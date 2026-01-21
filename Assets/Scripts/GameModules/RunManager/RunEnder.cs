@@ -6,11 +6,11 @@ public class RunEnder : Observer
     public RunEnder()
     {
         // Subscribe to player death events
-        PlayerManager pm = GameManager.Instance.GetManager<PlayerManager>();
+        PlayerManager pm = RunManager.Instance.GetService<PlayerManager>();
         pm.AttachObserver(this);
     }
     
-    public override void OnNotify(object subject, EventType et)
+    public void OnNotify(object subject, EventType et)
     {
         if (et == EventType.PlayerDeath)
         {
