@@ -3,20 +3,25 @@ using UnityEngine;
 public class DungeonManager
 {
     private int k_maxDungeonFloor = 100;
-    private int k_roomsPerFloor = 10;
+    private int k_roomsPerFloor = 11; // 10 rooms + 1 rest room
 
-    public int currentDungeonFloor { get; private set; } = 1;
-    public int roomAtCurrentFloor { get; private set; } = 1;
+    public int CurrentDungeonFloor { get; private set; } = 1;
+    public int RoomAtCurrentFloor { get; private set; } = 1;
 
     // Advance to the next room, and if necessary, the next floor
     public DungeonFloorData AdvanceRoom()
     {
-        roomAtCurrentFloor++;
-        if (roomAtCurrentFloor > k_roomsPerFloor)
+        RoomAtCurrentFloor++;
+        if (RoomAtCurrentFloor > k_roomsPerFloor)
         {
             AdvanceFloor();
         }
-        return new DungeonFloorData(currentDungeonFloor, roomAtCurrentFloor);
+        return new DungeonFloorData(CurrentDungeonFloor, RoomAtCurrentFloor);
+    }
+
+    public DungeonFloorData GetCurrentDungeonFloorData()
+    {
+        return new DungeonFloorData(CurrentDungeonFloor, RoomAtCurrentFloor);
     }
 
     // Advance to the next floor
@@ -27,26 +32,27 @@ public class DungeonManager
             Debug.Log("Dungeon is complete.");
             return;
         }
-        currentDungeonFloor++;
-        roomAtCurrentFloor = 1;
+        CurrentDungeonFloor++;
+        RoomAtCurrentFloor = 1;
     }
+    
 
     // Check if the dungeon run is complete
     public bool IsDungeonComplete()
     {
-        return currentDungeonFloor >= k_maxDungeonFloor;
+        return CurrentDungeonFloor >= k_maxDungeonFloor;
     }
 }
 
 // Data structure for dungeon floor information
 public struct DungeonFloorData
 {
-    public int floor;
-    public int room;
+    public int Floor;
+    public int Room;
 
-    public DungeonFloorData(int x, int y)
+    public DungeonFloorData(int floor, int room)
     {
-        floor = x;
-        room = y;
+        Floor = floor;
+        Room = room;
     }
 }
