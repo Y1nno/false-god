@@ -10,7 +10,7 @@ public class RunEnder : Observer
         pm.AttachObserver(this);
     }
     
-    public void OnNotify(object subject, EventType et)
+    public override void OnNotify(object subject, EventType et)
     {
         if (et == EventType.PlayerDeath)
         {

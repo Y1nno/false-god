@@ -18,7 +18,7 @@ public class Subject
     }
 
     // Notify all observers of an event
-    public void Notify(string eventType)
+    public void Notify(EventType eventType)
     {
         foreach (var observer in observers)
         {
