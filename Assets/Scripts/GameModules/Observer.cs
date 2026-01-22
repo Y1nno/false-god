@@ -8,5 +8,7 @@ public class Observer
 
 public enum EventType
 {
-    PlayerDeath
+    PlayerDeath,
+    EncounterStart,
+    EncounterResolve
 }

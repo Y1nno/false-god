@@ -1,22 +1,36 @@
 using UnityEngine;
+using System;
 
 public class EncounterFactory
 {
     private int _floor;
     private int _room;
     
-    public static Encounter CreateEncounter(DungeonFloorData floorData, EncounterType type)
+    // Create an encounter based on dungeon floor data and encounter type
+    public Encounter CreateEncounter(DungeonFloorData floorData, EncounterType type)
     {
         _floor = floorData.Floor;
         _room = floorData.Room;
 
         float difficulty = CalculateEncounterDifficulty();
+        switch (type)
+        {
+            case EncounterType.Enemy:
+                return new EnemyEncounter(difficulty);
+            case EncounterType.Treasure:
+                return new TreasureEncounter(difficulty);
+            case EncounterType.Trap:
+                return new TrapEncounter(difficulty);
+            default:
+                throw new ArgumentOutOfRangeException("Invalid encounter type.");
+        }
     }
     
+    // Calculate the difficulty of the encounter based on floor and room
     private float CalculateEncounterDifficulty()
     {
         float baseDifficulty = _floor + _room * 1.5f;
 
-        return Math.RandomRange(baseDifficulty * 0.9f, baseDifficulty * 1.1f);
+        return UnityEngine.Random.Range(baseDifficulty * 0.9f, baseDifficulty * 1.1f);
     }
 }

@@ -2,9 +2,9 @@ using UnityEngine;
 
 public class InputInterface : MonoBehaviour
 {
+    
     public void StartNewRun()
     {
-
         RunManager.Instance.StartNewRun();
     }
 

@@ -6,9 +6,9 @@ public class RunManager
 {
     private static RunManager _instance;
 
-    private static ManagerBox mb;
+    private static ManagerBox s_mb;
 
-    private static RunEnder _runEnder;
+    private static RunEnder s_runEnder;
 
     public static RunManager Instance
     {
@@ -36,9 +36,9 @@ public class RunManager
     //TODO: Add start of core loop
     public void StartNewRun()
     {
-        mb = new ManagerBox();
-        mb.InitializeAllManagers();
-        _runEnder = new RunEnder();
+        s_mb = new ManagerBox();
+        s_mb.InitializeAllManagers();
+        s_runEnder = new RunEnder();
 
         TextOutputter.Instance.OutputText("New run started.");
     }
@@ -47,9 +47,9 @@ public class RunManager
     public RunSummary EndRun()
     {
         RunSummary rs = new RunSummary();
-        if (mb != null)
+        if (s_mb != null)
         {
-            mb = null;
+            s_mb = null;
         }
         TextOutputter.Instance.OutputText("Run ended.");
         return rs;
@@ -65,9 +65,9 @@ public class RunManager
     // Retrieves a specific manager from the ManagerBox
     public T GetService<T>() where T : class
     {
-        if (mb != null)
+        if (s_mb != null)
         {
-            return mb.GetManager<T>();
+            return s_mb.GetManager<T>();
         }
         return null;
     }

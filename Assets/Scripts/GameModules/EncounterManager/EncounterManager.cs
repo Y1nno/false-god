@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 public class EncounterManager
 {
@@ -11,15 +12,14 @@ public class EncounterManager
     private float k_trapEncounterIncrement = 0.025f;
 
     private DungeonManager _dm = RunManager.Instance.GetService<DungeonManager>();
-
     
     #region Public API 
     public void CreateEncounter()
     {
         EncounterType encounterType = DetermineEncounterType();
         HandleEncounterChances(encounterType);
-        _currentEncounter = EncounterFactory.CreateEncounter(encounterType);
-        
+        _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), encounterType);
+        TextOutputter.Instance.OutputText("Encounter created: " + encounterType.ToString());
     }
 
     public void BeginEncounter()
@@ -30,6 +30,7 @@ public class EncounterManager
             Debug.LogException(ex);
             return;
         }
+        TextOutputter.Instance.OutputText("Encounter started: " + _currentEncounter.GetType().Name);
         _currentEncounter.StartEncounter();
     }
 
@@ -52,6 +53,7 @@ public class EncounterManager
             Debug.LogException(ex);
             return;
         }
+        TextOutputter.Instance.OutputText("Encounter resolved: " + _currentEncounter.GetType().Name);
         _currentEncounter.ResolveEncounter();
         _currentEncounter = null;
     }
@@ -78,11 +80,11 @@ public class EncounterManager
         {
             return EncounterType.Rest;
         }
-        else if (Random.NextDouble() <= _trapEncounterChance)
+        else if (UnityEngine.Random.value <= _trapEncounterChance)
         {
             return EncounterType.Trap;
         }
-        else if (Random.NextDouble() <= _treasureEncounterChance)
+        else if (UnityEngine.Random.value <= _treasureEncounterChance)
         {
             return EncounterType.Treasure;
         }
@@ -90,8 +92,6 @@ public class EncounterManager
         {
             return EncounterType.Enemy;
         }
-
-        return possibleEncounters[index];
     }
 
     private void HandleEncounterChances(EncounterType encounterType)

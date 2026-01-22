@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class DungeonManager
+public class DungeonManager : Observer
 {
     private int k_maxDungeonFloor = 100;
     private int k_roomsPerFloor = 11; // 10 rooms + 1 rest room
@@ -16,10 +16,11 @@ public class DungeonManager
         {
             AdvanceFloor();
         }
-        TextOutputter.Instance.OutputText($"Advanced to floor {currentDungeonFloor}, room {roomAtCurrentFloor}.");
-        return new DungeonFloorData(currentDungeonFloor, roomAtCurrentFloor);
+        TextOutputter.Instance.OutputText($"Advanced to floor {CurrentDungeonFloor}, room {RoomAtCurrentFloor}.");
+        return new DungeonFloorData(CurrentDungeonFloor, RoomAtCurrentFloor);
     }
 
+    // Get the current dungeon floor data
     public DungeonFloorData GetCurrentDungeonFloorData()
     {
         return new DungeonFloorData(CurrentDungeonFloor, RoomAtCurrentFloor);
@@ -33,9 +34,8 @@ public class DungeonManager
             TextOutputter.Instance.OutputText("Run complete, cannot advance further.");
             return;
         }
-        currentDungeonFloor++;
-        roomAtCurrentFloor = 1;
-        TextOutputter.Instance.OutputText($"Advanced to floor {currentDungeonFloor}, room {roomAtCurrentFloor}.");
+        CurrentDungeonFloor++;
+        RoomAtCurrentFloor = 1;
     }
     
 
@@ -43,6 +43,16 @@ public class DungeonManager
     public bool IsDungeonComplete()
     {
         return CurrentDungeonFloor >= k_maxDungeonFloor;
+    }
+
+    // Handle notifications from observed subjects
+    public override void OnNotify(object subject, EventType eventType)
+    {
+        if (eventType == EventType.EncounterResolve)
+        {
+            // Advance room on encounter resolution
+            AdvanceRoom();
+        }
     }
 }
 
