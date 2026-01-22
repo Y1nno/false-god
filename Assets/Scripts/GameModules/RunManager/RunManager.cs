@@ -24,7 +24,10 @@ public class RunManager
         
     }
 
-    private RunManager(){}
+    private RunManager()
+    {
+        TextOutputter.Instance.OutputText("RunManager initialized.");
+    }
 
 
     // API Methods
@@ -36,6 +39,8 @@ public class RunManager
         mb = new ManagerBox();
         mb.InitializeAllManagers();
         _runEnder = new RunEnder();
+
+        TextOutputter.Instance.OutputText("New run started.");
     }
 
     // Ends the current run and returns a summary
@@ -46,6 +51,7 @@ public class RunManager
         {
             mb = null;
         }
+        TextOutputter.Instance.OutputText("Run ended.");
         return rs;
     }
 

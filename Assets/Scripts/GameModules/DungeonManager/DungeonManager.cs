@@ -16,6 +16,7 @@ public class DungeonManager
         {
             AdvanceFloor();
         }
+        TextOutputter.Instance.OutputText($"Advanced to floor {currentDungeonFloor}, room {roomAtCurrentFloor}.");
         return new DungeonFloorData(currentDungeonFloor, roomAtCurrentFloor);
     }
 
@@ -24,11 +25,12 @@ public class DungeonManager
     {
         if (IsDungeonComplete())
         {
-            Debug.Log("Dungeon is complete.");
+            TextOutputter.Instance.OutputText("Run complete, cannot advance further.");
             return;
         }
         currentDungeonFloor++;
         roomAtCurrentFloor = 1;
+        TextOutputter.Instance.OutputText($"Advanced to floor {currentDungeonFloor}, room {roomAtCurrentFloor}.");
     }
 
     // Check if the dungeon run is complete
