@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // Observer that ends the run when the player dies
-public class RunEnder : Observer
+public class RunEnder : IObserver
 {
     public RunEnder()
     {
@@ -10,7 +10,7 @@ public class RunEnder : Observer
         pm.AttachObserver(this);
     }
     
-    public override void OnNotify(object subject, EventType et)
+    public void OnNotify(object subject, EventType et)
     {
         if (et == EventType.PlayerDeath)
         {

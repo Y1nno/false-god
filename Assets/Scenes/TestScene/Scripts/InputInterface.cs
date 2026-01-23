@@ -10,8 +10,13 @@ public class InputInterface : MonoBehaviour
 
     public void AdvanceDungeonRoom()
     {
-        RunManager rm = RunManager.Instance;
-        DungeonManager dm = rm.GetService<DungeonManager>();
+        DungeonManager dm = RunManager.Instance.GetService<DungeonManager>();
         dm.AdvanceRoom();
+    }
+
+    public void ResolveCurrentEncounter()
+    {
+        EncounterManager em = RunManager.Instance.GetService<EncounterManager>();
+        em.ResolveEncounter();
     }
 }
