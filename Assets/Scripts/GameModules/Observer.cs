@@ -12,5 +12,7 @@ public enum EventType
     EncounterStart,
     EncounterResolve,
     DungeonRoomAdvance,
-    DungeonFloorAdvance
+    DungeonFloorAdvance,
+    GoldAdded,
+    GoldSpent
 }
