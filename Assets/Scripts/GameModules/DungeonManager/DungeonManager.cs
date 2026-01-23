@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class DungeonManager : Observer
+public class DungeonManager : Subject, IObserver
 {
     private int k_maxDungeonFloor = 100;
     private int k_roomsPerFloor = 11; // 10 rooms + 1 rest room
@@ -8,8 +8,15 @@ public class DungeonManager : Observer
     public int CurrentDungeonFloor { get; private set; } = 1;
     public int RoomAtCurrentFloor { get; private set; } = 1;
 
+    private EncounterManager _em = null;
+
+    public DungeonManager()
+    {
+        
+    }
+
     // Advance to the next room, and if necessary, the next floor
-    public DungeonFloorData AdvanceRoom()
+    public void AdvanceRoom()
     {
         RoomAtCurrentFloor++;
         if (RoomAtCurrentFloor > k_roomsPerFloor)
@@ -17,7 +24,12 @@ public class DungeonManager : Observer
             AdvanceFloor();
         }
         TextOutputter.Instance.OutputText($"Advanced to floor {CurrentDungeonFloor}, room {RoomAtCurrentFloor}.");
-        return new DungeonFloorData(CurrentDungeonFloor, RoomAtCurrentFloor);
+        if (_em == null)
+        {
+            _em = RunManager.Instance.GetService<EncounterManager>();
+            AttachObserver(_em);
+        }
+        Notify(EventType.DungeonRoomAdvance);
     }
 
     // Get the current dungeon floor data
@@ -36,6 +48,7 @@ public class DungeonManager : Observer
         }
         CurrentDungeonFloor++;
         RoomAtCurrentFloor = 1;
+        Notify(EventType.DungeonFloorAdvance);
     }
     
 
@@ -46,7 +59,7 @@ public class DungeonManager : Observer
     }
 
     // Handle notifications from observed subjects
-    public override void OnNotify(object subject, EventType eventType)
+    public void OnNotify(object subject, EventType eventType)
     {
         if (eventType == EventType.EncounterResolve)
         {

@@ -7,6 +7,7 @@ public class ManagerBox
     private CombatManager _combatManager;
 
     private DungeonManager _dungeonManager;
+    private EncounterManager _encounterManager;
     private EconomyManager _economyManager;
 
     private InventoryManager _inventoryManager;
@@ -22,6 +23,7 @@ public class ManagerBox
         _combatManager = new CombatManager();
 
         _dungeonManager = new DungeonManager();
+        _encounterManager = new EncounterManager();
         _economyManager = new EconomyManager();
 
         _inventoryManager = new InventoryManager();
@@ -40,6 +42,8 @@ public class ManagerBox
             return _combatManager as T;
         if (typeof(T) == typeof(DungeonManager))
             return _dungeonManager as T;
+        if (typeof(T) == typeof(EncounterManager))
+            return _encounterManager as T;
         if (typeof(T) == typeof(EconomyManager))
             return _economyManager as T;
         if (typeof(T) == typeof(InventoryManager))

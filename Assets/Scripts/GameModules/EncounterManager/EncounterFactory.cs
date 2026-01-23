@@ -21,6 +21,12 @@ public class EncounterFactory
                 return new TreasureEncounter(difficulty);
             case EncounterType.Trap:
                 return new TrapEncounter(difficulty);
+            case EncounterType.NPC:
+                return new NPCEncounter(difficulty);
+            case EncounterType.Religious:
+                return new ReligiousEncounter(difficulty);
+            case EncounterType.Rest:
+                return new RestEncounter(difficulty);
             default:
                 throw new ArgumentOutOfRangeException("Invalid encounter type.");
         }

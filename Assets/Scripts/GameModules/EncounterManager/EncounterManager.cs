@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 
-public class EncounterManager
+public class EncounterManager : IObserver
 {
     private Encounter _currentEncounter; 
 
@@ -55,7 +55,6 @@ public class EncounterManager
         }
         TextOutputter.Instance.OutputText("Encounter resolved: " + _currentEncounter.GetType().Name);
         _currentEncounter.ResolveEncounter();
-        _currentEncounter = null;
     }
     #endregion
 
@@ -110,6 +109,15 @@ public class EncounterManager
                 _treasureEncounterChance += k_treasureEncounterIncrement;
                 _trapEncounterChance += k_trapEncounterIncrement;
                 break;
+        }
+    }
+
+    public void OnNotify(object subject, EventType eventType)
+    {
+        if (eventType == EventType.DungeonRoomAdvance)
+        {
+            Debug.Log("EncounterManager received DungeonRoomAdvance notification.");
+            CreateEncounter();
         }
     }
 }
