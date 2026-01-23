@@ -6,6 +6,8 @@ public class InfoContainer : MonoBehaviour
     private string _content;
 
     private RunManager _rm = null;
+    private PlayerManager _pm = null;
+    private EconomyManager _em = null;
 
     public TMP_Text textBox;
 
@@ -13,17 +15,29 @@ public class InfoContainer : MonoBehaviour
     {
         if (_rm == null)
         {
-            _rm = RunManager.Instance;
+            HookUpManagers();
         }
         _content = "Player Info:\n";
         AddPlayerInfo();
+        AddEconomyInfo();
         textBox.text = _content;
     }
 
     private void AddPlayerInfo()
     {
-        PlayerManager pm = _rm.GetService<PlayerManager>();
-        _content += "Health: " + pm.Health.CurrentValue + "/" + pm.Health.MaxValue + "\n";
-        _content += "Mana: " + pm.Mana.CurrentValue + "/" + pm.Mana.MaxValue + "\n";
+        _content += "Health: " + _pm.Health.CurrentValue + "/" + _pm.Health.MaxValue + "\n";
+        _content += "Mana: " + _pm.Mana.CurrentValue + "/" + _pm.Mana.MaxValue + "\n";
+        
+    }
+
+    private void AddEconomyInfo()
+    {
+        _content += "Gold: " + _em.GetCurrentGold() + "\n";
+    }
+    private void HookUpManagers()
+    {
+        _rm = RunManager.Instance;
+        _pm = _rm.GetService<PlayerManager>();
+        _em = _rm.GetService<EconomyManager>();
     }
 }
