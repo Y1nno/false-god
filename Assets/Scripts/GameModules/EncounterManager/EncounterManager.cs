@@ -56,6 +56,11 @@ public class EncounterManager : IObserver
         TextOutputter.Instance.OutputText("Encounter resolved: " + _currentEncounter.GetType().Name);
         _currentEncounter.ResolveEncounter();
     }
+
+    public Encounter GetCurrentEncounter()
+    {
+        return _currentEncounter;
+    }
     #endregion
 
     private EncounterType DetermineEncounterType()
