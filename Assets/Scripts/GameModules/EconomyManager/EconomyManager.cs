@@ -3,6 +3,8 @@ using UnityEngine;
 public class EconomyManager : Subject
 {
     private int _gold = 0;
+
+    // Tracks the most recent change in gold (positive or negative)
     public int GoldDelta { get; private set; } = 0;
 
     public int AddGold(int amount)

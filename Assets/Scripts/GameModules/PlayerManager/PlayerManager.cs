@@ -22,6 +22,7 @@ public class PlayerManager : Subject
     {
         if (amount <= 0) return;
         Health.Decrease(amount);
+        TextOutputter.Instance.OutputText($"Took {amount} damage.");
         if (Health.CurrentValue <= 0)
         {
             Die();
