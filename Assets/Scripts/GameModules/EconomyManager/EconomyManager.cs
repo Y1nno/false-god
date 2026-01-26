@@ -1,12 +1,17 @@
 using UnityEngine;
 
-public class EconomyManager : Subject
+public class EconomyManager : GameModule
 {
     private int _gold = 0;
 
     // Tracks the most recent change in gold (positive or negative)
     public int GoldDelta { get; private set; } = 0;
 
+    public override void AttachDefaultObservers()
+    {
+        // none for now
+    }
+    
     public int AddGold(int amount)
     {
         _gold += amount;

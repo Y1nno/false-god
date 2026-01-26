@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class InventoryManager
+public class InventoryManager : GameModule
 {
     private Equipment _eq = new Equipment();
     private Inventory _inv = new Inventory();
@@ -9,6 +9,12 @@ public class InventoryManager
     #region Public API
 
     #region Equipment Methods
+    
+    public override void AttachDefaultObservers()
+    {
+        // none for now
+    }
+
     public void EquipItem(EquipmentSlot slot, Item item)
     {
         if (item.CanBeEquipped() == false)

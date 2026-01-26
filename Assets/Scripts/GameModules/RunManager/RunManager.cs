@@ -2,7 +2,7 @@ using UnityEngine;
 
 
 // Singleton class that manages the lifecycle of a run
-public class RunManager
+public class RunManager : GameModule
 {
     private static RunManager _instance;
 
@@ -27,6 +27,11 @@ public class RunManager
     private RunManager()
     {
         TextOutputter.Instance.OutputText("RunManager initialized.");
+    }
+
+    public override void AttachDefaultObservers()
+    {
+        // none for now
     }
 
 

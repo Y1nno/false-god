@@ -11,6 +11,8 @@ public class Encounter : Subject
         DungeonManager dm = RunManager.Instance.GetService<DungeonManager>();
         // Register DungeonManager as an observer to this encounter for starting and resolving notifications
         AttachObserver(dm);
+        XPManager xm = RunManager.Instance.GetService<XPManager>();
+        AttachObserver(xm);
     }
     public virtual void ProcessPlayerCommand(PlayerCommand command)
     {

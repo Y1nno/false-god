@@ -17,6 +17,8 @@ public class ManagerBox
     private SaveManager _saveManager;
     private XPManager _xpManager;
 
+    private List<GameModule> _allManagers = new List<GameModule>();
+
     public void InitializeAllManagers()
     {
         _commandManager = new CommandManager();
@@ -32,6 +34,28 @@ public class ManagerBox
         _riteManager = new RiteManager();
         _saveManager = new SaveManager();
         _xpManager = new XPManager();
+
+        _allManagers.Add(_commandManager);
+        _allManagers.Add(_combatManager);
+        _allManagers.Add(_dungeonManager);
+        _allManagers.Add(_encounterManager);
+        _allManagers.Add(_economyManager);
+        _allManagers.Add(_inventoryManager);
+        _allManagers.Add(_playerManager);
+        _allManagers.Add(_religionManager);
+        _allManagers.Add(_riteManager);
+        _allManagers.Add(_saveManager);
+        _allManagers.Add(_xpManager);
+
+        SetupObservers();
+    }
+
+    private void SetupObservers()
+    {
+        foreach (var manager in _allManagers)
+        {
+            manager.AttachDefaultObservers();
+        }
     }
 
     public T GetManager<T>() where T : class
