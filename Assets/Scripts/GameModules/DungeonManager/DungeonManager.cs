@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class DungeonManager : Subject, IObserver
+public class DungeonManager : GameModule, IObserver
 {
     private int k_maxDungeonFloor = 100;
     private int k_roomsPerFloor = 11; // 10 rooms + 1 rest room
@@ -15,6 +15,12 @@ public class DungeonManager : Subject, IObserver
         
     }
 
+    public override void AttachDefaultObservers()
+    {
+        _em = RunManager.Instance.GetService<EncounterManager>();
+        AttachObserver(_em);
+    }
+
     // Advance to the next room, and if necessary, the next floor
     public void AdvanceRoom()
     {
@@ -26,8 +32,7 @@ public class DungeonManager : Subject, IObserver
         TextOutputter.Instance.OutputText($"Advanced to floor {CurrentDungeonFloor}, room {RoomAtCurrentFloor}.");
         if (_em == null)
         {
-            _em = RunManager.Instance.GetService<EncounterManager>();
-            AttachObserver(_em);
+            AttachDefaultObservers();
         }
         Notify(EventType.DungeonRoomAdvance);
     }

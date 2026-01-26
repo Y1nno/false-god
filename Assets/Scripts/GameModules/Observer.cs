@@ -11,8 +11,15 @@ public enum EventType
     PlayerDeath,
     EncounterStart,
     EncounterResolve,
+    EnemyDefeat,
     DungeonRoomAdvance,
     DungeonFloorAdvance,
     GoldAdded,
-    GoldSpent
+    GoldSpent,
+    ItemAcquired,
+    ItemRemoved,
+    LevelUp,
+    QuestComplete,
+    XPAdded,
+    StatPointsAdded
 }

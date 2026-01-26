@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 
-public class PlayerManager : Subject
+public class PlayerManager : GameModule
 {
     private const int k_StartingMaxHealth = 100;
     private const int k_StartingMaxMana = 50;
@@ -13,8 +13,13 @@ public class PlayerManager : Subject
     public Resource Health = new Resource(k_StartingMaxHealth);
     public Resource Mana = new Resource(k_StartingMaxMana);
 
-    private StatBox playerStats = new StatBox();
+    public StatBox PlayerStats { get; private set; } = new StatBox();
 
+    public override void AttachDefaultObservers()
+    {
+        // none for now
+    }
+    
     //API methods
 
     #region Health and Mana Management
@@ -56,12 +61,12 @@ public class PlayerManager : Subject
 
     public int GetStat(Stat stat)
     {
-        return playerStats.GetStat(stat);
+        return PlayerStats.GetStat(stat);
     }
 
     public void SetStat(Stat stat, int value)
     {
-        playerStats.SetStat(stat, value);
+        PlayerStats.SetStat(stat, value);
         if (stat == Stat.STR)
         {
             int mod = Mathf.RoundToInt((GetStat(Stat.STR) * k_HealthPerStrength));
@@ -76,13 +81,13 @@ public class PlayerManager : Subject
 
     public void IncreaseStat(Stat stat, int amount)
     {
-        int currentValue = playerStats.GetStat(stat);
+        int currentValue = PlayerStats.GetStat(stat);
         SetStat(stat, currentValue + amount);
     }
 
     public void DecreaseStat(Stat stat, int amount)
     {
-        int currentValue = playerStats.GetStat(stat);
+        int currentValue = PlayerStats.GetStat(stat);
         SetStat(stat, currentValue - amount);
     }
 

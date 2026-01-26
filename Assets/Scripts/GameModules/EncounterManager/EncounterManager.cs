@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 
-public class EncounterManager : IObserver
+public class EncounterManager : GameModule, IObserver
 {
     private Encounter _currentEncounter; 
 
@@ -14,6 +14,12 @@ public class EncounterManager : IObserver
     private DungeonManager _dm = RunManager.Instance.GetService<DungeonManager>();
     
     #region Public API 
+    
+    public override void AttachDefaultObservers()
+    {
+        // none for now
+    }
+    
     public void CreateEncounter()
     {
         EncounterType encounterType = DetermineEncounterType();

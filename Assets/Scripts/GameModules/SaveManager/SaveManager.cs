@@ -1,6 +1,9 @@
 using UnityEngine;
 
-public class SaveManager
+public class SaveManager : GameModule
 {
-    
+    public override void AttachDefaultObservers()
+    {
+        // none for now
+    }
 }

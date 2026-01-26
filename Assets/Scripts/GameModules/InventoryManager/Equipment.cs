@@ -62,6 +62,7 @@ public class Equipment
 
     public Item UnequipItem(EquipmentSlot slot)
     {
+        // Ensure item can be unequipped
         if (_equipment.ContainsKey(slot) && _equipment[slot] != null && _equipment[slot].CanBeUnequipped())
         {
             Item item = _equipment[slot];

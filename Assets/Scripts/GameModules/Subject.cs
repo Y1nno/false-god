@@ -25,4 +25,6 @@ public class Subject
             observer.OnNotify(this, eventType);
         }
     }
+
+
 }
