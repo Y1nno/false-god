@@ -13,6 +13,8 @@ public class Encounter : Subject
         AttachObserver(dm);
         XPManager xm = RunManager.Instance.GetService<XPManager>();
         AttachObserver(xm);
+        ScoreManager sm = RunManager.Instance.GetService<ScoreManager>();
+        AttachObserver(sm);
     }
     public virtual void ProcessPlayerCommand(PlayerCommand command)
     {
