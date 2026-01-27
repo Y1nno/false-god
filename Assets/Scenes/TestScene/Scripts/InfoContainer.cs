@@ -12,6 +12,7 @@ public class InfoContainer : MonoBehaviour
     private XPManager _exm = null;
 
     private ScoreManager _sm = null;
+    private RiteManager _ritem = null;
 
     public TMP_Text textBox;
 
@@ -33,7 +34,8 @@ public class InfoContainer : MonoBehaviour
 
     private void AddScoreInfo()
     {
-        _content += "Current Score: " + _sm.CurrentScore + "\n\n";
+        _content += "Current Score: " + _sm.CurrentScore + "\n";
+        _content += "Rite Points: " + _rm.GetService<RiteManager>().CalculateRitePointsRemaining() + "/" + _rm.GetService<RiteManager>().RitePoints + "\n";
     }
 
     private void AddPlayerInfo()
@@ -72,5 +74,6 @@ public class InfoContainer : MonoBehaviour
         _enm = _rm.GetService<EncounterManager>();
         _exm = _rm.GetService<XPManager>();
         _sm = _rm.GetService<ScoreManager>();
+        _ritem = _rm.GetService<RiteManager>();
     }
 }
