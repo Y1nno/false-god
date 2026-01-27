@@ -4,6 +4,6 @@ public class RestEncounter : Encounter
 {
     public RestEncounter(float difficulty) : base(difficulty)
     {
-        Debug.Log($"RestEncounter created with difficulty: {difficulty}");
+        //Debug.Log($"RestEncounter created with difficulty: {difficulty}");
     }
 }

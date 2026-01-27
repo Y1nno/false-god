@@ -11,6 +11,8 @@ public class InfoContainer : MonoBehaviour
     private EncounterManager _enm = null;
     private XPManager _exm = null;
 
+    private ScoreManager _sm = null;
+
     public TMP_Text textBox;
 
     public void Refresh()
@@ -19,7 +21,9 @@ public class InfoContainer : MonoBehaviour
         {
             HookUpManagers();
         }
+        _content = "";
         
+        AddScoreInfo();
         AddPlayerInfo();
         AddStatInfo();
         AddEconomyInfo();
@@ -27,9 +31,14 @@ public class InfoContainer : MonoBehaviour
         textBox.text = _content;
     }
 
+    private void AddScoreInfo()
+    {
+        _content += "Current Score: " + _sm.CurrentScore + "\n\n";
+    }
+
     private void AddPlayerInfo()
     {
-        _content = "Player Info:\n";
+        _content += "Player Info:\n";
         _content += "Health: " + _pm.Health.CurrentValue + "/" + _pm.Health.MaxValue + "\n";
         _content += "Mana: " + _pm.Mana.CurrentValue + "/" + _pm.Mana.MaxValue + "\n";
     }
@@ -62,5 +71,6 @@ public class InfoContainer : MonoBehaviour
         _em = _rm.GetService<EconomyManager>();
         _enm = _rm.GetService<EncounterManager>();
         _exm = _rm.GetService<XPManager>();
+        _sm = _rm.GetService<ScoreManager>();
     }
 }

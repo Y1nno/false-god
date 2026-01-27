@@ -15,6 +15,7 @@ public class ManagerBox
     private ReligionManager _religionManager;
     private RiteManager _riteManager;
     private SaveManager _saveManager;
+    private ScoreManager _scoreManager;
     private XPManager _xpManager;
 
     private List<GameModule> _allManagers = new List<GameModule>();
@@ -33,6 +34,7 @@ public class ManagerBox
         _religionManager = new ReligionManager();
         _riteManager = new RiteManager();
         _saveManager = new SaveManager();
+        _scoreManager = new ScoreManager();
         _xpManager = new XPManager();
 
         _allManagers.Add(_commandManager);
@@ -45,6 +47,7 @@ public class ManagerBox
         _allManagers.Add(_religionManager);
         _allManagers.Add(_riteManager);
         _allManagers.Add(_saveManager);
+        _allManagers.Add(_scoreManager);
         _allManagers.Add(_xpManager);
 
         SetupObservers();
@@ -80,6 +83,8 @@ public class ManagerBox
             return _riteManager as T;
         if (typeof(T) == typeof(SaveManager))
             return _saveManager as T;
+        if (typeof(T) == typeof(ScoreManager))
+            return _scoreManager as T;
         if (typeof(T) == typeof(XPManager))
             return _xpManager as T;
 
