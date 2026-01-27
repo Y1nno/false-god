@@ -127,7 +127,7 @@ public class EncounterManager : GameModule, IObserver
     {
         if (eventType == EventType.DungeonRoomAdvance)
         {
-            Debug.Log("EncounterManager received DungeonRoomAdvance notification.");
+            //Debug.Log("EncounterManager received DungeonRoomAdvance notification.");
             CreateEncounter();
         }
     }
