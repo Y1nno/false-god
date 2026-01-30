@@ -13,6 +13,7 @@ public class InfoContainer : MonoBehaviour
 
     private ScoreManager _sm = null;
     private RiteManager _ritem = null;
+    private ReligionManager _relm = null;
 
     public TMP_Text textBox;
 
@@ -23,12 +24,13 @@ public class InfoContainer : MonoBehaviour
             HookUpManagers();
         }
         _content = "";
-        
+
         AddScoreInfo();
         AddPlayerInfo();
         AddStatInfo();
         AddEconomyInfo();
         AddXPInfo();
+        AddReligionInfo();
         textBox.text = _content;
     }
 
@@ -66,6 +68,18 @@ public class InfoContainer : MonoBehaviour
         _content += "Stat points: " + _pm.PlayerStats.AvailableStatPoints + "\n";
     }
 
+    private void AddReligionInfo()
+    {
+        if (_relm.CurrentReligion != null)
+        {
+            _content += "Religion: " + _relm.CurrentReligion.ReligionID + "\n";
+        }
+        else
+        {
+            _content += "No current religion.\n";
+        }
+    }
+
     private void HookUpManagers()
     {
         _rm = RunManager.Instance;
@@ -75,5 +89,6 @@ public class InfoContainer : MonoBehaviour
         _exm = _rm.GetService<XPManager>();
         _sm = _rm.GetService<ScoreManager>();
         _ritem = _rm.GetService<RiteManager>();
+        _relm = _rm.GetService<ReligionManager>();
     }
 }

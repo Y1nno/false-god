@@ -4,7 +4,7 @@ using System;
 
 public class InputInterface : MonoBehaviour
 {
-    
+
     public void StartNewRun()
     {
         RunManager.Instance.StartNewRun();
@@ -21,13 +21,13 @@ public class InputInterface : MonoBehaviour
         EncounterManager em = RunManager.Instance.GetService<EncounterManager>();
         em.ResolveEncounter();
     }
-    
+
     public void AddGold(UnityEngine.GameObject txtInput)
     {
         EconomyManager em = RunManager.Instance.GetService<EconomyManager>();
         if (txtInput == null) return;
         TMP_InputField inputField = txtInput.GetComponent<TMP_InputField>();
-        int amount = int.Parse(inputField.text); 
+        int amount = int.Parse(inputField.text);
         em.AddGold(amount);
     }
 
@@ -36,7 +36,7 @@ public class InputInterface : MonoBehaviour
         EconomyManager em = RunManager.Instance.GetService<EconomyManager>();
         if (txtInput == null) return;
         TMP_InputField inputField = txtInput.GetComponent<TMP_InputField>();
-        int amount = int.Parse(inputField.text); 
+        int amount = int.Parse(inputField.text);
         em.SpendGold(amount);
     }
 
@@ -45,7 +45,7 @@ public class InputInterface : MonoBehaviour
         XPManager xm = RunManager.Instance.GetService<XPManager>();
         if (txtInput == null) return;
         TMP_InputField inputField = txtInput.GetComponent<TMP_InputField>();
-        int amount = int.Parse(inputField.text); 
+        int amount = int.Parse(inputField.text);
         xm.AddXP(amount);
     }
 
@@ -58,12 +58,21 @@ public class InputInterface : MonoBehaviour
         TMP_Dropdown statInputField = txtStatInput.GetComponent<TMP_Dropdown>();
         TMP_InputField pointsInputField = txtPointsInput.GetComponent<TMP_InputField>();
         if (!Enum.TryParse(statInputField.captionText.text, out Stat stat)) return;
-        int points = int.Parse(pointsInputField.text); 
+        int points = int.Parse(pointsInputField.text);
         bool success = pm.PlayerStats.SpendStatPoints(stat, points);
         if (!success)
         {
             TextOutputter.Instance.OutputText("Not enough stat points to spend.");
         }
+    }
+
+    public void MakeEncounterDecision(UnityEngine.GameObject txtInput)
+    {
+        EncounterManager em = RunManager.Instance.GetService<EncounterManager>();
+        if (txtInput == null) return;
+        TMP_InputField inputField = txtInput.GetComponent<TMP_InputField>();
+        int decisionIndex = int.Parse(inputField.text) -1; // Convert to zero-based index
+        em.ProcessEncounterDecision(decisionIndex);
     }
 
 }

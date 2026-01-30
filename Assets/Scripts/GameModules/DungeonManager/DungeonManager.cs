@@ -10,10 +10,7 @@ public class DungeonManager : GameModule, IObserver
 
     private EncounterManager _em = null;
 
-    public DungeonManager()
-    {
-        
-    }
+    public DungeonManager(){}
 
     public override void AttachDefaultObservers()
     {
@@ -55,7 +52,6 @@ public class DungeonManager : GameModule, IObserver
         RoomAtCurrentFloor = 1;
         Notify(EventType.DungeonFloorAdvance);
     }
-    
 
     // Check if the dungeon run is complete
     public bool IsDungeonComplete()
