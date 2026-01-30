@@ -4,7 +4,7 @@ using System;
 
 public class EncounterManager : GameModule, IObserver
 {
-    private Encounter _currentEncounter; 
+    private Encounter _currentEncounter;
 
     private float _treasureEncounterChance = 0.0f;
     private float k_treasureEncounterIncrement = 0.015f;
@@ -12,20 +12,21 @@ public class EncounterManager : GameModule, IObserver
     private float k_trapEncounterIncrement = 0.025f;
 
     private DungeonManager _dm = RunManager.Instance.GetService<DungeonManager>();
-    
-    #region Public API 
-    
+
+    #region Public API
+
     public override void AttachDefaultObservers()
     {
         // none for now
     }
-    
+
     public void CreateEncounter()
     {
         EncounterType encounterType = DetermineEncounterType();
         HandleEncounterChances(encounterType);
         _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), encounterType);
         TextOutputter.Instance.OutputText("Encounter created: " + encounterType.ToString());
+        _currentEncounter.StartEncounter();
     }
 
     public void BeginEncounter()
@@ -121,6 +122,17 @@ public class EncounterManager : GameModule, IObserver
                 _trapEncounterChance += k_trapEncounterIncrement;
                 break;
         }
+    }
+
+    public void ProcessEncounterDecision(int decisionIndex)
+    {
+        if (_currentEncounter == null)
+        {
+            NullReferenceException  ex = new NullReferenceException("No encounter has been created.");
+            Debug.LogException(ex);
+            return;
+        }
+        _currentEncounter.RecieveDecision(decisionIndex);
     }
 
     public void OnNotify(object subject, EventType eventType)

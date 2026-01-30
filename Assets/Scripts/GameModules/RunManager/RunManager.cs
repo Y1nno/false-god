@@ -20,8 +20,6 @@ public class RunManager : GameModule
             }
             return _instance;
         }
-
-        
     }
 
     private RunManager()
@@ -76,6 +74,4 @@ public class RunManager : GameModule
         }
         return null;
     }
-
-    
 }
