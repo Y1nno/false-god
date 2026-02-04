@@ -1,9 +1,46 @@
 using UnityEngine;
+using System.Collections.Generic;
 
-public class CombatManager : GameModule
+public class CombatManager : GameModule, IObserver
 {
-    public override void AttachDefaultObservers()
+    public Battle CurrentBattle {get; private set;}
+    public override void AttachDefaultObservers(){}
+
+    public void CreateNewBattle(float difficulty)
     {
-        // none for now
+        CurrentBattle = new Battle(EnemiesByDifficulty(difficulty));
+        CurrentBattle.AttachObserver(this);
+    }
+
+    public void Start()
+    {
+        CurrentBattle.StartBattle();
+    }
+
+    public List<Combatant> EnemiesByDifficulty(float difficulty)
+    {
+        // Placeholder logic for generating enemies based on difficulty
+        List<Combatant> enemies = new List<Combatant>();
+        enemies.Add(new Goblin());
+        enemies.Add(new Orc());
+        return enemies;
+    }
+
+    public void FinishBattle()
+    {
+        CurrentBattle = null;
+        Notify(EventType.BattleEnd);
+    }
+
+    public void OnNotify(Subject subject, EventType eventType)
+    {
+        switch (eventType)
+        {
+            case EventType.BattleEnd:
+                FinishBattle();
+                break;
+            default:
+                break;
+        }
     }
 }

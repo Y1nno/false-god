@@ -21,5 +21,15 @@ public enum EventType
     LevelUp,
     QuestComplete,
     XPAdded,
-    StatPointsAdded
+    StatPointsAdded,
+    RoundStart,
+    RoundEnd,
+    PlayerTurnStart,
+    PlayerTurnEnd,
+    EnemyTurnStart,
+    EnemyTurnEnd,
+    BattleStart,
+    BattleEnd,
+    PlayerActionSet,
+    EnemyDefeated,
 }
