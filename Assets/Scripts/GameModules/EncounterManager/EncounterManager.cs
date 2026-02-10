@@ -41,17 +41,6 @@ public class EncounterManager : GameModule, IObserver
         _currentEncounter.StartEncounter();
     }
 
-    public void SubmitPlayerCommand(PlayerCommand command)
-    {
-        if (_currentEncounter == null)
-        {
-            NullReferenceException  ex = new NullReferenceException("No encounter has been created.");
-            Debug.LogException(ex);
-            return;
-        }
-        _currentEncounter.ProcessPlayerCommand(command);
-    }
-
     public void ResolveEncounter()
     {
         if (_currentEncounter == null)

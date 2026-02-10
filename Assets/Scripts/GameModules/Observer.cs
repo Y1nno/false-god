@@ -4,6 +4,7 @@ public interface IObserver
 {
     // Notification method called when an observed subject triggers an event
     public virtual void OnNotify(object subject, EventType eventType){}
+    //public virtual void OnNotify(Subject subject, EventType eventType){}
 }
 
 public enum EventType
@@ -21,5 +22,15 @@ public enum EventType
     LevelUp,
     QuestComplete,
     XPAdded,
-    StatPointsAdded
+    StatPointsAdded,
+    RoundStart,
+    RoundEnd,
+    PlayerTurnStart,
+    PlayerTurnEnd,
+    EnemyTurnStart,
+    EnemyTurnEnd,
+    BattleStart,
+    BattleEnd,
+    PlayerActionSet,
+    EnemyDefeated,
 }

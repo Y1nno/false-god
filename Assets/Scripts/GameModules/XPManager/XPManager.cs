@@ -20,7 +20,7 @@ public class XPManager : GameModule, IObserver
     private readonly int k_XPForQuestComplete = 5;
     #endregion
 
-    private StatBox _statBox = null;
+    private PlayerStatBox _statBox = null;
 
     public override void AttachDefaultObservers()
     {
@@ -30,14 +30,13 @@ public class XPManager : GameModule, IObserver
 
     // API Methods
     #region API Methods
-    
     public void AddXP(int amount)
     {
         currentXP += amount;
         Notify(EventType.XPAdded);
         TextOutputter.Instance.OutputText("Gained " + amount + " XP.");
         CheckLevelUp();
-    } 
+    }
 
     private void CheckLevelUp()
     {

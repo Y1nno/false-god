@@ -19,10 +19,6 @@ public abstract class Encounter : Subject
         ScoreManager sm = RunManager.Instance.GetService<ScoreManager>();
         AttachObserver(sm);
     }
-    public virtual void ProcessPlayerCommand(PlayerCommand command)
-    {
-
-    }
     public virtual void StartEncounter()
     {
         Notify(EventType.EncounterStart);

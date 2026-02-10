@@ -1,0 +1,138 @@
+using System.Collections.Generic;
+using UnityEngine;
+using System.Linq;
+
+
+public class Battle : Subject, IObserver
+{
+    List<Combatant> combatants = new List<Combatant>();
+    PlayerManager _pm = RunManager.Instance.GetService<PlayerManager>();
+    public PlayerCombatManager Pcm { get; private set; } = new PlayerCombatManager();
+    System.Random rng = new System.Random();
+
+    public Battle(List<Combatant> enemies)
+    {
+        combatants = enemies;
+        combatants.Add(Pcm);
+        foreach (Combatant combatant in combatants)
+        {
+            combatant.AttachObserver(this);
+        }
+    }
+
+    public void StartBattle()
+    {
+        TextOutputter.Instance.OutputText("A battle has started!");
+        foreach (Enemy enemy in GetEnemies())
+        {
+            TextOutputter.Instance.OutputText($"Enemy encountered: {enemy.Name} (HP: {enemy.Health.CurrentValue})");
+        }
+
+        StartRound();
+    }
+
+    public bool CheckBattleOngoing()
+    {
+        return _pm.Health.CurrentValue > 0 && HasLivingEnemies();
+    }
+
+    private bool HasLivingEnemies()
+    {
+        return GetEnemies().Count > 0;
+    }
+
+    public void StartRound()
+    {
+        //Debug.Log($"StartRound called, frame={Time.frameCount}");
+        if (!CheckBattleOngoing()) return;
+        Notify(EventType.RoundStart);
+        SetActions();
+    }
+
+    public void EndRound()
+    {
+        //Debug.Log($"EndRound called, frame={Time.frameCount}");
+        if (!CheckBattleOngoing())
+        {
+            Notify(EventType.BattleEnd);
+            return;
+        }
+        Notify(EventType.RoundEnd);
+        StartRound();
+    }
+    public void SetActions()
+    {
+        //Debug.Log("Setting actions for all combatants.");
+        foreach (Enemy enemy in GetEnemies())
+        {
+            enemy.ChooseAction();
+        }
+        TelegraphEnemyActions();
+        Pcm.ChooseAction();
+    }
+
+    private void TelegraphEnemyActions()
+    {
+        foreach (Enemy enemy in GetEnemies())
+        {
+            TextOutputter.Instance.OutputText($"Enemy {enemy.Name} is preparing to use {enemy.CurrentAction.ActionName}!");
+        }
+    }
+
+    public List<Combatant> GetEnemies(bool aliveOnly = true)
+    {
+        List<Combatant> enemies = new List<Combatant>();
+        foreach (Combatant combatant in combatants)
+        {
+            if (combatant is Enemy && (!aliveOnly || combatant.IsAlive()))
+            {
+                enemies.Add(combatant);
+            }
+        }
+        return enemies;
+    }
+
+    public void CalculateResolutionOrder()
+    {
+        // Sort combatants by SPD stat in descending order, first being highest SPD
+        combatants = combatants.OrderByDescending(c => c.GetStat(Stat.SPD)).ThenBy(_ => rng.Next()).ToList();
+    }
+
+    public void ResolveCombatantsActions()
+    {
+        foreach (Combatant combatant in combatants)
+        {
+            if (combatant.IsAlive())
+            {
+                combatant.ExecuteAction();
+            }
+        }
+    }
+
+    public void OnNotify(object subject, EventType eventType)
+    {
+        //Debug.Log($"[Battle.OnNotify] got {eventType} ({(int)eventType}) from battle object this={this.GetHashCode()}, subject={(Combatant)subject}, frame={Time.frameCount}");
+        switch (eventType)
+        {
+            case EventType.PlayerActionSet:
+                //Debug.Log($"Player action set, calculating resolution order and resolving actions. Called from frame={Time.frameCount} by {((Combatant)subject).GetName()}");
+                CalculateResolutionOrder();
+                ResolveCombatantsActions();
+                EndRound();
+                break;
+            case EventType.EnemyDefeated:
+                if (!HasLivingEnemies())
+                {
+                    TextOutputter.Instance.OutputText("All enemies have been defeated!");
+                    Notify(EventType.BattleEnd);
+                    return;
+                }
+                //Debug.Log("An enemy was defeated, checking for remaining enemies.");
+                //Debug.Log($"Living enemies remaining: {GetEnemies().Count}");
+                break;
+            default:
+                break;
+        }
+    }
+
+}

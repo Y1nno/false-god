@@ -13,13 +13,13 @@ public class PlayerManager : GameModule
     public Resource Health = new Resource(k_StartingMaxHealth);
     public Resource Mana = new Resource(k_StartingMaxMana);
 
-    public StatBox PlayerStats { get; private set; } = new StatBox();
+    public PlayerStatBox PlayerStats { get; private set; } = new PlayerStatBox();
 
     public override void AttachDefaultObservers()
     {
         // none for now
     }
-    
+
     //API methods
 
     #region Health and Mana Management
@@ -36,7 +36,7 @@ public class PlayerManager : GameModule
 
     public bool TryUseMana(int amount)
     {
-        if (!Mana.CanAfford(amount)) 
+        if (!Mana.CanAfford(amount))
         {
             return false;
         }
@@ -97,7 +97,7 @@ public class PlayerManager : GameModule
         {
             //TODO: Implement formulas
             case SecondaryStat.SPATK:
-                return 1; 
+                return 1;
             case SecondaryStat.SPDEF:
                 return 1;
             case SecondaryStat.CRIT:
@@ -110,7 +110,7 @@ public class PlayerManager : GameModule
 
     }
     #endregion
-    
+
     private void Die()
     {
         // Notify observers about player death

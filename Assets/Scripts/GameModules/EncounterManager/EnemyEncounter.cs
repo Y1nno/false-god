@@ -1,22 +1,36 @@
 using UnityEngine;
 
-public class EnemyEncounter : Encounter
+public class EnemyEncounter : Encounter, IObserver
 {
+    private CombatManager _combatManager;
     public EnemyEncounter(float difficulty) : base(difficulty)
     {
-        //Debug.Log($"EnemyEncounter created with difficulty: {difficulty}");
+        _combatManager = RunManager.Instance.GetService<CombatManager>();
+        _combatManager.CreateNewBattle(difficulty);
+        _combatManager.AttachObserver(this);
+    }
+
+    public override void StartEncounter()
+    {
+        base.StartEncounter();
+        _combatManager.Start();
     }
 
     public override void RecieveDecision(int decisionIndex)
     {
-        if (ValidateDecisionIndex(decisionIndex))
-        {
-            // Process the decision made by the player
+        _combatManager.CurrentBattle.Pcm.RecieveDecision(decisionIndex);
+    }
 
-        }
-        else
+    public void OnNotify(object subject, EventType eventType)
+    {
+        switch (eventType)
         {
-            Debug.LogWarning("Invalid decision index received in EnemyEncounter.");
+            case EventType.BattleEnd:
+                Debug.Log("EnemyEncounter received BattleEnd event, resolving encounter");
+                ResolveEncounter();
+                break;
+            default:
+                break;
         }
     }
 }
