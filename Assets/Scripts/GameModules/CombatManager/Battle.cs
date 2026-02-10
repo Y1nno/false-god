@@ -1,9 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-using System.Data.Common;
-using Unity.VisualScripting;
-using Unity.Collections;
 
 
 public class Battle : Subject, IObserver
@@ -17,10 +14,9 @@ public class Battle : Subject, IObserver
     {
         combatants = enemies;
         combatants.Add(Pcm);
-        Pcm.AttachObserver(this);
-        foreach (Combatant enemy in enemies)
+        foreach (Combatant combatant in combatants)
         {
-            enemy.AttachObserver(this);
+            combatant.AttachObserver(this);
         }
     }
 
@@ -47,6 +43,7 @@ public class Battle : Subject, IObserver
 
     public void StartRound()
     {
+        //Debug.Log($"StartRound called, frame={Time.frameCount}");
         if (!CheckBattleOngoing()) return;
         Notify(EventType.RoundStart);
         SetActions();
@@ -54,7 +51,7 @@ public class Battle : Subject, IObserver
 
     public void EndRound()
     {
-        Debug.Log($"EndRound called, frame={Time.frameCount}");
+        //Debug.Log($"EndRound called, frame={Time.frameCount}");
         if (!CheckBattleOngoing())
         {
             Notify(EventType.BattleEnd);
@@ -114,11 +111,11 @@ public class Battle : Subject, IObserver
 
     public void OnNotify(object subject, EventType eventType)
     {
-        //Debug.Log($"[Battle.OnNotify] got {eventType} ({(int)eventType})");
+        //Debug.Log($"[Battle.OnNotify] got {eventType} ({(int)eventType}) from battle object this={this.GetHashCode()}, subject={(Combatant)subject}, frame={Time.frameCount}");
         switch (eventType)
         {
             case EventType.PlayerActionSet:
-                Debug.Log("Player action set, calculating resolution order and resolving actions.");
+                //Debug.Log($"Player action set, calculating resolution order and resolving actions. Called from frame={Time.frameCount} by {((Combatant)subject).GetName()}");
                 CalculateResolutionOrder();
                 ResolveCombatantsActions();
                 EndRound();
@@ -130,8 +127,8 @@ public class Battle : Subject, IObserver
                     Notify(EventType.BattleEnd);
                     return;
                 }
-                Debug.Log("An enemy was defeated, checking for remaining enemies.");
-                Debug.Log($"Living enemies remaining: {GetEnemies().Count}");
+                //Debug.Log("An enemy was defeated, checking for remaining enemies.");
+                //Debug.Log($"Living enemies remaining: {GetEnemies().Count}");
                 break;
             default:
                 break;

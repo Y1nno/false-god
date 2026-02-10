@@ -22,7 +22,6 @@ public class CombatManager : GameModule, IObserver
         // Placeholder logic for generating enemies based on difficulty
         List<Combatant> enemies = new List<Combatant>();
         enemies.Add(new Goblin());
-        enemies.Add(new Orc());
         return enemies;
     }
 
@@ -32,7 +31,7 @@ public class CombatManager : GameModule, IObserver
         Notify(EventType.BattleEnd);
     }
 
-    public void OnNotify(Subject subject, EventType eventType)
+    public void OnNotify(object subject, EventType eventType)
     {
         switch (eventType)
         {

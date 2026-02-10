@@ -65,26 +65,28 @@ public class PlayerCombatManager : Combatant
 
     public void RecieveDecision(int decisionIndex)
     {
-        Debug.Log($"RecieveDecision called: idx={decisionIndex}, mode={_currentDecisionMode}, frame={Time.frameCount}");
-
+        //Debug.Log($"RecieveDecision called: idx={decisionIndex}, mode={_currentDecisionMode}, frame={Time.frameCount}");
+        //Debug.Log(observersString);
         if (!ValidateDecisionIndex(decisionIndex))
         {
-            Debug.LogWarning("Invalid decision index received: " + decisionIndex);
+            //Debug.LogWarning("Invalid decision index received: " + decisionIndex);
             return;
         }
 
         switch (_currentDecisionMode)
         {
             case DecisionMode.None:
-                Debug.LogWarning("Received decision while not in decision mode.");
+                //Debug.LogWarning("Received decision while not in decision mode.");
                 break;
 
             case DecisionMode.ChoosingAction:
+                //Debug.Log($"Player selected action index: {decisionIndex}");
                 TextOutputter.Instance.OutputText($"Player selected action: {_availableActions[decisionIndex].ActionName}");
                 CurrentAction = _availableActions[decisionIndex];
                 if (CurrentAction.NeedsTarget() == false)
                 {
                     _currentDecisionMode = DecisionMode.None;
+                    //Debug.Log("Selected action does not require target, setting action and notifying.");
                     Notify(EventType.PlayerActionSet);
                     return;
                 }
@@ -103,6 +105,7 @@ public class PlayerCombatManager : Combatant
                 _currentDecisionMode = DecisionMode.None;
                 _currentTarget = possibleTargets[decisionIndex];
                 possibleTargets.Clear();
+                //Debug.Log($"Selected target: {_currentTarget.GetName()}, setting action and notifying.");
                 Notify(EventType.PlayerActionSet);
                 break;
         }

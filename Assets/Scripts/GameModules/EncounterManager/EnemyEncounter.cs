@@ -21,11 +21,12 @@ public class EnemyEncounter : Encounter, IObserver
         _combatManager.CurrentBattle.Pcm.RecieveDecision(decisionIndex);
     }
 
-    public void OnNotify(Subject subject, EventType eventType)
+    public void OnNotify(object subject, EventType eventType)
     {
         switch (eventType)
         {
             case EventType.BattleEnd:
+                Debug.Log("EnemyEncounter received BattleEnd event, resolving encounter");
                 ResolveEncounter();
                 break;
             default:
