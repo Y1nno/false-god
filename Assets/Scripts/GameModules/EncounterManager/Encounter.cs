@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 public abstract class Encounter : Subject
 {
-    private readonly float _difficulty;
+    protected readonly float _difficulty;
 
     private List<int> decisionsAvailable = new List<int>();
 

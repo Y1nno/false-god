@@ -44,7 +44,11 @@ public class Battle : Subject, IObserver
     public void StartRound()
     {
         //Debug.Log($"StartRound called, frame={Time.frameCount}");
-        if (!CheckBattleOngoing()) return;
+        if (!CheckBattleOngoing())
+        {
+            Notify(EventType.BattleEnd);
+            return;
+        }
         Notify(EventType.RoundStart);
         SetActions();
     }

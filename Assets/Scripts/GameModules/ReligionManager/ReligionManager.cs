@@ -57,7 +57,7 @@ public class ReligionManager : GameModule
         return _questFactory.CreateQuest(questId, difficultyLevel);
     }
 
-    public List<Religion> GenerateAvailableReligions()
+    private List<Religion> GenerateAvailableReligions()
     {
         var availableReligions = new List<Religion>();
 
