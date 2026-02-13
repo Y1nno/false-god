@@ -6,13 +6,13 @@ public class EnemyEncounter : Encounter, IObserver
     public EnemyEncounter(float difficulty) : base(difficulty)
     {
         _combatManager = RunManager.Instance.GetService<CombatManager>();
-        _combatManager.CreateNewBattle(difficulty);
         _combatManager.AttachObserver(this);
     }
 
     public override void StartEncounter()
     {
         base.StartEncounter();
+        _combatManager.CreateNewBattle(_difficulty);
         _combatManager.Start();
     }
 

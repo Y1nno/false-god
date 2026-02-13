@@ -52,8 +52,7 @@ public class XPManager : GameModule, IObserver
 
     private int CalculateXPToNextLevel()
     {
-        return Mathf.FloorToInt(xpThresholdForLevelUp + XPThresholdFlatIncrease + 
-            (XPThresholdBase * Mathf.Pow(level, XPThresholdExponent) * XPThresholdMultiplier));
+        return Mathf.FloorToInt(xpThresholdForLevelUp + XPThresholdFlatIncrease + (XPThresholdBase * Mathf.Pow(level, XPThresholdExponent) * XPThresholdMultiplier));
     }
 
     #endregion

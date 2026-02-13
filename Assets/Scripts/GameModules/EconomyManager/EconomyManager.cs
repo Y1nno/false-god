@@ -11,7 +11,7 @@ public class EconomyManager : GameModule
     {
         // none for now
     }
-    
+
     public int AddGold(int amount)
     {
         _gold += amount;

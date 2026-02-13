@@ -1,5 +1,5 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 
 public class CombatManager : GameModule, IObserver
 {
@@ -14,10 +14,15 @@ public class CombatManager : GameModule, IObserver
 
     public void Start()
     {
+        if (CurrentBattle == null)
+        {
+            Debug.LogWarning("CombatManager: No current battle to start.");
+            return;
+        }
         CurrentBattle.StartBattle();
     }
 
-    public List<Combatant> EnemiesByDifficulty(float difficulty)
+    private List<Combatant> EnemiesByDifficulty(float difficulty)
     {
         // Placeholder logic for generating enemies based on difficulty
         List<Combatant> enemies = new List<Combatant>();
@@ -25,7 +30,7 @@ public class CombatManager : GameModule, IObserver
         return enemies;
     }
 
-    public void FinishBattle()
+    private void FinishBattle()
     {
         CurrentBattle = null;
         Notify(EventType.BattleEnd);

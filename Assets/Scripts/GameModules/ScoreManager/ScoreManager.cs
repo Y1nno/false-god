@@ -10,12 +10,12 @@ public class ScoreManager : GameModule, IObserver
         { EventType.EncounterResolve, 10 },
         { EventType.QuestComplete, 50 },
     };
-    
+
     public override void AttachDefaultObservers()
     {
         // No default observers for now
     }
-    
+
     public void AddScore(int points)
     {
         CurrentScore += points;
