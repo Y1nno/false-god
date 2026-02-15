@@ -31,6 +31,7 @@ public class InfoContainer : MonoBehaviour
         AddEconomyInfo();
         AddXPInfo();
         AddReligionInfo();
+        AddRiteInfo();
         textBox.text = _content;
     }
 
@@ -77,6 +78,15 @@ public class InfoContainer : MonoBehaviour
         else
         {
             _content += "No current religion.\n";
+        }
+    }
+
+    private void AddRiteInfo()
+    {
+        _content += "Rites:\n";
+        foreach (Rite rite in _ritem.ActiveRites)
+        {
+            _content += $"- {rite.RiteID}: {rite.Description}\n";
         }
     }
 

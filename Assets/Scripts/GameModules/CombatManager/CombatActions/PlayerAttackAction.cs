@@ -18,7 +18,12 @@ public class PlayerAttackAction : CombatAction
             return;
         }
 
-        int damage = 10; // Example fixed damage
+        int damage = user.GetStat(Stat.STR);
+        if (user is PlayerCombatManager)
+        {
+             damage += RunManager.Instance.GetService<PlayerManager>().BonusDamage;
+        }
+
         target.TakeDamage(damage);
     }
 }

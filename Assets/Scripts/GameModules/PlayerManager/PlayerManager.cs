@@ -13,6 +13,8 @@ public class PlayerManager : GameModule
     public Resource Health = new Resource(k_StartingMaxHealth);
     public Resource Mana = new Resource(k_StartingMaxMana);
 
+    public int BonusDamage { get; set; } = 0;
+
     public PlayerStatBox PlayerStats { get; private set; } = new PlayerStatBox();
 
     public override void AttachDefaultObservers()

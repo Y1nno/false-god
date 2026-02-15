@@ -75,4 +75,11 @@ public class InputInterface : MonoBehaviour
         em.ProcessEncounterDecision(decisionIndex);
     }
 
+    public void AddColossusRite()
+    {
+        RiteManager rm = RunManager.Instance.GetService<RiteManager>();
+        Rite colossus = new ColossusRite();
+        rm.EquipRite(colossus);
+    }
+
 }

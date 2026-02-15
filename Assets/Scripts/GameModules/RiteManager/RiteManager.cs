@@ -14,6 +14,11 @@ public class RiteManager : GameModule
         }
     }
 
+    public RiteManager()
+    {
+        CurrentCapacityMax = k_maxCapacity;
+    }
+
     public List<Rite> ActiveRites { get; private set; } = new List<Rite>();
 
     public override void AttachDefaultObservers()
@@ -33,6 +38,18 @@ public class RiteManager : GameModule
         return false;
     }
 
+    public bool HasRite<T>() where T : Rite
+    {
+        foreach (Rite rite in ActiveRites)
+        {
+            if (rite is T)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void EquipRite(Rite newRite)
     {
         if (CanEquip(newRite.RiteID) == false)
@@ -41,6 +58,8 @@ public class RiteManager : GameModule
             return;
         }
         ActiveRites.Add(newRite);
+        newRite.OnEquip(RunManager.Instance.GetService<PlayerManager>());
+        TextOutputter.Instance.OutputText($"Equipped Rite: {newRite.RiteID}");
     }
 
     public void UnequipRite(Rite riteToRemove)
@@ -48,6 +67,8 @@ public class RiteManager : GameModule
         if (CanUnequip(riteToRemove))
         {
             ActiveRites.Remove(riteToRemove);
+            riteToRemove.OnUnequip(RunManager.Instance.GetService<PlayerManager>());
+             TextOutputter.Instance.OutputText($"Unequipped Rite: {riteToRemove.RiteID}");
         }
         else
         {

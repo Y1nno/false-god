@@ -1,13 +1,17 @@
 using UnityEngine;
 
-public class Rite
+public abstract class Rite
 {
-    public string RiteID { get; private set; }
-    public int RitePointCost { get; private set; }
+    public string RiteID { get; protected set; }
+    public int RitePointCost { get; protected set; }
+    public abstract string Description { get; }
 
     public Rite(string riteID, int ritePointCost)
     {
         RiteID = riteID;
         RitePointCost = ritePointCost;
     }
+
+    public virtual void OnEquip(PlayerManager player) { }
+    public virtual void OnUnequip(PlayerManager player) { }
 }
