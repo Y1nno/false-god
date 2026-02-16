@@ -14,6 +14,7 @@ public class PlayerManager : GameModule
     public Resource Mana = new Resource(k_StartingMaxMana);
 
     public int BonusDamage { get; set; } = 0;
+    public bool CanUseHealthAsMana { get; set; } = false;
 
     public PlayerStatBox PlayerStats { get; private set; } = new PlayerStatBox();
 

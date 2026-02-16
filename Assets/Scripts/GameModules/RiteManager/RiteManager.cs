@@ -50,8 +50,39 @@ public class RiteManager : GameModule
         return false;
     }
 
+    private HashSet<string> _unlockedRiteIDs = new HashSet<string>();
+
+    public void UnlockRite(string riteID)
+    {
+        if (!_unlockedRiteIDs.Contains(riteID))
+        {
+            _unlockedRiteIDs.Add(riteID);
+            TextOutputter.Instance.OutputText($"Unlocked Rite: {riteID}");
+        }
+    }
+
+    public void LockRite(string riteID)
+    {
+        if (_unlockedRiteIDs.Contains(riteID))
+        {
+            _unlockedRiteIDs.Remove(riteID);
+            TextOutputter.Instance.OutputText($"Locked Rite: {riteID}");
+        }
+    }
+
+    public bool IsRiteUnlocked(string riteID)
+    {
+        return _unlockedRiteIDs.Contains(riteID);
+    }
+
     public void EquipRite(Rite newRite)
     {
+        if (!IsRiteUnlocked(newRite.RiteID))
+        {
+            TextOutputter.Instance.OutputText($"Rite {newRite.RiteID} is locked!");
+            return;
+        }
+
         if (CanEquip(newRite.RiteID) == false)
         {
             Debug.LogWarning("Cannot add more rites. Maximum reached.");

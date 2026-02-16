@@ -124,6 +124,47 @@ public class PlayerCombatManager : Combatant
         return _pm.GetStat(stat);
     }
 
+    public override bool TryUseMana(int amount)
+    {
+        // 1. Try normal mana usage first
+        if (base.TryUseMana(amount))
+        {
+            return true;
+        }
+
+        // 2. If out of mana, check for Ouroboros Rite
+        if (_pm.CanUseHealthAsMana)
+        {
+            int currentMana = _pm.Mana.CurrentValue;
+            int deficit = amount - currentMana;
+
+            // Consume all remaining mana
+            if (currentMana > 0)
+            {
+                _pm.Mana.Decrease(currentMana);
+            }
+
+            // Consume health for the rest
+            // Check if we have enough health (don't kill self unless intended? usually allow suicide or block)
+            // Let's allow suicide for drama, or check CanAfford if we want safety.
+            // Requirement says "Use HP as Mana", usually implies "Blood Magic".
+            
+            if (_pm.Health.CurrentValue > deficit)
+            {
+                _pm.TakeDamage(deficit);
+                TextOutputter.Instance.OutputText($"Ouroboros: Consumed {deficit} HP for Mana!");
+                return true;
+            }
+            else
+            {
+                 TextOutputter.Instance.OutputText("Not enough Health to cast spell!");
+                 return false;
+            }
+        }
+
+        return false;
+    }
+
     public bool ValidateDecisionIndex(int decisionIndex)
     {
         //Debug.Log($"Validating decision index: {decisionIndex}");
@@ -154,8 +195,19 @@ public class PlayerCombatManager : Combatant
         return actionNames;
     }
 
-    public void SetCurrentTarget(Combatant target)
+    public override bool CanAffordMana(int amount)
     {
-        _currentTarget = target;
+        if (base.CanAffordMana(amount)) return true;
+
+        if (_pm.CanUseHealthAsMana)
+        {
+            int deficit = amount - _pm.Mana.CurrentValue;
+            // Ensure we have enough health to cover the deficit
+            // Depending on design, we might require > deficit to stay alive, or >= to cast and die.
+            // Let's go with > 0 after cost (strict survival) or >= (allowed to die).
+            // Given "Die()" exists, allowing >= seems consistent.
+            return _pm.Health.CurrentValue > deficit; 
+        }
+        return false;
     }
 }

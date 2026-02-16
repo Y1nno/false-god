@@ -82,4 +82,18 @@ public class InputInterface : MonoBehaviour
         rm.EquipRite(colossus);
     }
 
+    public void AddBeastRite()
+    {
+        RiteManager rm = RunManager.Instance.GetService<RiteManager>();
+        Rite beast = new BeastRite();
+        rm.EquipRite(beast);
+    }
+
+    public void AddOuroborosRite()
+    {
+        RiteManager rm = RunManager.Instance.GetService<RiteManager>();
+        Rite ouroboros = new OuroborosRite();
+        rm.EquipRite(ouroboros);
+    }
+
 }

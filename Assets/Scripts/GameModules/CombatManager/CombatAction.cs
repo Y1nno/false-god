@@ -15,7 +15,7 @@ public abstract class CombatAction
     public abstract void Execute(Combatant user, Combatant target = null);
     public virtual bool CanUse(Combatant user)
     {
-        return user.GetMana().CanAfford(ManaCost);
+        return user.CanAffordMana(ManaCost);
     }
 
     public bool NeedsTarget()
