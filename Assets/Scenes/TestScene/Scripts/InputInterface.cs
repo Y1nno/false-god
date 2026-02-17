@@ -75,25 +75,16 @@ public class InputInterface : MonoBehaviour
         em.ProcessEncounterDecision(decisionIndex);
     }
 
-    public void AddColossusRite()
+    public void AddRite(string riteName)
     {
-        RiteManager rm = RunManager.Instance.GetService<RiteManager>();
-        Rite colossus = new ColossusRite();
-        rm.EquipRite(colossus);
+        if (Enum.TryParse(riteName, true, out RiteType type))
+        {
+            RunManager.Instance.GetService<RiteManager>().EquipRite(type);
+        }
+        else
+        {
+            TextOutputter.Instance.OutputText($"Invalid Rite Name: {riteName}");
+            Debug.LogError($"Could not parse Enum: {riteName}");
+        }
     }
-
-    public void AddBeastRite()
-    {
-        RiteManager rm = RunManager.Instance.GetService<RiteManager>();
-        Rite beast = new BeastRite();
-        rm.EquipRite(beast);
-    }
-
-    public void AddOuroborosRite()
-    {
-        RiteManager rm = RunManager.Instance.GetService<RiteManager>();
-        Rite ouroboros = new OuroborosRite();
-        rm.EquipRite(ouroboros);
-    }
-
 }

@@ -93,6 +93,20 @@ public class RiteManager : GameModule
         TextOutputter.Instance.OutputText($"Equipped Rite: {newRite.RiteID}");
     }
 
+    public void EquipRite(RiteType type)
+    {
+        Rite rite = RiteFactory.CreateRite(type);
+        if (rite != null)
+        {
+            EquipRite(rite);
+        }
+        else
+        {
+            TextOutputter.Instance.OutputText($"Rite {type} is not implemented or factory failed.");
+            Debug.LogWarning($"RiteFactory returned null for type: {type}");
+        }
+    }
+
     public void UnequipRite(Rite riteToRemove)
     {
         if (CanUnequip(riteToRemove))
