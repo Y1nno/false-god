@@ -13,6 +13,7 @@ public class RestEncounter : Encounter
         {
             // Process the decision made by the player
 
+            ResolveEncounter();
         }
         else
         {

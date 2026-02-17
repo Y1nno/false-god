@@ -57,6 +57,8 @@ public class ReligiousEncounter : Encounter
             {
                 Debug.LogWarning("ReligiousEncounter received decision but no valid options are available.");
             }
+            
+            ResolveEncounter();
         }
         else
         {

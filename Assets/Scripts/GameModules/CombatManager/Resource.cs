@@ -39,6 +39,11 @@ public class Resource
         CurrentValue = Mathf.Min(CurrentValue, MaxValue);
     }
 
+    public void IncreaseBaseMax(int amount)
+    {
+        SetBaseMax(_baseMax + amount);
+    }
+
     public void SetCurrent(int newCurrent)
     {
         CurrentValue = Mathf.Clamp(newCurrent, 0, MaxValue);

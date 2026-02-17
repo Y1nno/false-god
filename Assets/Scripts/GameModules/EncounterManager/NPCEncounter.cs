@@ -13,6 +13,7 @@ public class NPCEncounter : Encounter
         {
             // Process the decision made by the player
 
+            ResolveEncounter();
         }
         else
         {

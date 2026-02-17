@@ -21,7 +21,16 @@ public class PlayerAttackAction : CombatAction
         int damage = user.GetStat(Stat.STR);
         if (user is PlayerCombatManager)
         {
-             damage += RunManager.Instance.GetService<PlayerManager>().BonusDamage;
+             PlayerManager pm = RunManager.Instance.GetService<PlayerManager>();
+             damage += pm.BonusDamage;
+             damage = Mathf.RoundToInt(damage * pm.DamageMultiplier);
+
+             // Critical Hit Check
+             if (Random.Range(0f, 100f) < pm.CritChance)
+             {
+                 damage *= 2; // Standard 2x Crit
+                 TextOutputter.Instance.OutputText("CRITICAL HIT!");
+             }
         }
 
         target.TakeDamage(damage);

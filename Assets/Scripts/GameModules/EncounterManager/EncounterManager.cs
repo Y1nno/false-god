@@ -25,6 +25,7 @@ public class EncounterManager : GameModule, IObserver
         EncounterType encounterType = DetermineEncounterType();
         HandleEncounterChances(encounterType);
         _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), encounterType);
+        AttachToEncounter(_currentEncounter);
         TextOutputter.Instance.OutputText("Encounter created: " + encounterType.ToString());
         _currentEncounter.StartEncounter();
     }
@@ -131,6 +132,23 @@ public class EncounterManager : GameModule, IObserver
             //Debug.Log("EncounterManager received DungeonRoomAdvance notification.");
             CreateEncounter();
         }
+        else if (eventType == EventType.EncounterResolve)
+        {
+            // Propagate the event to EncounterManager's observers (like Rites)
+            Notify(EventType.EncounterResolve);
+            
+            // Clean up observer from the SPECIFIC encounter that just resolved
+            // (Note: _currentEncounter might already be the NEXT encounter if DungeonManager advanced first)
+            if (subject is Encounter resolvedEncounter)
+            {
+                resolvedEncounter.DetachObserver(this);
+            }
+        }
+    }
+
+    private void AttachToEncounter(Encounter encounter)
+    {
+        encounter.AttachObserver(this);
     }
 }
 
