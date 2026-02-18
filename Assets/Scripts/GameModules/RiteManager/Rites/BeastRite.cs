@@ -32,7 +32,7 @@ public class BeastRite : Rite, IObserver
 
     public override void OnUnequip(PlayerManager player)
     {
-        player.BonusDamage -= _currentStacks;
+        player.BonusDamage -= _currentStacks * k_DamagePerStack;
         
         if (_combatManager != null)
         {

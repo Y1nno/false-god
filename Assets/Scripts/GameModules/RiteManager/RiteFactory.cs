@@ -16,6 +16,8 @@ public static class RiteFactory
                 return new JudgementRite();
             case RiteType.Lazarus:
                 return new LazarusRite();
+            case RiteType.Chalice:
+                return new ChaliceRite();
             default:
                 // For now, return null or throw for unimplemented rites
                 // throw new NotImplementedException($"Rite {type} is not yet implemented.");
