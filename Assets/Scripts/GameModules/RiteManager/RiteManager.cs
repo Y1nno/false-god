@@ -83,10 +83,16 @@ public class RiteManager : GameModule
             return;
         }
 
-        if (CanEquip(newRite.RiteID) == false)
+        if (ActiveRites.Count >= CurrentCapacityMax)
         {
-            Debug.LogWarning("Cannot add more rites. Maximum reached.");
+            Debug.LogWarning("Cannot add more rites. Maximum Capacity reached.");
             return;
+        }
+
+        if (HasRite(newRite.RiteID))
+        {
+             Debug.LogWarning($"Cannot add rite. {newRite.RiteID} is already equipped.");
+             return;
         }
         ActiveRites.Add(newRite);
         newRite.OnEquip(RunManager.Instance.GetService<PlayerManager>());
@@ -121,9 +127,36 @@ public class RiteManager : GameModule
         }
     }
 
+    public void UnequipRite(RiteType type)
+    {
+        // Find rite by type
+        Rite toRemove = null;
+        foreach (Rite r in ActiveRites)
+        {
+            // Simple check: does the ID match the type name?
+            // Converting Enum to String is okay for now as IDs match Enum names (Colossus, Beast, etc.)
+            if (r.RiteID == type.ToString()) 
+            {
+                toRemove = r;
+                break;
+            }
+        }
+        
+        if (toRemove != null)
+        {
+            UnequipRite(toRemove);
+        }
+        else
+        {
+            TextOutputter.Instance.OutputText($"Rite {type} is not equipped.");
+        }
+    }
+
+    public int BaseRitePoints { get; set; } = 20; // Default 20 points
+
     public int CalculateRitePointsFromScore()
     {
-        return (int) RunManager.Instance.GetService<ScoreManager>().CurrentScore / 500;
+        return BaseRitePoints + (int) RunManager.Instance.GetService<ScoreManager>().CurrentScore / 500;
     }
 
     public bool CanEquip(string riteID)

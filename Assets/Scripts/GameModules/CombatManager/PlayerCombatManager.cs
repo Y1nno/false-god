@@ -41,6 +41,13 @@ public class PlayerCombatManager : Combatant
     {
         return _pm.Mana;
     }
+
+    public override void TakeDamage(int amount)
+    {
+        // Redirect damage to PlayerManager to ensure global events (like Lazarus Rite) trigger
+        _pm.TakeDamage(amount);
+    }
+
     public override void Die()
     {
         TextOutputter.Instance.OutputText("You have been defeated!");

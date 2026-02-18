@@ -80,11 +80,85 @@ public class InputInterface : MonoBehaviour
         if (Enum.TryParse(riteName, true, out RiteType type))
         {
             RunManager.Instance.GetService<RiteManager>().EquipRite(type);
+            RefreshUI();
         }
         else
         {
             TextOutputter.Instance.OutputText($"Invalid Rite Name: {riteName}");
             Debug.LogError($"Could not parse Enum: {riteName}");
         }
+    }
+
+    private void RefreshUI()
+    {
+        InfoContainer info = GameObject.FindAnyObjectByType<InfoContainer>();
+        if (info != null) info.Refresh();
+    }
+
+    // --- Improved UI Logic: Direct Read ---
+    // These methods read the dropdown value at the moment of the click, preventing cross-talk between multiple dropdowns.
+
+    public void AddRiteFromDropdown(UnityEngine.GameObject dropdownObj)
+    {
+        RiteType type = ParseRiteFromDropdown(dropdownObj);
+        RunManager.Instance.GetService<RiteManager>().EquipRite(type);
+        RefreshUI();
+    }
+
+    public void UnequipRiteFromDropdown(UnityEngine.GameObject dropdownObj)
+    {
+        RiteType type = ParseRiteFromDropdown(dropdownObj);
+        RunManager.Instance.GetService<RiteManager>().UnequipRite(type);
+        RefreshUI();
+    }
+
+    private RiteType ParseRiteFromDropdown(UnityEngine.GameObject dropdownObj)
+    {
+        if (dropdownObj == null)
+        {
+            Debug.LogError("Dropdown GameObject passed to InputInterface is null.");
+            return RiteType.Colossus; // Default safe fall back
+        }
+
+        TMP_Dropdown dropdown = dropdownObj.GetComponent<TMP_Dropdown>();
+        if (dropdown == null)
+        {
+            Debug.LogError("GameObject passed does not have a TMP_Dropdown component.");
+            return RiteType.Colossus;
+        }
+
+        string selectedOption = dropdown.options[dropdown.value].text;
+        Debug.Log($"Direct Read from {dropdownObj.name}: {selectedOption}");
+
+        if (Enum.TryParse(selectedOption, true, out RiteType type))
+        {
+            return type;
+        }
+        else
+        {
+            Debug.LogWarning($"Could not parse Rite Enum from string: {selectedOption}");
+            return RiteType.Colossus;
+        }
+    }
+    
+    
+    // --- Legacy / Shared State Logic (Deprecated but kept to avoid breaking existing link immediately) ---
+    private RiteType _selectedRite = RiteType.Colossus;
+
+    public void SelectRite(UnityEngine.GameObject txtInput)
+    {
+        _selectedRite = ParseRiteFromDropdown(txtInput);
+    }
+
+    public void AddSelectedRite()
+    {
+        RunManager.Instance.GetService<RiteManager>().EquipRite(_selectedRite);
+        RefreshUI();
+    }
+
+    public void UnequipSelectedRite()
+    {
+        RunManager.Instance.GetService<RiteManager>().UnequipRite(_selectedRite); 
+        RefreshUI();
     }
 }

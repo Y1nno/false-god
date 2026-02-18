@@ -12,6 +12,7 @@ public enum EventType
     PlayerDeath,
     EncounterStart,
     EncounterResolve,
+    PlayerAboutToDie,
     EnemyDefeat,
     DungeonRoomAdvance,
     DungeonFloorAdvance,

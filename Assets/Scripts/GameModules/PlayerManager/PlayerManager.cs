@@ -35,7 +35,14 @@ public class PlayerManager : GameModule
         TextOutputter.Instance.OutputText($"Took {amount} damage.");
         if (Health.CurrentValue <= 0)
         {
-            Die();
+            // Give observers (like Lazarus Rite) a chance to save the player
+            Notify(EventType.PlayerAboutToDie);
+            
+            // Re-check health after observers have run
+            if (Health.CurrentValue <= 0)
+            {
+                Die();
+            }
         }
     }
 

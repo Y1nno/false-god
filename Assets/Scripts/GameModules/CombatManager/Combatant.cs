@@ -18,7 +18,7 @@ public abstract class Combatant : Subject
     public Combatant()
     {
     }
-    public void TakeDamage(int amount)
+    public virtual void TakeDamage(int amount)
     {
         if (amount <= 0) return;
         GetHealth().Decrease(amount);
