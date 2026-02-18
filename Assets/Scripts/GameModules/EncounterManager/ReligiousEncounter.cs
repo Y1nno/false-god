@@ -18,6 +18,14 @@ public class ReligiousEncounter : Encounter
 
         if (_rm.CurrentReligion == null)
         {
+            RiteManager riteManager = RunManager.Instance.GetService<RiteManager>();
+            if (riteManager != null && riteManager.HasRite<FaithlessRite>())
+            {
+                TextOutputter.Instance.OutputText("You cant join a religion because you have the faithless rite");
+                ResolveEncounter();
+                return;
+            }
+
             OfferReligionChoices();
         }
         else

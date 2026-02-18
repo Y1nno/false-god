@@ -18,6 +18,8 @@ public static class RiteFactory
                 return new LazarusRite();
             case RiteType.Chalice:
                 return new ChaliceRite();
+            case RiteType.Faithless:
+                return new FaithlessRite();
             default:
                 // For now, return null or throw for unimplemented rites
                 // throw new NotImplementedException($"Rite {type} is not yet implemented.");
