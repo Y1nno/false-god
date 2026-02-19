@@ -5,6 +5,8 @@ public class RiteManager : GameModule
 {
     private const int k_maxCapacity = 11;
     private const int k_maxRitePoints = 40;
+
+    public int BaseRitePoints { get; set; } = 0; // Default 0 points
     public int CurrentCapacityMax{ get; private set; }
     public int RitePoints
     {
@@ -83,6 +85,12 @@ public class RiteManager : GameModule
             return;
         }
 
+        if (CalculateRitePointsRemaining() < newRite.RitePointCost)
+        {
+             TextOutputter.Instance.OutputText($"Not enough Rite Points! Cost: {newRite.RitePointCost}, Available: {CalculateRitePointsRemaining()}");
+             return;
+        }
+
         if (ActiveRites.Count >= CurrentCapacityMax)
         {
             Debug.LogWarning("Cannot add more rites. Maximum Capacity reached.");
@@ -152,7 +160,6 @@ public class RiteManager : GameModule
         }
     }
 
-    public int BaseRitePoints { get; set; } = 20; // Default 20 points
 
     public int CalculateRitePointsFromScore()
     {
@@ -174,6 +181,10 @@ public class RiteManager : GameModule
 
     public bool CanEquip(Rite rite)
     {
+        if (CalculateRitePointsRemaining() < rite.RitePointCost)
+        {
+            return false;
+        }
         return CanEquip(rite.RiteID);
     }
 
@@ -202,5 +213,11 @@ public class RiteManager : GameModule
             ritePoints += rite.RitePointCost;
         }
         return CalculateRitePointsFromScore() - ritePoints;
+    }
+
+    public void AddBaseRitePoints(int amount)
+    {
+        BaseRitePoints += amount;
+        TextOutputter.Instance.OutputText($"Added {amount} Rite Points. Total Base: {BaseRitePoints}");
     }
 }

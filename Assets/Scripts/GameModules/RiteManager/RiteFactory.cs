@@ -20,6 +20,22 @@ public static class RiteFactory
                 return new ChaliceRite();
             case RiteType.Faithless:
                 return new FaithlessRite();
+            case RiteType.Candle:
+                return new CandleRite();
+            case RiteType.Midas:
+                return new MidasRite();
+            case RiteType.Palamedes:
+                return new PalamedesRite();
+            case RiteType.Gluttony:
+                return new GluttonyRite();
+            case RiteType.Juggernaut:
+                return new JuggernautRite();
+            case RiteType.Berserk:
+                return new BerserkRite();
+            case RiteType.Empress:
+                return new EmpressRite();
+            case RiteType.Merlin:
+                return new MerlinRite();
             default:
                 // For now, return null or throw for unimplemented rites
                 // throw new NotImplementedException($"Rite {type} is not yet implemented.");

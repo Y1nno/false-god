@@ -5,6 +5,7 @@ using System;
 public class EncounterManager : GameModule, IObserver
 {
     private Encounter _currentEncounter;
+    private Encounter _forcedNextEncounter;
 
     private float _treasureEncounterChance = 0.0f;
     private float k_treasureEncounterIncrement = 0.015f;
@@ -24,9 +25,38 @@ public class EncounterManager : GameModule, IObserver
     {
         EncounterType encounterType = DetermineEncounterType();
         HandleEncounterChances(encounterType);
-        _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), encounterType);
+        
+        if (_forcedNextEncounter != null)
+        {
+            _currentEncounter = _forcedNextEncounter;
+            _forcedNextEncounter = null;
+        }
+        else
+        {
+            _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), encounterType);
+        }
+        
         AttachToEncounter(_currentEncounter);
-        TextOutputter.Instance.OutputText("Encounter created: " + encounterType.ToString());
+        TextOutputter.Instance.OutputText("Encounter created: " + _currentEncounter.GetType().Name);
+        _currentEncounter.StartEncounter();
+    }
+
+    public void ForceNextEncounter(Encounter encounter)
+    {
+        _forcedNextEncounter = encounter;
+    }
+
+    public void ReplaceCurrentEncounter(EncounterType type)
+    {
+        if (_currentEncounter != null)
+        {
+            _currentEncounter.DetachObserver(this);
+            // We do NOT resolve the old encounter, just discard it. The new one will take its place.
+        }
+
+        _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), type);
+        AttachToEncounter(_currentEncounter);
+        TextOutputter.Instance.OutputText("Encounter switched to: " + _currentEncounter.GetType().Name);
         _currentEncounter.StartEncounter();
     }
 

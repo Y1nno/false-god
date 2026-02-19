@@ -89,6 +89,22 @@ public class InputInterface : MonoBehaviour
         }
     }
 
+    public void AddRitePoints(UnityEngine.GameObject txtInput)
+    {
+        RiteManager rm = RunManager.Instance.GetService<RiteManager>();
+        if (txtInput == null) return;
+        TMP_InputField inputField = txtInput.GetComponent<TMP_InputField>();
+        if (int.TryParse(inputField.text, out int amount))
+        {
+            rm.AddBaseRitePoints(amount);
+            RefreshUI();
+        }
+        else
+        {
+             Debug.LogWarning($"Could not parse int from input field: {inputField.text}");
+        }
+    }
+
     private void RefreshUI()
     {
         InfoContainer info = GameObject.FindAnyObjectByType<InfoContainer>();
