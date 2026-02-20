@@ -4,6 +4,7 @@ using System.Collections.Generic;
 public class CandleChoiceEncounter : Encounter
 {
     private List<EncounterType> _options = new List<EncounterType>();
+    private int k_AmountOfOptions = 3;
 
     public CandleChoiceEncounter(float difficulty) : base(difficulty)
     {
@@ -51,7 +52,7 @@ public class CandleChoiceEncounter : Encounter
             EncounterType.Trap
         };
 
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < k_AmountOfOptions; i++)
         {
             int randomIndex = Random.Range(0, validTypes.Count);
             _options.Add(validTypes[randomIndex]);
