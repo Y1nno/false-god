@@ -21,6 +21,12 @@ public class EnemyEncounter : Encounter, IObserver
         _combatManager.CurrentBattle.Pcm.RecieveDecision(decisionIndex);
     }
 
+    public override void ResolveEncounter()
+    {
+        _combatManager.DetachObserver(this);
+        base.ResolveEncounter();
+    }
+
     public void OnNotify(object subject, EventType eventType)
     {
         switch (eventType)

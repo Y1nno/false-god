@@ -43,6 +43,9 @@ public class CombatManager : GameModule, IObserver
             case EventType.BattleEnd:
                 FinishBattle();
                 break;
+            case EventType.EnemyDefeated:
+                Notify(EventType.EnemyDefeated);
+                break;
             default:
                 break;
         }

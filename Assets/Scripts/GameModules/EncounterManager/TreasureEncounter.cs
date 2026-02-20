@@ -13,6 +13,7 @@ public class TreasureEncounter : Encounter
         {
             // Process the decision made by the player
 
+            ResolveEncounter();
         }
         else
         {

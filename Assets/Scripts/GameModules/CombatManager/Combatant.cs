@@ -18,7 +18,7 @@ public abstract class Combatant : Subject
     public Combatant()
     {
     }
-    public void TakeDamage(int amount)
+    public virtual void TakeDamage(int amount)
     {
         if (amount <= 0) return;
         GetHealth().Decrease(amount);
@@ -29,7 +29,7 @@ public abstract class Combatant : Subject
         }
     }
 
-    public bool TryUseMana(int amount)
+    public virtual bool TryUseMana(int amount)
     {
         if (!GetMana().CanAfford(amount))
         {
@@ -37,6 +37,11 @@ public abstract class Combatant : Subject
         }
         GetMana().Decrease(amount);
         return true;
+    }
+
+    public virtual bool CanAffordMana(int amount)
+    {
+        return GetMana().CanAfford(amount);
     }
 
     public void Heal(int amount)

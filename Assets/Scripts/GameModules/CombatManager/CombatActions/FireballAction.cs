@@ -18,13 +18,11 @@ public class FireballAction : CombatAction
             return;
         }
 
-        if (!CanUse(user))
+        if (!user.TryUseMana(ManaCost))
         {
             Debug.Log($"{user} does not have enough mana to cast {ActionName}.");
             return;
         }
-
-        user.GetMana().Decrease(ManaCost);
 
         int damage = 30; // Example fixed damage for Fireball
         target.TakeDamage(damage);

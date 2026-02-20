@@ -13,6 +13,11 @@ public class PlayerManager : GameModule
     public Resource Health = new Resource(k_StartingMaxHealth);
     public Resource Mana = new Resource(k_StartingMaxMana);
 
+    public int BonusDamage { get; set; } = 0;
+    public float DamageMultiplier { get; set; } = 1.0f;
+    public float CritChance { get; set; } = 0.0f;
+    public bool CanUseHealthAsMana { get; set; } = false;
+
     public PlayerStatBox PlayerStats { get; private set; } = new PlayerStatBox();
 
     public override void AttachDefaultObservers()
@@ -30,7 +35,14 @@ public class PlayerManager : GameModule
         TextOutputter.Instance.OutputText($"Took {amount} damage.");
         if (Health.CurrentValue <= 0)
         {
-            Die();
+            // Give observers (like Lazarus Rite) a chance to save the player
+            Notify(EventType.PlayerAboutToDie);
+            
+            // Re-check health after observers have run
+            if (Health.CurrentValue <= 0)
+            {
+                Die();
+            }
         }
     }
 

@@ -28,7 +28,8 @@ public class Subject
     // Notify all observers of an event
     public void Notify(EventType eventType)
     {
-        foreach (var observer in observers)
+        List<IObserver> observersCopy = new List<IObserver>(observers);
+        foreach (var observer in observersCopy)
         {
             observer.OnNotify(this, eventType);
         }

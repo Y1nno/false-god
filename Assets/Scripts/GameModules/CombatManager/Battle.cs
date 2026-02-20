@@ -125,14 +125,9 @@ public class Battle : Subject, IObserver
                 EndRound();
                 break;
             case EventType.EnemyDefeated:
-                if (!HasLivingEnemies())
-                {
-                    TextOutputter.Instance.OutputText("All enemies have been defeated!");
-                    Notify(EventType.BattleEnd);
-                    return;
-                }
-                //Debug.Log("An enemy was defeated, checking for remaining enemies.");
-                //Debug.Log($"Living enemies remaining: {GetEnemies().Count}");
+                // Notify observers (CombatManager) that an enemy was defeated
+                Notify(EventType.EnemyDefeated);
+                // Do not end battle here. EndRound() will check CheckBattleOngoing() and handle it.
                 break;
             default:
                 break;
