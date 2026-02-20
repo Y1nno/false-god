@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PlayerCombatManager : Combatant
+public class PlayerCombatManager : Combatant, IPromptResponder
 {
     private PlayerManager _pm = RunManager.Instance.GetService<PlayerManager>();
 
@@ -57,7 +57,7 @@ public class PlayerCombatManager : Combatant
         Notify(EventType.PlayerTurnStart);
         _currentDecisionMode = DecisionMode.ChoosingAction;
         List<string> actionNames = GetAvailableActionNames();
-        OutputEnumeratedDecisionOptions(actionNames, "Choose your action:");
+        Prompt prompt = new Prompt("Choose your action:", actionNames, this);
     }
     public override void ExecuteAction()
     {
@@ -70,15 +70,15 @@ public class PlayerCombatManager : Combatant
 
     }
 
+    public void ProcessPromptResponse(int decisionIndex)
+    {
+        RecieveDecision(decisionIndex);
+    }
+
     public void RecieveDecision(int decisionIndex)
     {
         //Debug.Log($"RecieveDecision called: idx={decisionIndex}, mode={_currentDecisionMode}, frame={Time.frameCount}");
         //Debug.Log(observersString);
-        if (!ValidateDecisionIndex(decisionIndex))
-        {
-            //Debug.LogWarning("Invalid decision index received: " + decisionIndex);
-            return;
-        }
 
         switch (_currentDecisionMode)
         {
@@ -105,7 +105,7 @@ public class PlayerCombatManager : Combatant
                 {
                     targetStrings.Add($"{target.GetName()} (HP: {target.GetHealth().CurrentValue}/{target.GetHealth().MaxValue})");
                 }
-                OutputEnumeratedDecisionOptions(targetStrings, "Choose your target:");
+                Prompt prompt = new Prompt("Choose your target:", targetStrings, this);
                 break;
 
             case DecisionMode.ChoosingTarget:
@@ -155,7 +155,7 @@ public class PlayerCombatManager : Combatant
             // Check if we have enough health (don't kill self unless intended? usually allow suicide or block)
             // Let's allow suicide for drama, or check CanAfford if we want safety.
             // Requirement says "Use HP as Mana", usually implies "Blood Magic".
-            
+
             if (_pm.Health.CurrentValue > deficit)
             {
                 _pm.TakeDamage(deficit);
@@ -170,26 +170,6 @@ public class PlayerCombatManager : Combatant
         }
 
         return false;
-    }
-
-    public bool ValidateDecisionIndex(int decisionIndex)
-    {
-        //Debug.Log($"Validating decision index: {decisionIndex}");
-        //Debug.Log($"Decisions available count: {_decisionsAvailable.Count}");
-        //Debug.Log($"Is decision index valid: {decisionIndex >= 0 && decisionIndex < _decisionsAvailable.Count}");
-        return decisionIndex >= 0 && decisionIndex < _decisionsAvailable.Count;
-    }
-
-    public void OutputEnumeratedDecisionOptions(List<string> options, string header = "Choose an option:")
-    {
-        _decisionsAvailable.Clear();
-        string outputText = $"{header}\n";
-        for (int i = 0; i < options.Count; i++)
-        {
-            outputText += $"{i + 1}. {options[i]}\n";
-            _decisionsAvailable.Add(i);
-        }
-        TextOutputter.Instance.OutputText(outputText);
     }
 
     private List<string> GetAvailableActionNames()
@@ -213,7 +193,7 @@ public class PlayerCombatManager : Combatant
             // Depending on design, we might require > deficit to stay alive, or >= to cast and die.
             // Let's go with > 0 after cost (strict survival) or >= (allowed to die).
             // Given "Die()" exists, allowing >= seems consistent.
-            return _pm.Health.CurrentValue > deficit; 
+            return _pm.Health.CurrentValue > deficit;
         }
         return false;
     }

@@ -16,8 +16,8 @@ public class RiteDebugMenu : MonoBehaviour
     public void UnlockAll()
     {
         EnsureManager();
-        string[] allRites = new string[] 
-        { 
+        string[] allRites = new string[]
+        {
             "Candle", "Colossus", "Ouroboros", "Judgement", "Lazarus", 
             "Midas", "Chalice", "Palamedes", "Gluttony", "Juggernaut", 
             "Berserk", "Empress", "Beast", "Merlin", "Faithless" 

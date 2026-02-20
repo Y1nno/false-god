@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class ReligiousEncounter : Encounter
+public class ReligiousEncounter : Encounter, IPromptResponder
 {
 
     private ReligionManager _rm;
@@ -42,35 +42,28 @@ public class ReligiousEncounter : Encounter
         {
             outputOptions.Add(_offeredReligions[i].ReligionID);
         }
-        OutputEnumeratedDecisionOptions(outputOptions, "Choose a new religion:");
+        Prompt prompt = new Prompt("Choose a new religion:", outputOptions, this);
     }
 
     public override void RecieveDecision(int decisionIndex)
     {
-        if (ValidateDecisionIndex(decisionIndex))
+        if (_offeredReligions.Count == 0 && _offeredQuests.Count > 0)
         {
-            if (_offeredReligions.Count == 0 && _offeredQuests.Count > 0)
-            {
-                Quest chosenQuest = _offeredQuests[decisionIndex];
-                _offeredQuests = new List<Quest>();
-                _rm.AcceptReligionQuest(chosenQuest);
-            }
-            else if (_offeredQuests.Count == 0 && _offeredReligions.Count > 0)
-            {
-                Religion chosenReligion = _offeredReligions[decisionIndex];
-                _offeredReligions = new List<Religion>();
-                _rm.JoinReligion(chosenReligion);
-            }
-            else
-            {
-                Debug.LogWarning("ReligiousEncounter received decision but no valid options are available.");
-            }
-            
-            ResolveEncounter();
+            Quest chosenQuest = _offeredQuests[decisionIndex];
+            _offeredQuests = new List<Quest>();
+            _rm.AcceptReligionQuest(chosenQuest);
+        }
+        else if (_offeredQuests.Count == 0 && _offeredReligions.Count > 0)
+        {
+            Religion chosenReligion = _offeredReligions[decisionIndex];
+            _offeredReligions = new List<Religion>();
+            _rm.JoinReligion(chosenReligion);
         }
         else
         {
-            Debug.LogWarning("Invalid decision index received in ReligiousEncounter.");
+            Debug.LogWarning("ReligiousEncounter received decision but no valid options are available.");
         }
+
+        ResolveEncounter();
     }
 }

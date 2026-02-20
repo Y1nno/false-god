@@ -1,10 +1,11 @@
 using UnityEngine;
 using TMPro;
 using System;
+using System.Collections.Generic;
 
 public class InputInterface : MonoBehaviour
 {
-
+    public Prompt activePrompt = null;
     public void StartNewRun()
     {
         RunManager.Instance.StartNewRun();
@@ -68,11 +69,11 @@ public class InputInterface : MonoBehaviour
 
     public void MakeEncounterDecision(UnityEngine.GameObject txtInput)
     {
-        EncounterManager em = RunManager.Instance.GetService<EncounterManager>();
         if (txtInput == null) return;
+        EncounterManager em = RunManager.Instance.GetService<EncounterManager>();
         TMP_InputField inputField = txtInput.GetComponent<TMP_InputField>();
         int decisionIndex = int.Parse(inputField.text) -1; // Convert to zero-based index
-        em.ProcessEncounterDecision(decisionIndex);
+        activePrompt.RecieveDecision(decisionIndex);
     }
 
     public void AddRite(string riteName)
@@ -103,6 +104,19 @@ public class InputInterface : MonoBehaviour
         {
              Debug.LogWarning($"Could not parse int from input field: {inputField.text}");
         }
+    }
+
+    public void RollForStat(UnityEngine.GameObject panel)
+    {
+        Transform txtStatInput = panel.transform.Find("StatDropdown");
+        Transform txtThresholdInput = panel.transform.Find("Threshold");
+        if (txtStatInput == null || txtThresholdInput == null) return;
+        TMP_Dropdown statInputField = txtStatInput.GetComponent<TMP_Dropdown>();
+        TMP_InputField thresholdInputField = txtThresholdInput.GetComponent<TMP_InputField>();
+        if (!Enum.TryParse(statInputField.captionText.text, out Stat stat)) return;
+        int threshold = int.Parse(thresholdInputField.text);
+        //Debug.Log($"Rolling for stat: {stat} with threshold: {threshold}");
+        DiceRoller.Instance.RollForStat(stat, threshold);
     }
 
     private void RefreshUI()

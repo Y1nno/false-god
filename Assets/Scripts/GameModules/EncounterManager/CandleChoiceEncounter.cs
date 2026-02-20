@@ -1,7 +1,7 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-public class CandleChoiceEncounter : Encounter
+public class CandleChoiceEncounter : Encounter, IPromptResponder
 {
     private List<EncounterType> _options = new List<EncounterType>();
     private int k_AmountOfOptions = 3;
@@ -14,29 +14,23 @@ public class CandleChoiceEncounter : Encounter
     {
         base.StartEncounter();
         GenerateOptions();
-        
+
         List<string> optionStrings = new List<string>();
         foreach (var option in _options)
         {
             optionStrings.Add(option.ToString());
         }
-        OutputEnumeratedDecisionOptions(optionStrings, "Candle Rite: Choose your path:");
+        Prompt prompt = new Prompt("Candle Rite: Choose your path:", optionStrings, this);
     }
 
     public override void RecieveDecision(int decisionIndex)
     {
-        if (ValidateDecisionIndex(decisionIndex))
-        {
-            EncounterType chosenType = _options[decisionIndex];
-            TextOutputter.Instance.OutputText($"You chose: {chosenType}");
-            
-            // Immediately replace this choice screen with the chosen encounter
-            RunManager.Instance.GetService<EncounterManager>().ReplaceCurrentEncounter(chosenType);
-        }
-        else
-        {
-            Debug.LogWarning("Invalid decision index for CandleChoiceEncounter");
-        }
+        EncounterType chosenType = _options[decisionIndex];
+        TextOutputter.Instance.OutputText($"You chose: {chosenType}");
+
+        // Immediately replace this choice screen with the chosen encounter
+        RunManager.Instance.GetService<EncounterManager>().ReplaceCurrentEncounter(chosenType);
+
     }
 
     private void GenerateOptions()
