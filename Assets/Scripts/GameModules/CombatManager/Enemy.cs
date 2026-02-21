@@ -13,7 +13,7 @@ public class Enemy : Combatant
     protected int _goldValue = 0;
     public int GoldValue => _goldValue;
 
-    public Enemy(string name = "No Name", Dictionary<Stat, int> initialStats = null, int initialHealth = 1, int initialMana = 1, List<int> availableActionIDs = null)
+    public Enemy(string name = "No Name", Dictionary<Stat, int> initialStats = null, int initialHealth = 1, int initialMana = 1, List<int> availableActionIDs = null, int goldValue = 0)
     {
         Name = name;
         if (initialStats == null) initialStats = new Dictionary<Stat, int>()
@@ -38,6 +38,7 @@ public class Enemy : Combatant
                 _availableActions.Add(action);
             }
         }
+        _goldValue = goldValue;
 
         AttachObserver(RunManager.Instance.GetService<EconomyManager>());
     }
