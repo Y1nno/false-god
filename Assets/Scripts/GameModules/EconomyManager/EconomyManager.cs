@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class EconomyManager : GameModule
+public class EconomyManager : GameModule, IObserver
 {
     private int _gold = 0;
 
@@ -41,6 +41,26 @@ public class EconomyManager : GameModule
     public int GetCurrentGold()
     {
         return _gold;
+    }
+
+    public void OnNotify(object subject, EventType eventType)
+    {
+        switch (eventType)
+        {
+            case EventType.EnemyDefeated:
+                if (subject is Enemy enemy)
+                {
+                    int gold = (int) enemy.GoldValue;
+                    RiteManager rm = RunManager.Instance.GetService<RiteManager>();
+                    if (rm.HasRite(RiteType.Midas))
+                    {
+                        MidasRite midasRite = (MidasRite)rm.GetRite(RiteType.Midas);
+                        gold = midasRite.ApplyMidasEffect(gold);
+                    }
+                    TextOutputter.Instance.OutputText($"Gained {gold} gold.");
+                }
+                break;
+        }
     }
 
 }

@@ -4,6 +4,7 @@ public class JuggernautRite : Rite
 
     public JuggernautRite() : base("Juggernaut", 4)
     {
+        RiteType = RiteType.Juggernaut;
     }
 
     public override void OnEquip(PlayerManager player)

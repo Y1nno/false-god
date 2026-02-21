@@ -10,6 +10,7 @@ public class CandleRite : Rite, IObserver
 
     public CandleRite() : base("Candle", 5)
     {
+        RiteType = RiteType.Candle;
     }
 
     public override void OnEquip(PlayerManager player)

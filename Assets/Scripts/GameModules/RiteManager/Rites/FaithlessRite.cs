@@ -5,10 +5,10 @@ public class FaithlessRite : Rite, IObserver
 {
     private const int k_StatBonus = 5;
     private const int k_EncountersPerBonus = 30;
-    
+
     private int _encounterCount = 0;
     private int _totalStatsGained = 0; // Track total added to each stat to remove on unequip
-    
+
     // We need to observe EncounterManager to track progress
     private EncounterManager _encounterManager;
 
@@ -16,6 +16,7 @@ public class FaithlessRite : Rite, IObserver
 
     public FaithlessRite() : base("Faithless", 10)
     {
+        RiteType = RiteType.Faithless;
     }
 
     public override void OnEquip(PlayerManager player)

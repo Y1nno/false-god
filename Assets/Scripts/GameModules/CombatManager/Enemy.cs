@@ -10,6 +10,8 @@ public class Enemy : Combatant
     public EnemyStatBox Stats { get; protected set; }
 
     protected List<CombatAction> _availableActions = new List<CombatAction>();
+    protected int _goldValue = 0;
+    public int GoldValue => _goldValue;
 
     public Enemy(string name = "No Name", Dictionary<Stat, int> initialStats = null, int initialHealth = 1, int initialMana = 1, List<int> availableActionIDs = null)
     {
@@ -36,6 +38,8 @@ public class Enemy : Combatant
                 _availableActions.Add(action);
             }
         }
+
+        AttachObserver(RunManager.Instance.GetService<EconomyManager>());
     }
 
     public override string GetName()

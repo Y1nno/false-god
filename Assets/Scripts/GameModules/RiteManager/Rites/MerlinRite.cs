@@ -4,6 +4,7 @@ public class MerlinRite : Rite
 
     public MerlinRite() : base("Merlin", 5)
     {
+        RiteType = RiteType.Merlin;
     }
 
     public override void OnEquip(PlayerManager player)

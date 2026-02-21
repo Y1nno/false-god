@@ -8,6 +8,7 @@ public class ColossusRite : Rite
 
     public ColossusRite() : base("Colossus", 2) // ID: Colossus, Cost: 2
     {
+        RiteType = RiteType.Colossus;
     }
 
     public override void OnEquip(PlayerManager player)
