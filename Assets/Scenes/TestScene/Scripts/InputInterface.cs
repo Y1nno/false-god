@@ -128,6 +128,72 @@ public class InputInterface : MonoBehaviour
         RefreshUI();
     }
 
+    public void UseConsumableFromDropdown(UnityEngine.GameObject panel)
+    {
+        if (panel == null)
+        {
+            Debug.LogError("Panel GameObject passed is null.");
+            return;
+        }
+
+        Transform dropdownTransform = panel.transform.Find("ConsumableDropdown");
+        Transform tierInputTransform = panel.transform.Find("TierInputField");
+        
+        if (dropdownTransform == null)
+        {
+            // Fallback if the user passes the Dropdown directly instead of a panel
+            TMP_Dropdown dropdownDirect = panel.GetComponent<TMP_Dropdown>();
+            if (dropdownDirect != null)
+            {
+                dropdownTransform = panel.transform;
+            }
+            else
+            {
+                Debug.LogError("Could not find ConsumableDropdown inside panel, and panel is not a Dropdown.");
+                return;
+            }
+        }
+
+        TMP_Dropdown dropdown = dropdownTransform.GetComponent<TMP_Dropdown>();
+        if (dropdown == null) return;
+
+        int tier = 1;
+        if (tierInputTransform != null)
+        {
+            TMP_InputField inputField = tierInputTransform.GetComponent<TMP_InputField>();
+            if (inputField != null && int.TryParse(inputField.text, out int parsedTier))
+            {
+                tier = parsedTier;
+            }
+        }
+
+        string selectedOption = dropdown.options[dropdown.value].text;
+        
+        // Append "SO" to match the user's naming convention and load from Resources
+        string resourceName = selectedOption + "SO";
+        Consumable baseConsumableData = Resources.Load<Consumable>(resourceName);
+        
+        if (baseConsumableData != null)
+        {
+            ConsumableInstance consumableInstance = new ConsumableInstance(baseConsumableData, tier);
+
+            // Use it on the player for debug purposes
+            CombatManager cm = RunManager.Instance.GetService<CombatManager>();
+            if (cm != null && cm.CurrentBattle != null && cm.CurrentBattle.Pcm != null)
+            {
+                consumableInstance.Use(cm.CurrentBattle.Pcm);
+            }
+            else
+            {
+                TextOutputter.Instance.OutputText("Cannot use consumable outside of battle for now.");
+            }
+        }
+        else
+        {
+            TextOutputter.Instance.OutputText($"Could not find Consumable named '{resourceName}' in Resources folder!");
+        }
+    }
+
     private RiteType ParseRiteFromDropdown(UnityEngine.GameObject dropdownObj)
     {
         if (dropdownObj == null)

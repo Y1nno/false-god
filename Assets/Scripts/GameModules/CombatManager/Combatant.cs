@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public abstract class Combatant : Subject
@@ -7,6 +8,10 @@ public abstract class Combatant : Subject
     protected Combatant _currentTarget = null;
 
     public CombatAction CurrentAction = null;
+    
+    // Tracking active effects like HealOverTime or ManaOverTime
+    protected List<ActiveOverTimeEffect> _activeEffects = new List<ActiveOverTimeEffect>();
+
     public abstract void ChooseAction();
     public abstract void ExecuteAction();
     public abstract bool IsAlive();
@@ -54,5 +59,42 @@ public abstract class Combatant : Subject
     {
         if (amount <= 0) return;
         GetMana().Increase(amount);
+    }
+
+    public void AddActiveEffect(ActiveOverTimeEffect effect)
+    {
+        _activeEffects.Add(effect);
+        TextOutputter.Instance.OutputText($"{GetName()} gained an over-time effect ({effect.BaseEffect.Type}) for {effect.RoundsRemaining} turns.");
+    }
+
+    public virtual void OnRoundEnd()
+    {
+        if (_activeEffects.Count == 0 || !IsAlive()) return;
+
+        for (int i = _activeEffects.Count - 1; i >= 0; i--)
+        {
+            ActiveOverTimeEffect effect = _activeEffects[i];
+            
+            // Apply effect
+            if (effect.BaseEffect.Type == ConsumableEffectType.HealOverTime)
+            {
+                int healAmount = Mathf.RoundToInt((effect.ModifiedAmount / 100f) * GetHealth().MaxValue);
+                Heal(healAmount);
+                TextOutputter.Instance.OutputText($"{GetName()} regenerates {healAmount} HP from {effect.BaseEffect.Type}.");
+            }
+            else if (effect.BaseEffect.Type == ConsumableEffectType.ManaOverTime)
+            {
+                int manaAmount = Mathf.RoundToInt((effect.ModifiedAmount / 100f) * GetMana().MaxValue);
+                RestoreMana(manaAmount);
+                TextOutputter.Instance.OutputText($"{GetName()} regenerates {manaAmount} Mana from {effect.BaseEffect.Type}.");
+            }
+
+            // Decrement and remove if finished
+            effect.DecrementDuration();
+            if (effect.RoundsRemaining <= 0)
+            {
+                _activeEffects.RemoveAt(i);
+            }
+        }
     }
 }
