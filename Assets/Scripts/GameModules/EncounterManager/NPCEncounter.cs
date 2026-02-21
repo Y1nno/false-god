@@ -9,15 +9,6 @@ public class NPCEncounter : Encounter
 
     public override void RecieveDecision(int decisionIndex)
     {
-        if (ValidateDecisionIndex(decisionIndex))
-        {
-            // Process the decision made by the player
-
-            ResolveEncounter();
-        }
-        else
-        {
-            Debug.LogWarning("Invalid decision index received in NPCEncounter.");
-        }
+        ResolveEncounter();
     }
 }

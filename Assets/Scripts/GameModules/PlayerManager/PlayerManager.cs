@@ -17,6 +17,7 @@ public class PlayerManager : GameModule
     public float DamageMultiplier { get; set; } = 1.0f;
     public float CritChance { get; set; } = 0.0f;
     public bool CanUseHealthAsMana { get; set; } = false;
+    public int DiceRerollCount { get; set; } = 0;
 
     public PlayerStatBox PlayerStats { get; private set; } = new PlayerStatBox();
 
@@ -37,7 +38,7 @@ public class PlayerManager : GameModule
         {
             // Give observers (like Lazarus Rite) a chance to save the player
             Notify(EventType.PlayerAboutToDie);
-            
+
             // Re-check health after observers have run
             if (Health.CurrentValue <= 0)
             {
@@ -120,6 +121,18 @@ public class PlayerManager : GameModule
                 throw new ArgumentOutOfRangeException(nameof(secondaryStat), secondaryStat, null);
         }
 
+    }
+    #endregion
+
+    #region Dice Rolling
+    public void RollForStat(Stat stat, int successThreshold)
+    {
+        DiceRoller.Instance.RollForStat(stat, successThreshold);
+    }
+
+    public void Reroll()
+    {
+        DiceRoller.Instance.Reroll();
     }
     #endregion
 
