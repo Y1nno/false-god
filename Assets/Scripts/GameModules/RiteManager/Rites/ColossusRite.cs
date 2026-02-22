@@ -6,7 +6,7 @@ public class ColossusRite : Rite
 
     public override string Description => $"+{k_DamageBonus} Damage";
 
-    public ColossusRite() : base("Colossus", 2) // ID: Colossus, Cost: 2
+    public ColossusRite() : base("Colossus", 2, RiteType.Colossus) // ID: Colossus, Cost: 2
     {
     }
 

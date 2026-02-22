@@ -15,7 +15,7 @@ public class BeastRite : Rite, IObserver
 
     public override string Description => $"Beast (+{_currentStacks} Dmg)";
 
-    public BeastRite() : base("Beast", 5) // ID: Beast, Cost: 5
+    public BeastRite() : base("Beast", 5, RiteType.Beast) // ID: Beast, Cost: 5
     {
     }
 

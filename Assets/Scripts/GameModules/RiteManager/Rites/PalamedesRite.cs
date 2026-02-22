@@ -3,7 +3,7 @@ public class PalamedesRite : Rite
     public override string Description => "Reroll Dice";
     private readonly int k_RerollCount = 1;
 
-    public PalamedesRite() : base("Palamedes", 3)
+    public PalamedesRite() : base("Palamedes", 3, RiteType.Palamedes)
     {
     }
 

@@ -7,7 +7,7 @@ public class MerlinRite : Rite
     public float SpecialAttackMultiplier => specialAttackMultiplier;
     public float PhysicalDefenseMultiplier => physicalDefenseMultiplier;
 
-    public MerlinRite() : base("Merlin", 5)
+    public MerlinRite() : base("Merlin", 5, RiteType.Merlin)
     {
     }
 

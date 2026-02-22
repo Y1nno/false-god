@@ -9,7 +9,7 @@ public class Consumable : ScriptableObject
 
     public List<ConsumableEffect> Effects = new List<ConsumableEffect>();
 
-    // This makes it compatible if you refactor your Item class to use SOs later, 
+    // This makes it compatible if you refactor your Item class to use SOs later,
     // but right now Item is a plain class, so we use this separately or aggregate it.
     public virtual void Use(Combatant target, int tier = 1)
     {

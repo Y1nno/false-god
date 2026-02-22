@@ -2,7 +2,7 @@ public class EmpressRite : Rite
 {
     public override string Description => "Gain random T2 consumable at the start of the game";
 
-    public EmpressRite() : base("Empress", 4)
+    public EmpressRite() : base("Empress", 4, RiteType.Empress)
     {
     }
 

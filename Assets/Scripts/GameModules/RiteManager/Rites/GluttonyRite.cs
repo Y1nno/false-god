@@ -4,7 +4,7 @@ public class GluttonyRite : Rite
     private readonly float k_consumableEffectivenessMultiplier = 1.2f;
     public float Multiplier => k_consumableEffectivenessMultiplier;
 
-    public GluttonyRite() : base("Gluttony", 2)
+    public GluttonyRite() : base("Gluttony", 2, RiteType.Gluttony)
     {
     }
 

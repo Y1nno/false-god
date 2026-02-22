@@ -45,7 +45,7 @@ public class JudgementRite : Rite, IObserver
         return sum;
     }
 
-    public JudgementRite() : base("Judgement", 5) // ID: Judgement, Cost: 5
+    public JudgementRite() : base("Judgement", 5, RiteType.Judgement) // ID: Judgement, Cost: 5
     {
     }
 

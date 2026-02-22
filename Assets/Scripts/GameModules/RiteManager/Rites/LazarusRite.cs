@@ -6,7 +6,7 @@ public class LazarusRite : Rite, IObserver
 
     public override string Description => "Lazarus: Prevents death once and restores 50% HP.";
 
-    public LazarusRite() : base("Lazarus", 10) // ID: Lazarus, Cost: 10
+    public LazarusRite() : base("Lazarus", 10, RiteType.Lazarus) // ID: Lazarus, Cost: 10
     {
     }
 

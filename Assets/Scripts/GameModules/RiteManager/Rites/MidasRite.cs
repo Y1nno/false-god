@@ -2,7 +2,7 @@ public class MidasRite : Rite
 {
     public override string Description => "Enemies Drop 10% more gold";
 
-    public MidasRite() : base("Midas", 6)
+    public MidasRite() : base("Midas", 6, RiteType.Midas)
     {
     }
 
