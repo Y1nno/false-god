@@ -11,6 +11,7 @@ public class JudgementRite : Rite, IObserver
     private float _accDamageMult = 0f;
     private int _accMaxHP = 0;
     private float _accCrit = 0f;
+    public float CritChance => _accCrit;
     private Dictionary<Stat, int> _accStats = new Dictionary<Stat, int>
     {
         { Stat.STR, 0 }, { Stat.DEX, 0 }, { Stat.INT, 0 }, { Stat.LCK, 0 }
@@ -71,7 +72,7 @@ public class JudgementRite : Rite, IObserver
         player.Health.IncreaseBaseMax(-_accMaxHP);
         // Note: We don't remove current HP, just Max.
 
-        player.CritChance -= _accCrit;
+        _accCrit = 0f;
 
         foreach (var kvp in _accStats)
         {
@@ -124,7 +125,6 @@ public class JudgementRite : Rite, IObserver
                  TextOutputter.Instance.OutputText($"Judgement: You feel sharper! (+2 {randomStat})");
                 break;
             case 3: // +2% Crit
-                pm.CritChance += 2.0f;
                 _accCrit += 2.0f;
                 TextOutputter.Instance.OutputText("Judgement: Your aim strikes true! (+2% Crit Chance)");
                 break;

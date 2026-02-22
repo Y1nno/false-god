@@ -55,6 +55,15 @@ public class Battle : Subject, IObserver
 
     public void EndRound()
     {
+        // Process over-time effects before actually ending
+        foreach (Combatant combatant in combatants)
+        {
+            if (combatant.IsAlive())
+            {
+                combatant.OnRoundEnd();
+            }
+        }
+
         //Debug.Log($"EndRound called, frame={Time.frameCount}");
         if (!CheckBattleOngoing())
         {

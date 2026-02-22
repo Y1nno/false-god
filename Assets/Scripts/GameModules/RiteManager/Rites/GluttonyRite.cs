@@ -9,11 +9,17 @@ public class GluttonyRite : Rite
 
     public override void OnEquip(PlayerManager player)
     {
-        // TODO: Consumables are 20% more effective
+        if (player.PlayerStats is PlayerStatBox psb)
+        {
+            psb.ConsumableEffectivenessMultiplier = 1.2f;
+        }
     }
 
     public override void OnUnequip(PlayerManager player)
     {
-        // TODO: Remove effect
+        if (player.PlayerStats is PlayerStatBox psb)
+        {
+            psb.ConsumableEffectivenessMultiplier = 1.0f;
+        }
     }
 }

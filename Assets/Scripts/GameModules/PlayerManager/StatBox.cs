@@ -19,6 +19,8 @@ public class StatBox : Subject, IObserver
     public int INT = k_DefaultStatValue[Stat.INT];
     public int LCK = k_DefaultStatValue[Stat.LCK];
 
+    public float ConsumableEffectivenessMultiplier { get; set; } = 1.0f;
+
     protected StatBox(Dictionary<Stat, int> initialStats = null)
     {
         if (initialStats == null)
@@ -82,6 +84,8 @@ public enum SecondaryStat
 {
     SPATK,
     SPDEF,
+    PHATK,
+    PHDEF,
     CRIT,
     EVDE
 }

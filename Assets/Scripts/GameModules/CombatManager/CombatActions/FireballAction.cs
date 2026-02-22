@@ -2,6 +2,7 @@ using UnityEngine;
 
 public class FireballAction : CombatAction
 {
+    private int _baseDamage = 10;
     public FireballAction()
     {
         ActionID = 2;
@@ -24,7 +25,8 @@ public class FireballAction : CombatAction
             return;
         }
 
-        int damage = 30; // Example fixed damage for Fireball
-        target.TakeDamage(damage);
+        int damage = _baseDamage;
+        damage = CalculateDamageFromBase(damage, user);
+        target.GetAttacked(damage, ActionType);
     }
 }
