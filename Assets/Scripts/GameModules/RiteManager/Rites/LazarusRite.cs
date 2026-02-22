@@ -8,6 +8,7 @@ public class LazarusRite : Rite, IObserver
 
     public LazarusRite() : base("Lazarus", 10) // ID: Lazarus, Cost: 10
     {
+        RiteType = RiteType.Lazarus;
     }
 
     public override void OnEquip(PlayerManager player)

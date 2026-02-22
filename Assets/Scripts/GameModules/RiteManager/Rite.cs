@@ -11,6 +11,7 @@ public abstract class Rite
         RiteID = riteID;
         RitePointCost = ritePointCost;
     }
+    public RiteType RiteType;
 
     public virtual void OnEquip(PlayerManager player) { }
     public virtual void OnUnequip(PlayerManager player) { }

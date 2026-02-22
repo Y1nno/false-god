@@ -18,6 +18,8 @@ public class Goblin : Enemy
         01, // Basic Attack
     };
 
-    public Goblin() : base(name: k_name, initialStats: k_baseStats, initialHealth: k_baseHealth, initialMana: k_baseMana, availableActionIDs: k_availableActionIDs)
+    private readonly static int k_goldValue = 5;
+
+    public Goblin() : base(name: k_name, initialStats: k_baseStats, initialHealth: k_baseHealth, initialMana: k_baseMana, availableActionIDs: k_availableActionIDs, goldValue: k_goldValue)
     {}
 }

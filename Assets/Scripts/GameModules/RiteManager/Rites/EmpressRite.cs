@@ -4,6 +4,7 @@ public class EmpressRite : Rite
 
     public EmpressRite() : base("Empress", 4)
     {
+        RiteType = RiteType.Empress;
     }
 
     public override void OnEquip(PlayerManager player)

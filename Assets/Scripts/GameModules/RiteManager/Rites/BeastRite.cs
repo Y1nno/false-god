@@ -15,8 +15,10 @@ public class BeastRite : Rite, IObserver
 
     public override string Description => $"Beast (+{_currentStacks} Dmg)";
 
+
     public BeastRite() : base("Beast", 5) // ID: Beast, Cost: 5
     {
+        RiteType = RiteType.Beast;
     }
 
     public override void OnEquip(PlayerManager player)

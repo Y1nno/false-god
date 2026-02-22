@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 public class RiteManager : GameModule
 {
@@ -30,9 +31,14 @@ public class RiteManager : GameModule
 
     public bool HasRite(string riteID)
     {
+        return HasRite(Enum.Parse<RiteType>(riteID));
+    }
+
+    public bool HasRite(RiteType type)
+    {
         foreach (Rite rite in ActiveRites)
         {
-            if (rite.RiteID == riteID)
+            if (rite.RiteType == type)
             {
                 return true;
             }
@@ -273,5 +279,17 @@ public class RiteManager : GameModule
     {
         BaseRitePoints += amount;
         TextOutputter.Instance.OutputText($"Added {amount} Rite Points. Total Base: {BaseRitePoints}");
+    }
+
+    public Rite GetRite(RiteType type)
+    {
+        foreach (Rite rite in ActiveRites)
+        {
+            if (rite.RiteType == type)
+            {
+                return rite;
+            }
+        }
+        return null;
     }
 }
