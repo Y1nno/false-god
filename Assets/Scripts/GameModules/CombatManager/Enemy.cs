@@ -128,10 +128,10 @@ public class Enemy : Combatant
         switch (attackType)
         {
             case AttackType.Physical:
-                TakeDamage(damage); // TODO: Apply physical defense
+                TakeDamage(damage - GetSecondaryStat(SecondaryStat.PHDEF));
                 break;
             case AttackType.Special:
-                TakeDamage(damage); // TODO: Apply special defense
+                TakeDamage(damage - GetSecondaryStat(SecondaryStat.SPDEF));
                 break;
             default:
                 TakeDamage(damage);
