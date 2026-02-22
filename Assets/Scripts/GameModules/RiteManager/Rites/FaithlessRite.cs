@@ -14,7 +14,7 @@ public class FaithlessRite : Rite, IObserver
 
     public override string Description => $"Faithless: +{_totalStatsGained} All Attributes. Next bonus in {k_EncountersPerBonus - _encounterCount} encounters.";
 
-    public FaithlessRite() : base("Faithless", 10)
+    public FaithlessRite() : base("Faithless", 10, RiteType.Faithless)
     {
         RiteType = RiteType.Faithless;
     }

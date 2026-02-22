@@ -4,7 +4,7 @@ public class OuroborosRite : Rite
 {
     public override string Description => "Ouroboros (HP as Mana)";
 
-    public OuroborosRite() : base("Ouroboros", 3) // ID: Ouroboros, Cost: 3
+    public OuroborosRite() : base("Ouroboros", 3, RiteType.Ouroboros) // ID: Ouroboros, Cost: 3
     {
         RiteType = RiteType.Ouroboros;
     }

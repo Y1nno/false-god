@@ -1,25 +1,21 @@
 public class GluttonyRite : Rite
 {
     public override string Description => "Consumables are 20% more effective";
+    private readonly float k_consumableEffectivenessMultiplier = 1.2f;
+    public float Multiplier => k_consumableEffectivenessMultiplier;
 
-    public GluttonyRite() : base("Gluttony", 2)
+    public GluttonyRite() : base("Gluttony", 2, RiteType.Gluttony)
     {
         RiteType = RiteType.Gluttony;
     }
 
     public override void OnEquip(PlayerManager player)
     {
-        if (player.PlayerStats is PlayerStatBox psb)
-        {
-            psb.ConsumableEffectivenessMultiplier = 1.2f;
-        }
+        // Gluttony Effect applied just by being active, the calculations for consumable effectiveness check for the rite, so no additional setup needed
     }
 
     public override void OnUnequip(PlayerManager player)
     {
-        if (player.PlayerStats is PlayerStatBox psb)
-        {
-            psb.ConsumableEffectivenessMultiplier = 1.0f;
-        }
+        // No need to reset anything on unequip since the effect is only checked when calculating consumable effectiveness
     }
 }

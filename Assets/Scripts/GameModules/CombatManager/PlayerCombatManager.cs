@@ -53,10 +53,10 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         switch (attackType)
         {
             case AttackType.Physical:
-                TakeDamage(damage); // TODO: Apply physical defense
+                TakeDamage(damage - _pm.CalculateSecondaryStat(SecondaryStat.PHDEF));
                 break;
             case AttackType.Special:
-                TakeDamage(damage); // TODO: Apply special defense
+                TakeDamage(damage - _pm.CalculateSecondaryStat(SecondaryStat.SPDEF));
                 break;
             default:
                 TakeDamage(damage);

@@ -1,8 +1,13 @@
 public class MerlinRite : Rite
 {
     public override string Description => "Special atk increased 10% but - 10% Def";
+    private readonly float specialAttackMultiplier = 0.1f;
+    private readonly float physicalDefenseMultiplier = -0.1f;
 
-    public MerlinRite() : base("Merlin", 5)
+    public float SpecialAttackMultiplier => specialAttackMultiplier;
+    public float PhysicalDefenseMultiplier => physicalDefenseMultiplier;
+
+    public MerlinRite() : base("Merlin", 5, RiteType.Merlin)
     {
         RiteType = RiteType.Merlin;
     }

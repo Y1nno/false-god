@@ -7,7 +7,7 @@ public class BerserkRite : Rite
     public float PhysicalAttackMultiplier => k_physicalDamageMultiplier;
     public float SpecialDefenseMultiplier => k_specialDefenseMultiplier;
 
-    public BerserkRite() : base("Berserk", 5)
+    public BerserkRite() : base("Berserk", 5, RiteType.Berserk)
     {
         RiteType = RiteType.Berserk;
     }

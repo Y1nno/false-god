@@ -22,7 +22,7 @@ public class RiteManager : GameModule
         CurrentCapacityMax = k_maxCapacity;
     }
 
-    public List<Rite> ActiveRites { get; private set; } = new List<Rite>();
+    public Dictionary<RiteType, Rite> ActiveRites { get; private set; } = new Dictionary<RiteType, Rite>();
 
     public override void AttachDefaultObservers()
     {
@@ -36,19 +36,12 @@ public class RiteManager : GameModule
 
     public bool HasRite(RiteType type)
     {
-        foreach (Rite rite in ActiveRites)
-        {
-            if (rite.RiteType == type)
-            {
-                return true;
-            }
-        }
-        return false;
+        return ActiveRites.ContainsKey(type);
     }
 
     public bool HasRite<T>() where T : Rite
     {
-        foreach (Rite rite in ActiveRites)
+        foreach (var rite in ActiveRites.Values)
         {
             if (rite is T)
             {
@@ -56,6 +49,27 @@ public class RiteManager : GameModule
             }
         }
         return false;
+    }
+
+    public Rite GetRite(RiteType type)
+    {
+        if (ActiveRites.TryGetValue(type, out var rite))
+        {
+            return rite;
+        }
+        return null;
+    }
+
+    public T GetRite<T>() where T : Rite
+    {
+        foreach (var rite in ActiveRites.Values)
+        {
+            if (rite is T typedRite)
+            {
+                return typedRite;
+            }
+        }
+        return null;
     }
 
     private HashSet<string> _unlockedRiteIDs = new HashSet<string>();
@@ -108,7 +122,7 @@ public class RiteManager : GameModule
              Debug.LogWarning($"Cannot add rite. {newRite.RiteID} is already equipped.");
              return;
         }
-        ActiveRites.Add(newRite);
+        ActiveRites.Add(newRite.RiteType, newRite);
         newRite.OnEquip(RunManager.Instance.GetService<PlayerManager>());
         TextOutputter.Instance.OutputText($"Equipped Rite: {newRite.RiteID}");
     }
@@ -131,7 +145,7 @@ public class RiteManager : GameModule
     {
         if (CanUnequip(riteToRemove))
         {
-            ActiveRites.Remove(riteToRemove);
+            ActiveRites.Remove(riteToRemove.RiteType);
             riteToRemove.OnUnequip(RunManager.Instance.GetService<PlayerManager>());
              TextOutputter.Instance.OutputText($"Unequipped Rite: {riteToRemove.RiteID}");
         }
@@ -145,17 +159,17 @@ public class RiteManager : GameModule
     {
         // Find rite by type
         Rite toRemove = null;
-        foreach (Rite r in ActiveRites)
+        foreach (Rite r in ActiveRites.Values)
         {
             // Simple check: does the ID match the type name?
             // Converting Enum to String is okay for now as IDs match Enum names (Colossus, Beast, etc.)
-            if (r.RiteID == type.ToString()) 
+            if (r.RiteID == type.ToString())
             {
                 toRemove = r;
                 break;
             }
         }
-        
+
         if (toRemove != null)
         {
             UnequipRite(toRemove);
@@ -196,25 +210,24 @@ public class RiteManager : GameModule
 
     public bool CanUnequip(string riteID)
     {
-        foreach (Rite rite in ActiveRites)
-        {
-            if (rite.RiteID == riteID)
-            {
-                return true;
-            }
-        }
-        return false;
+        Enum.TryParse<RiteType>(riteID, out var type);
+        return CanUnequip(type);
     }
 
     public bool CanUnequip(Rite rite)
     {
-        return ActiveRites.Contains(rite);
+        return CanUnequip(rite.RiteType);
+    }
+
+    public bool CanUnequip(RiteType type)
+    {
+        return ActiveRites.ContainsKey(type);
     }
 
     public int CalculateRitePointsRemaining()
     {
         int ritePoints = 0;
-        foreach (Rite rite in ActiveRites)
+        foreach (Rite rite in ActiveRites.Values)
         {
             ritePoints += rite.RitePointCost;
         }
@@ -224,54 +237,48 @@ public class RiteManager : GameModule
     public float CalculateStatMultiplierFromRites(SecondaryStat stat)
     {
         float multiplier = 1.0f;
-        //TODO: Implement this when merged with branch that HasRite and GetRite are implemented
-        /**
         switch (stat)
         {
             case SecondaryStat.PHATK:
                 if (HasRite(RiteType.Berserk))
                 {
-                    multiplier += GetRite(RiteType.Berserk).PhysicalAttackMultiplier;
+                    multiplier += GetRite<BerserkRite>().PhysicalAttackMultiplier;
                 }
                 break;
             case SecondaryStat.SPDEF:
                 if (HasRite(RiteType.Berserk))
                 {
-                    multiplier += GetRite(RiteType.Berserk).SpecialDefenseMultiplier;
+                    multiplier += GetRite<BerserkRite>().SpecialDefenseMultiplier;
                 }
                 break;
             case SecondaryStat.SPATK:
                 if (HasRite(RiteType.Merlin))
                 {
-                    multiplier += GetRite(RiteType.Merlin).SpecialAttackMultiplier;
+                    multiplier += GetRite<MerlinRite>().SpecialAttackMultiplier;
                 }
                 break;
             case SecondaryStat.PHDEF:
                 if (HasRite(RiteType.Merlin))
                 {
-                    multiplier += GetRite(RiteType.Merlin).SpecialAttackMultiplier;
+                    multiplier += GetRite<MerlinRite>().PhysicalDefenseMultiplier;
                 }
                 break;
         }
-        **/
         return multiplier;
     }
 
     public float CalculateFlatStatBonus(SecondaryStat stat)
     {
         float flatBonus = 0.0f;
-        //TODO: Implement this when merged with branch that HasRite and GetRite are implemented
-        /**
         switch (stat)
         {
             case SecondaryStat.CRIT:
                 if (HasRite(RiteType.Judgement))
                 {
-                    flatBonus += GetRite(RiteType.Judgement).CritChance;
+                    flatBonus += GetRite<JudgementRite>().CritChance;
                 }
                 break;
         }
-        **/
         return flatBonus;
     }
 

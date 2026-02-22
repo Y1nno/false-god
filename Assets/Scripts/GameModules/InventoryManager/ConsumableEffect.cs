@@ -17,13 +17,13 @@ public enum ConsumableEffectType
 public struct ConsumableEffect
 {
     public ConsumableEffectType Type;
-    
+
     [Tooltip("Amounts for each tier. Index 0 = Tier 1, Index 1 = Tier 2, etc. If only 1 amount, it's used for all tiers.")]
     public float[] Amount;
-    
+
     [Tooltip("How many rounds the effect lasts. Use 1 or 0 for instant effects.")]
     public int Duration;
-    
+
     [Tooltip("Which stat to modify, if Type is StatChange")]
     public Stat TargetStat;
 }

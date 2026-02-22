@@ -2,7 +2,7 @@ public class JuggernautRite : Rite
 {
     public override string Description => "Cannot be stunned";
 
-    public JuggernautRite() : base("Juggernaut", 4)
+    public JuggernautRite() : base("Juggernaut", 4, RiteType.Juggernaut)
     {
         RiteType = RiteType.Juggernaut;
     }

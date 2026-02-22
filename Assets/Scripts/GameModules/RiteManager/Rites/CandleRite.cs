@@ -8,7 +8,7 @@ public class CandleRite : Rite, IObserver
 
     public override string Description => $"Candle: Choose next encounter in {k_EncountersToTrigger - _encounterCount} rooms.";
 
-    public CandleRite() : base("Candle", 5)
+    public CandleRite() : base("Candle", 5, RiteType.Candle)
     {
         RiteType = RiteType.Candle;
     }

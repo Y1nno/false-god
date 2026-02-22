@@ -7,7 +7,7 @@ public class ChaliceRite : Rite, IObserver
 
     public override string Description => $"Gain +1 Permanent Max HP per kill. (Current: {_currentStacks}/{k_MaxStacks})";
 
-    public ChaliceRite() : base("Chalice", 5)
+    public ChaliceRite() : base("Chalice", 5, RiteType.Chalice)
     {
         RiteType = RiteType.Chalice;
     }

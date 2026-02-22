@@ -84,7 +84,7 @@ public class InfoContainer : MonoBehaviour
     private void AddRiteInfo()
     {
         _content += "Rites:\n";
-        foreach (Rite rite in _ritem.ActiveRites)
+        foreach (Rite rite in _ritem.ActiveRites.Values)
         {
             _content += $"- {rite.RiteID}: {rite.Description}\n";
         }
