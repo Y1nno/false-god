@@ -6,6 +6,7 @@ public class OuroborosRite : Rite
 
     public OuroborosRite() : base("Ouroboros", 3, RiteType.Ouroboros) // ID: Ouroboros, Cost: 3
     {
+        RiteType = RiteType.Ouroboros;
     }
 
     public override void OnEquip(PlayerManager player)

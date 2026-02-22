@@ -5,6 +5,7 @@ public class PalamedesRite : Rite
 
     public PalamedesRite() : base("Palamedes", 3, RiteType.Palamedes)
     {
+        RiteType = RiteType.Palamedes;
     }
 
     public override void OnEquip(PlayerManager player)

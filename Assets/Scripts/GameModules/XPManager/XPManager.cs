@@ -62,10 +62,9 @@ public class XPManager : GameModule, IObserver
         switch (eventType)
         {
             case EventType.EncounterResolve:
-                
-                AddXP(k_XPForEncounterResolve); 
+                AddXP(k_XPForEncounterResolve);
                 break;
-            case EventType.EnemyDefeat:
+            case EventType.EnemyDefeated:
                 AddXP(k_XPForEnemyDefeat);
                 break;
             case EventType.QuestComplete:

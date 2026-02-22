@@ -6,6 +6,7 @@ public class GluttonyRite : Rite
 
     public GluttonyRite() : base("Gluttony", 2, RiteType.Gluttony)
     {
+        RiteType = RiteType.Gluttony;
     }
 
     public override void OnEquip(PlayerManager player)

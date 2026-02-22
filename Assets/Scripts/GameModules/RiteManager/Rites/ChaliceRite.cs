@@ -9,6 +9,7 @@ public class ChaliceRite : Rite, IObserver
 
     public ChaliceRite() : base("Chalice", 5, RiteType.Chalice)
     {
+        RiteType = RiteType.Chalice;
     }
 
     public override void OnEquip(PlayerManager player)

@@ -47,6 +47,7 @@ public class JudgementRite : Rite, IObserver
 
     public JudgementRite() : base("Judgement", 5, RiteType.Judgement) // ID: Judgement, Cost: 5
     {
+        RiteType = RiteType.Judgement;
     }
 
     public override void OnEquip(PlayerManager player)

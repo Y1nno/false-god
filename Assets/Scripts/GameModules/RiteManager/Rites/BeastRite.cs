@@ -17,6 +17,7 @@ public class BeastRite : Rite, IObserver
 
     public BeastRite() : base("Beast", 5, RiteType.Beast) // ID: Beast, Cost: 5
     {
+        RiteType = RiteType.Beast;
     }
 
     public override void OnEquip(PlayerManager player)

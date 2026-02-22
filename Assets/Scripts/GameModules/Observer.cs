@@ -13,7 +13,6 @@ public enum EventType
     EncounterStart,
     EncounterResolve,
     PlayerAboutToDie,
-    EnemyDefeat,
     DungeonRoomAdvance,
     DungeonFloorAdvance,
     GoldAdded,

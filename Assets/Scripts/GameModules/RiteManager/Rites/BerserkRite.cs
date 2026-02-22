@@ -9,6 +9,7 @@ public class BerserkRite : Rite
 
     public BerserkRite() : base("Berserk", 5, RiteType.Berserk)
     {
+        RiteType = RiteType.Berserk;
     }
 
     public override void OnEquip(PlayerManager player)
