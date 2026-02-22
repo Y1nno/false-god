@@ -215,6 +215,60 @@ public class RiteManager : GameModule
         return CalculateRitePointsFromScore() - ritePoints;
     }
 
+    public float CalculateStatMultiplierFromRites(SecondaryStat stat)
+    {
+        float multiplier = 1.0f;
+        //TODO: Implement this when merged with branch that HasRite and GetRite are implemented
+        /**
+        switch (stat)
+        {
+            case SecondaryStat.PHATK:
+                if (HasRite(RiteType.Berserk))
+                {
+                    multiplier += GetRite(RiteType.Berserk).PhysicalAttackMultiplier;
+                }
+                break;
+            case SecondaryStat.SPDEF:
+                if (HasRite(RiteType.Berserk))
+                {
+                    multiplier += GetRite(RiteType.Berserk).SpecialDefenseMultiplier;
+                }
+                break;
+            case SecondaryStat.SPATK:
+                if (HasRite(RiteType.Merlin))
+                {
+                    multiplier += GetRite(RiteType.Merlin).SpecialAttackMultiplier;
+                }
+                break;
+            case SecondaryStat.PHDEF:
+                if (HasRite(RiteType.Merlin))
+                {
+                    multiplier += GetRite(RiteType.Merlin).SpecialAttackMultiplier;
+                }
+                break;
+        }
+        **/
+        return multiplier;
+    }
+
+    public float CalculateFlatStatBonus(SecondaryStat stat)
+    {
+        float flatBonus = 0.0f;
+        //TODO: Implement this when merged with branch that HasRite and GetRite are implemented
+        /**
+        switch (stat)
+        {
+            case SecondaryStat.CRIT:
+                if (HasRite(RiteType.Judgement))
+                {
+                    flatBonus += GetRite(RiteType.Judgement).CritChance;
+                }
+                break;
+        }
+        **/
+        return flatBonus;
+    }
+
     public void AddBaseRitePoints(int amount)
     {
         BaseRitePoints += amount;

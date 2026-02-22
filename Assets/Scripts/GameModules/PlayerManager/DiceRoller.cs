@@ -69,6 +69,11 @@ public class DiceRoller : Subject, IObserver, IPromptResponder
         return;
     }
 
+    public int RollD20()
+    {
+        return UnityEngine.Random.Range(1, 20 + 1);
+    }
+
     public void Reroll()
     {
         if (!HasRollResult)
