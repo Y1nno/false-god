@@ -28,7 +28,7 @@ public class Consumable : ScriptableObject
             PlayerManager pm = RunManager.Instance.GetService<PlayerManager>();
             if (pm != null && pm.PlayerStats is PlayerStatBox psb)
             {
-               gluttonyMultiplier = psb.ConsumableEffectivenessMultiplier;
+               gluttonyMultiplier = psb.ConsumableEffectivenessMultiplier; // TODO: Align this line with the other ways we've stored info on the rite and then get that info
             }
         }
 
