@@ -2,11 +2,9 @@ using UnityEngine;
 using System.Collections.Generic;
 
 [CreateAssetMenu(fileName = "New Consumable", menuName = "Inventory/Consumable")]
-public class Consumable : ScriptableObject
+public class Consumable : ItemSO
 {
-    public string ItemName;
-    public string Description;
-
+    [Header("Consumable Specific")]
     public List<ConsumableEffect> Effects = new List<ConsumableEffect>();
 
     // This makes it compatible if you refactor your Item class to use SOs later,
