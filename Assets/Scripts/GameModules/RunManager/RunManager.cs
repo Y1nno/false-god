@@ -36,7 +36,6 @@ public class RunManager : GameModule
     // API Methods
 
     // Starts a new run by initializing all managers
-    //TODO: Add start of core loop
     public void StartNewRun()
     {
         s_mb = new ManagerBox();

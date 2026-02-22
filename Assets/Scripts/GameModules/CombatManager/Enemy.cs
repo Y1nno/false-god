@@ -90,6 +90,17 @@ public class Enemy : Combatant
     {
         return Stats.GetStat(stat);
     }
+
+    public override int GetSecondaryStat(SecondaryStat stat)
+    {
+        return Stats.GetSecondaryStat(stat);
+    }
+
+    public override float GetCritChance()
+    {
+        return Stats.GetSecondaryStat(SecondaryStat.CRIT);
+    }
+
     public override void ExecuteAction()
     {
         if (CurrentAction != null)
@@ -109,6 +120,22 @@ public class Enemy : Combatant
                 return cbm.CurrentBattle.Pcm;
             default:
                 return null;
+        }
+    }
+
+    public override void GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null)
+    {
+        switch (attackType)
+        {
+            case AttackType.Physical:
+                TakeDamage(damage); // TODO: Apply physical defense
+                break;
+            case AttackType.Special:
+                TakeDamage(damage); // TODO: Apply special defense
+                break;
+            default:
+                TakeDamage(damage);
+                break;
         }
     }
 }

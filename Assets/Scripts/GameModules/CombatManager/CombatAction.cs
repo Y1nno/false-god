@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,10 +6,12 @@ public abstract class CombatAction
     public int ActionID { get; protected set; } = -1;
     public string ActionName { get; protected set; } = "Unnamed Action";
     public int ManaCost { get; protected set; } = 0;
+    public static readonly int k_attackCalculationDivisor = 5;
 
     private CombatManager _cbtm = RunManager.Instance.GetService<CombatManager>();
 
     public TargetingType TargetType { get; protected set; } = TargetingType.SingleEnemy;
+    public AttackType ActionType { get; protected set; } = AttackType.Physical;
 
     public abstract void Execute(Combatant user, Combatant target = null);
     public virtual bool CanUse(Combatant user)
@@ -92,6 +93,40 @@ public abstract class CombatAction
         }
         return targets;
     }
+
+    protected virtual int CalculateDamageBasedOnStats(int baseDamage, Combatant user)
+    {
+        int finalDamage = baseDamage;
+        if (ActionType == AttackType.Physical)
+        {
+            finalDamage *= (user.GetSecondaryStat(SecondaryStat.PHATK) + DiceRoller.Instance.RollD20())/k_attackCalculationDivisor;
+        }
+        else if (ActionType == AttackType.Special)
+        {
+            finalDamage *= (user.GetSecondaryStat(SecondaryStat.SPATK) + DiceRoller.Instance.RollD20())/k_attackCalculationDivisor;
+        }
+        return finalDamage;
+    }
+
+    protected virtual int CalculateCriticalHit(int baseDamage, Combatant user)
+    {
+        int finalDamage = baseDamage;
+
+            if (Random.Range(0f, 100f) < user.GetCritChance())
+            {
+                finalDamage *= 2; // Standard 2x Crit
+                TextOutputter.Instance.OutputText("CRITICAL HIT!");
+            }
+
+        return finalDamage;
+    }
+
+    public virtual int CalculateDamageFromBase(int baseDamage, Combatant user)
+    {
+        int finalDamage = CalculateDamageBasedOnStats(baseDamage, user);
+        finalDamage = CalculateCriticalHit(finalDamage, user);
+        return finalDamage;
+    }
 }
 
 public enum TargetingType
@@ -102,4 +137,10 @@ public enum TargetingType
     SingleEnemyAlly,
     AllEnemyAlly,
     All,
+}
+
+public enum AttackType
+{
+    Physical,
+    Special,
 }

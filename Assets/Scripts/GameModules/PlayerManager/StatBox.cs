@@ -82,6 +82,8 @@ public enum SecondaryStat
 {
     SPATK,
     SPDEF,
+    PHATK,
+    PHDEF,
     CRIT,
     EVDE
 }

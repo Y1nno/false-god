@@ -42,10 +42,31 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         return _pm.Mana;
     }
 
-    public override void TakeDamage(int amount)
+    protected override void TakeDamage(int amount)
     {
         // Redirect damage to PlayerManager to ensure global events (like Lazarus Rite) trigger
         _pm.TakeDamage(amount);
+    }
+
+    public override void GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null)
+    {
+        switch (attackType)
+        {
+            case AttackType.Physical:
+                TakeDamage(damage); // TODO: Apply physical defense
+                break;
+            case AttackType.Special:
+                TakeDamage(damage); // TODO: Apply special defense
+                break;
+            default:
+                TakeDamage(damage);
+                break;
+        }
+    }
+
+    public override float GetCritChance()
+    {
+        return _pm.CritChance;
     }
 
     public override void Die()
@@ -129,6 +150,10 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     public override int GetStat(Stat stat)
     {
         return _pm.GetStat(stat);
+    }
+    public override int GetSecondaryStat(SecondaryStat stat)
+    {
+        return _pm.CalculateSecondaryStat(stat);
     }
 
     public override bool TryUseMana(int amount)

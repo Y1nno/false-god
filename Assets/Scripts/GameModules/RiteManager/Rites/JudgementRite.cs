@@ -11,12 +11,13 @@ public class JudgementRite : Rite, IObserver
     private float _accDamageMult = 0f;
     private int _accMaxHP = 0;
     private float _accCrit = 0f;
-    private Dictionary<Stat, int> _accStats = new Dictionary<Stat, int> 
-    { 
-        { Stat.STR, 0 }, { Stat.DEX, 0 }, { Stat.INT, 0 }, { Stat.LCK, 0 } 
+    public float CritChance => _accCrit;
+    private Dictionary<Stat, int> _accStats = new Dictionary<Stat, int>
+    {
+        { Stat.STR, 0 }, { Stat.DEX, 0 }, { Stat.INT, 0 }, { Stat.LCK, 0 }
     };
 
-    public override string Description 
+    public override string Description
     {
         get
         {
@@ -24,7 +25,7 @@ public class JudgementRite : Rite, IObserver
             {
                 return "Judgement: Grants a permanent buff every 10 encounters.";
             }
-            
+
             string desc = "Judgement Buffs:\n";
             if (_accDamageMult > 0) desc += $"- Dmg: +{_accDamageMult * 100:0}%\n";
             if (_accMaxHP > 0) desc += $"- Max HP: +{_accMaxHP}\n";
@@ -53,7 +54,7 @@ public class JudgementRite : Rite, IObserver
         _encounterManager = RunManager.Instance.GetService<EncounterManager>();
         _encounterManager.AttachObserver(this);
         _encounterCount = 0;
-        
+
         ApplyRandomBuff(player);
         TextOutputter.Instance.OutputText("Judgement has begun! A boon is granted.");
     }
@@ -64,14 +65,14 @@ public class JudgementRite : Rite, IObserver
         {
             _encounterManager.DetachObserver(this);
         }
-        
+
         // Revert buffs
         player.DamageMultiplier -= _accDamageMult;
         player.Health.IncreaseBaseMax(-_accMaxHP);
-        // Note: We don't remove current HP, just Max. 
-        
-        player.CritChance -= _accCrit;
-        
+        // Note: We don't remove current HP, just Max.
+
+        _accCrit = 0f;
+
         foreach (var kvp in _accStats)
         {
              if (kvp.Value > 0)
@@ -80,7 +81,7 @@ public class JudgementRite : Rite, IObserver
                  player.PlayerStats.SetStat(kvp.Key, current - kvp.Value);
              }
         }
-        
+
         TextOutputter.Instance.OutputText("Judgement faded. All boons lost.");
     }
 
@@ -89,7 +90,7 @@ public class JudgementRite : Rite, IObserver
         if (eventType == EventType.EncounterResolve)
         {
             _encounterCount++;
-            
+
             if (_encounterCount >= k_EncountersToTrigger)
             {
                 _encounterCount = 0;
@@ -123,7 +124,6 @@ public class JudgementRite : Rite, IObserver
                  TextOutputter.Instance.OutputText($"Judgement: You feel sharper! (+2 {randomStat})");
                 break;
             case 3: // +2% Crit
-                pm.CritChance += 2.0f;
                 _accCrit += 2.0f;
                 TextOutputter.Instance.OutputText("Judgement: Your aim strikes true! (+2% Crit Chance)");
                 break;

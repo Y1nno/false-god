@@ -3,13 +3,13 @@ using System.Collections.Generic;
 
 public class InventoryManager : GameModule
 {
-    private Equipment _eq = new Equipment();
+    private EquipmentManager _eq = new EquipmentManager();
     private Inventory _inv = new Inventory();
-    
+
     #region Public API
 
     #region Equipment Methods
-    
+
     public override void AttachDefaultObservers()
     {
         // none for now
@@ -22,7 +22,7 @@ public class InventoryManager : GameModule
             // Item cannot be equipped
             return;
         }
-        
+
         Item oldItem = _eq.EquipItem(slot, item);
         if (oldItem != null)
         {
@@ -46,7 +46,7 @@ public class InventoryManager : GameModule
     }
 
     public void UnequipItem(EquipmentSlot slot)
-    {      
+    {
         if (_eq.GetEquippedItem(slot)?.CanBeUnequipped() == false)
         {
             // Item cannot be unequipped
@@ -116,6 +116,32 @@ public class InventoryManager : GameModule
     #endregion
 
     #endregion
+
+    #region Equipment Methods
+    public int CalculateSecondaryStatFromEquipment(SecondaryStat secondaryStat)
+    {
+        int total = 0;
+        foreach (Equipment equipment in _eq.GetAllEquippedItems().Values)
+        {
+            switch (secondaryStat)
+                {
+                    case SecondaryStat.SPATK:
+                        total += equipment.SpecialAttack;
+                        break;
+                    case SecondaryStat.SPDEF:
+                        total += equipment.SpecialDefense;
+                        break;
+                    case SecondaryStat.CRIT:
+                        total += equipment.CritChance;
+                        break;
+                    case SecondaryStat.EVDE:
+                        total += equipment.DodgeChance;
+                        break;
+                }
+        }
+        return total;
+    }
+    #endregion
 }
 
 public enum EquipmentSlot
@@ -129,4 +155,13 @@ public enum EquipmentSlot
     OffHand,
     Accessory1,
     Accessory2
+}
+
+public enum Rarity
+{
+    Common,
+    Uncommon,
+    Rare,
+    Epic,
+    Legendary
 }
