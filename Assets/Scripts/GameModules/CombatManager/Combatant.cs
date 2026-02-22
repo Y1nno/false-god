@@ -8,7 +8,7 @@ public abstract class Combatant : Subject
     protected Combatant _currentTarget = null;
 
     public CombatAction CurrentAction = null;
-    
+
     // Tracking active effects like HealOverTime or ManaOverTime
     protected List<ActiveOverTimeEffect> _activeEffects = new List<ActiveOverTimeEffect>();
 
@@ -53,6 +53,12 @@ public abstract class Combatant : Subject
         return GetMana().CanAfford(amount);
     }
 
+    public void TakeConsumableDamage(int amount)
+    {
+        if (amount <= 0) return;
+        TakeDamage(amount);
+    }
+
     public void Heal(int amount)
     {
         if (amount <= 0) return;
@@ -78,7 +84,7 @@ public abstract class Combatant : Subject
         for (int i = _activeEffects.Count - 1; i >= 0; i--)
         {
             ActiveOverTimeEffect effect = _activeEffects[i];
-            
+
             // Apply effect
             if (effect.BaseEffect.Type == ConsumableEffectType.HealOverTime)
             {

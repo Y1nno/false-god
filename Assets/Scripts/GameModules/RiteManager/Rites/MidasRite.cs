@@ -8,11 +8,11 @@ public class MidasRite : Rite
 
     public override void OnEquip(PlayerManager player)
     {
-        // TODO: Enemies Drop 10% more gold
+        // No implementation needed for now, effect is applied through ApplyMidasEffect method
     }
 
     public override void OnUnequip(PlayerManager player)
     {
-        // TODO: Remove effect
+        // No implementation needed for now, effect is applied through ApplyMidasEffect method
     }
 }

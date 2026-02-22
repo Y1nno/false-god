@@ -6,7 +6,7 @@ public class Consumable : ScriptableObject
 {
     public string ItemName;
     public string Description;
-    
+
     public List<ConsumableEffect> Effects = new List<ConsumableEffect>();
 
     // This makes it compatible if you refactor your Item class to use SOs later, 
@@ -14,21 +14,21 @@ public class Consumable : ScriptableObject
     public virtual void Use(Combatant target, int tier = 1)
     {
         TextOutputter.Instance.OutputText($"Used {ItemName}...");
-        
+
         if (ItemName == "Empty Bottle" || ItemName == "EmptyBottle")
         {
             // TODO: Can fill from Fountain give HP or Mana
         }
-        
+
         bool isPlayer = target.GetName() == "Player"; // Basic way to check based on your Combatant code
         float gluttonyMultiplier = 1.0f;
 
         if (isPlayer)
         {
-            PlayerManager pm = RunManager.Instance.GetService<PlayerManager>();
-            if (pm != null && pm.PlayerStats is PlayerStatBox psb)
+            RiteManager rm = RunManager.Instance.GetService<RiteManager>();
+            if (rm != null && rm.HasRite<GluttonyRite>())
             {
-               gluttonyMultiplier = psb.ConsumableEffectivenessMultiplier; // TODO: Align this line with the other ways we've stored info on the rite and then get that info
+               gluttonyMultiplier = ((GluttonyRite)rm.GetRite(RiteType.Gluttony)).Multiplier;
             }
         }
 
@@ -45,32 +45,32 @@ public class Consumable : ScriptableObject
         int tierIndex = Mathf.Clamp(tier - 1, 0, Mathf.Max(0, effect.Amount.Length - 1));
         float baseAmount = effect.Amount != null && effect.Amount.Length > 0 ? effect.Amount[tierIndex] : 0;
         float modifiedAmount = baseAmount * multiplier;
-        
+
         switch (effect.Type)
         {
             case ConsumableEffectType.FlatHP:
                 if (modifiedAmount > 0) target.Heal(Mathf.RoundToInt(modifiedAmount));
-                else target.TakeDamage(Mathf.RoundToInt(-modifiedAmount));
+                else target.TakeConsumableDamage(Mathf.RoundToInt(-modifiedAmount));
                 break;
-                
+
             case ConsumableEffectType.PercentHP:
                 // Calculate percentage based on Max Value
                 int hpAmount = Mathf.RoundToInt((modifiedAmount / 100f) * target.GetHealth().MaxValue);
                 if (hpAmount > 0) target.Heal(hpAmount);
-                else target.TakeDamage(-hpAmount);
+                else target.TakeConsumableDamage(-hpAmount);
                 break;
-                
+
             case ConsumableEffectType.FlatMana:
                 if (modifiedAmount > 0) target.RestoreMana(Mathf.RoundToInt(modifiedAmount));
                 else target.TryUseMana(Mathf.RoundToInt(-modifiedAmount));
                 break;
-                
+
             case ConsumableEffectType.PercentMana:
                 int manaAmount = Mathf.RoundToInt((modifiedAmount / 100f) * target.GetMana().MaxValue);
                 if (manaAmount > 0) target.RestoreMana(manaAmount);
                 else target.TryUseMana(-manaAmount);
                 break;
-                
+
             case ConsumableEffectType.StatChange:
                 // For now, PlayerManager handles stats.
                 PlayerManager pmSC = RunManager.Instance.GetService<PlayerManager>();
@@ -80,7 +80,7 @@ public class Consumable : ScriptableObject
                     else pmSC.DecreaseStat(effect.TargetStat, Mathf.RoundToInt(-modifiedAmount));
                 }
                 break;
-                
+
             case ConsumableEffectType.AllStatsChange:
                 PlayerManager pmAll = RunManager.Instance.GetService<PlayerManager>();
                 if (pmAll != null)

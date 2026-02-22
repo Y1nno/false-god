@@ -108,12 +108,10 @@ public class PlayerManager : GameModule
     {
         switch (secondaryStat)
         {
-            //TODO: Implement formulas
             case SecondaryStat.SPATK:
                 int spatkFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.SPATK);
                 float spatkMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.SPATK);
                 return spatkFromEquipment * (int)(1.0f + spatkMultiplierFromRite);
-
             case SecondaryStat.SPDEF:
                 int spdefFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.SPDEF);
                 float spdefMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.SPDEF);

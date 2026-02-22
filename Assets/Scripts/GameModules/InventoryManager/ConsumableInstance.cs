@@ -4,13 +4,13 @@ public class ConsumableInstance : Item
 {
     public Consumable BaseData { get; private set; }
     public int Tier { get; private set; }
-    
+
     public ConsumableInstance(Consumable baseData, int tier)
     {
         BaseData = baseData;
         Tier = Mathf.Clamp(tier, 1, 3);
     }
-    
+
     public override void Use()
     {
         // For ConsumableInstance, the inventory or UI normally calls this.
