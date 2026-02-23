@@ -3,27 +3,19 @@ using System.Collections.Generic;
 
 public class ActionFactory
 {
-    private Dictionary<int, CombatAction> availableActions = new Dictionary<int, CombatAction>();
     public ActionFactory()
     {
-        InitializeActions();
     }
 
     public CombatAction CreateActionByID(int actionID)
     {
-        if (availableActions.ContainsKey(actionID))
+        switch (actionID)
         {
-            return availableActions[actionID];
+            case 0: return new DoNothingAction();
+            case 1: return new PlayerAttackAction();
+            case 2: return new PlayerBlockAction();
+            case 3: return new FireballAction();
+            default: return null;
         }
-        return null;
-    }
-
-    private void InitializeActions()
-    {
-        // TODO: Implementation for initializing available actions
-        availableActions.Add(0, new DoNothingAction());
-        availableActions.Add(1, new PlayerAttackAction());
-        availableActions.Add(2, new PlayerBlockAction());
-        availableActions.Add(3, new FireballAction());
     }
 }

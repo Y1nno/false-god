@@ -27,4 +27,5 @@ public enum EquipmentTrait
     HealAfterFirstDamage,
     AttackMultiplier,
     CounterChance,
+    MoveFirst
 }

@@ -75,6 +75,21 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     }
     public override void ChooseAction()
     {
+        _availableActions.Clear();
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+        EquipmentSO moveFirstItem = null;
+        int traitIndex = -1;
+        bool hasMoveFirst = eqm != null && eqm.HasMoveFirstAvailable(out moveFirstItem, out traitIndex);
+
+        foreach (int actionID in k_StartingActionIDs)
+        {
+            CombatAction action = ActionFactory.CreateActionByID(actionID);
+            if (action != null)
+            {
+                _availableActions.Add(action);
+            }
+        }
+
         Notify(EventType.PlayerTurnStart);
         _currentDecisionMode = DecisionMode.ChoosingAction;
         List<string> actionNames = GetAvailableActionNames();
@@ -109,8 +124,31 @@ public class PlayerCombatManager : Combatant, IPromptResponder
 
             case DecisionMode.ChoosingAction:
                 //Debug.Log($"Player selected action index: {decisionIndex}");
-                TextOutputter.Instance.OutputText($"Player selected action: {_availableActions[decisionIndex].ActionName}");
-                CurrentAction = _availableActions[decisionIndex];
+                CombatAction selectedAction = _availableActions[decisionIndex];
+
+                if (selectedAction.ActionID == 1) // Basic Attack
+                {
+                    EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+                    if (eqm != null && eqm.HasMoveFirstAvailable(out EquipmentSO item, out int traitIndex))
+                    {
+                        if (item.Traits[traitIndex].CurrentCooldown > 0)
+                        {
+                            selectedAction.Priority = 0;
+                        }
+                        else
+                        {
+                            selectedAction.Priority = 1;
+                            eqm.TriggerMoveFirstCooldown();
+                        }
+                    }
+                    else
+                    {
+                        selectedAction.Priority = 0;
+                    }
+                }
+
+                TextOutputter.Instance.OutputText($"Player selected action: {selectedAction.ActionName}");
+                CurrentAction = selectedAction;
                 if (CurrentAction.NeedsTarget() == false)
                 {
                     _currentDecisionMode = DecisionMode.None;

@@ -123,6 +123,9 @@ public class InputInterface : MonoBehaviour
     {
         InfoContainer info = GameObject.FindAnyObjectByType<InfoContainer>();
         if (info != null) info.Refresh();
+
+        EquipmentContainer eq = GameObject.FindAnyObjectByType<EquipmentContainer>();
+        if (eq != null) eq.Refresh();
     }
 
     // --- Improved UI Logic: Direct Read ---
@@ -185,7 +188,25 @@ public class InputInterface : MonoBehaviour
         
         // Append "SO" to match the user's naming convention and load from Resources
         string resourceName = selectedOption + "SO";
-        Consumable baseConsumableData = Resources.Load<Consumable>(resourceName);
+        
+        Consumable baseConsumableData = null;
+#if UNITY_EDITOR
+        // If not using a Resources folder, search the AssetDatabase
+        string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Consumable");
+        foreach(string guid in guids)
+        {
+            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+            Consumable so = UnityEditor.AssetDatabase.LoadAssetAtPath<Consumable>(path);
+            
+            if (so != null && (so.name == resourceName || so.name == selectedOption))
+            {
+                baseConsumableData = so;
+                break;
+            }
+        }
+#else
+        baseConsumableData = Resources.Load<Consumable>(resourceName);
+#endif
         
         if (baseConsumableData != null)
         {
@@ -204,7 +225,7 @@ public class InputInterface : MonoBehaviour
         }
         else
         {
-            TextOutputter.Instance.OutputText($"Could not find Consumable named '{resourceName}' in Resources folder!");
+            TextOutputter.Instance.OutputText($"Could not find Consumable named '{resourceName}' in the project!");
         }
     }
 
@@ -256,5 +277,123 @@ public class InputInterface : MonoBehaviour
     {
         RunManager.Instance.GetService<RiteManager>().UnequipRite(_selectedRite); 
         RefreshUI();
+    }
+
+    // --- Equipment & Inventory Testing UI ---
+
+    public void AddEquipmentToInventory(UnityEngine.GameObject txtInput)
+    {
+        if (txtInput == null) return;
+        TMP_InputField inputField = txtInput.GetComponent<TMP_InputField>();
+        string itemID = inputField.text.Trim();
+
+        EquipmentSO newEquipment = null;
+        
+#if UNITY_EDITOR
+        // If not using a Resources folder, we must search the AssetDatabase in the editor
+        string[] guids = UnityEditor.AssetDatabase.FindAssets("t:EquipmentSO");
+        foreach(string guid in guids)
+        {
+            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+            EquipmentSO so = UnityEditor.AssetDatabase.LoadAssetAtPath<EquipmentSO>(path);
+            
+            // Check if either the filename matches OR the new ItemID field matches exactly
+            if (so != null && (so.ItemID == itemID || so.name == itemID || so.name == itemID + "SO"))
+            {
+                newEquipment = so;
+                break;
+            }
+        }
+#else
+        // If testing in a build later, they MUST be in Resources or an Addressables group.
+        newEquipment = Resources.Load<EquipmentSO>(itemID) ?? Resources.Load<EquipmentSO>(itemID + "SO");
+#endif
+
+        if (newEquipment != null)
+        {
+            // Give the player a uniquely rolled instance of the equipment
+            EquipmentSO rolledInstance = newEquipment.InstantiateAndRollStats();
+            RunManager.Instance.GetService<EquipmentManager>()?.AddEquipmentToInventory(rolledInstance);
+            RefreshEquipmentDropdown();
+        }
+        else
+        {
+            TextOutputter.Instance.OutputText($"Could not find Equipment with ID/filename '{itemID}' in the project.");
+        }
+    }
+
+    public void EquipItemFromDropdown(UnityEngine.GameObject panel)
+    {
+        if (panel == null) return;
+        
+        // Find the dropdown in the panel
+        Transform dropdownTransform = panel.transform.Find("EquipmentDropdown") ?? panel.transform; // Fallback to itself if it IS the dropdown
+        TMP_Dropdown dropdown = dropdownTransform.GetComponent<TMP_Dropdown>();
+        
+        // If still null, search globally just in case
+        if (dropdown == null)
+        {
+            GameObject globalDropdown = GameObject.Find("EquipmentDropdown");
+            if (globalDropdown != null) dropdown = globalDropdown.GetComponent<TMP_Dropdown>();
+        }
+        
+        if (dropdown == null || dropdown.options.Count == 0) return;
+
+        string selectedItemName = dropdown.options[dropdown.value].text;
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+        
+        if (eqm == null) return;
+
+        // Find the corresponding item in the player's inventory list
+        // Note: we're matching by ItemName here because the Dropdown displays names, not IDs.
+        EquipmentSO itemToEquip = eqm.Inventory.Find(item => item.ItemName == selectedItemName);
+
+        if (itemToEquip != null)
+        {
+            eqm.EquipItem(itemToEquip);
+            
+            // Re-populate the dropdown since the inventory changed (the item was removed from it)
+            RefreshEquipmentDropdown(panel);
+            
+            // Refresh the equipment panel UI
+            EquipmentContainer eqUI = GameObject.FindAnyObjectByType<EquipmentContainer>();
+            if (eqUI != null) eqUI.Refresh();
+        }
+        else
+        {
+             TextOutputter.Instance.OutputText($"Could not find '{selectedItemName}' in your Inventory.");
+        }
+    }
+
+    // Helper to keep the dropdown synchronized with the EquipmentManager.Inventory list
+    public void RefreshEquipmentDropdown(UnityEngine.GameObject panel = null)
+    {
+         TMP_Dropdown dropdown = null;
+         
+         if (panel != null)
+         {
+             Transform dropdownTransform = panel.transform.Find("EquipmentDropdown");
+             if (dropdownTransform != null) dropdown = dropdownTransform.GetComponent<TMP_Dropdown>();
+         }
+
+         // Fallback to global search if panel search failed or no panel was provided
+         if (dropdown == null)
+         {
+             GameObject globalDropdown = GameObject.Find("EquipmentDropdown");
+             if (globalDropdown != null) dropdown = globalDropdown.GetComponent<TMP_Dropdown>();
+         }
+         
+         EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+         if (dropdown == null || eqm == null) return;
+
+         dropdown.ClearOptions();
+         
+         List<string> options = new List<string>();
+         foreach (var item in eqm.Inventory)
+         {
+             options.Add(item.ItemName); // We display the human-readable ItemName in the UI
+         }
+         
+         dropdown.AddOptions(options);
     }
 }

@@ -164,6 +164,8 @@ public class EncounterManager : GameModule, IObserver
         }
         else if (eventType == EventType.EncounterResolve)
         {
+            RunManager.Instance.GetService<EquipmentManager>()?.TickCooldowns(CooldownType.Encounters);
+
             // Propagate the event to EncounterManager's observers (like Rites)
             Notify(EventType.EncounterResolve);
             

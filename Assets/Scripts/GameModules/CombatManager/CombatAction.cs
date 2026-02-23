@@ -4,8 +4,9 @@ using UnityEngine;
 public abstract class CombatAction
 {
     public int ActionID { get; protected set; } = -1;
-    public string ActionName { get; protected set; } = "Unnamed Action";
+    public string ActionName { get; set; } = "Unnamed Action";
     public int ManaCost { get; protected set; } = 0;
+    public int Priority { get; set; } = 0;
     public static readonly int k_attackCalculationDivisor = 5;
 
     private CombatManager _cbtm = RunManager.Instance.GetService<CombatManager>();

@@ -74,7 +74,21 @@ public class PlayerManager : GameModule
 
     public int GetStat(Stat stat)
     {
-        return PlayerStats.GetStat(stat);
+        int baseStat = PlayerStats.GetStat(stat);
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+        
+        if (eqm == null) return baseStat;
+
+        int bonus = stat switch
+        {
+            Stat.STR => eqm.GetTotalSTR(),
+            Stat.DEX => eqm.GetTotalDEX(),
+            Stat.INT => eqm.GetTotalINT(),
+            Stat.SPD => eqm.GetTotalSPD(),
+            _ => 0
+        };
+
+        return baseStat + bonus;
     }
 
     public void SetStat(Stat stat, int value)
@@ -106,30 +120,32 @@ public class PlayerManager : GameModule
 
     public int CalculateSecondaryStat(SecondaryStat secondaryStat)
     {
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+
         switch (secondaryStat)
         {
             case SecondaryStat.SPATK:
-                int spatkFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.SPATK);
+                int spatkFromEquipment = eqm?.GetTotalSpecialAttack() ?? 0;
                 float spatkMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.SPATK);
                 return spatkFromEquipment * (int)(1.0f + spatkMultiplierFromRite);
             case SecondaryStat.SPDEF:
-                int spdefFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.SPDEF);
+                int spdefFromEquipment = eqm?.GetTotalSpecialDefense() ?? 0;
                 float spdefMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.SPDEF);
                 return spdefFromEquipment * (int)(1.0f + spdefMultiplierFromRite);
             case SecondaryStat.PHATK:
-                int phatkFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.PHATK);
+                int phatkFromEquipment = eqm?.GetTotalPhysicalAttack() ?? 0;
                 float phatkMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.PHATK);
                 return phatkFromEquipment * (int)(1.0f + phatkMultiplierFromRite);
             case SecondaryStat.PHDEF:
-                int phdefFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.PHDEF);
+                int phdefFromEquipment = eqm?.GetTotalPhysicalDefense() ?? 0;
                 float phdefMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.PHDEF);
                 return phdefFromEquipment * (int)(1.0f + phdefMultiplierFromRite);
             case SecondaryStat.CRIT:
-                int critFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.CRIT);
+                int critFromEquipment = eqm?.GetTotalBonus(item => item.CritChance.value) ?? 0;
                 int critFromRite = (int)(RunManager.Instance.GetService<RiteManager>().CalculateFlatStatBonus(SecondaryStat.CRIT) * 100f) ;
                 return critFromEquipment + critFromRite;
             case SecondaryStat.EVDE:
-                return RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.EVDE);
+                return eqm?.GetTotalBonus(item => item.DodgeChance.value) ?? 0;
             default:
                 throw new ArgumentOutOfRangeException(nameof(secondaryStat), secondaryStat, null);
         }
