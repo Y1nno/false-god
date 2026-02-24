@@ -5,6 +5,7 @@ public class Equipment : Item
 {
     public EquipmentSlot Slot { get; private set; }
     public Rarity Rarity { get; private set; }
+    public new bool IsTwoHanded { get; private set; }
     public int PhysicalDefense { get; private set; }
     public int SpecialDefense { get; private set; }
     public int SpecialAttack { get; private set; }
@@ -15,6 +16,7 @@ public class Equipment : Item
     public int SPD { get; private set; }
     public int CritChance { get; private set; }
     public int BlockChance { get; private set; }
+    public int BlockAmount { get; private set; }
     public int DodgeChance { get; private set; }
     public List<TraitWithValue> Traits { get; private set; }
     public CombatAction Skill { get; private set; }
@@ -27,5 +29,12 @@ public enum EquipmentTrait
     HealAfterFirstDamage,
     AttackMultiplier,
     CounterChance,
-    MoveFirst
+    MoveFirst,
+    SoulSteal,
+    AllStats,
+    SpellReflect,
+    MaxHP,
+    DoubleStrike,
+    ComboStrike,
+    TrueStrike
 }

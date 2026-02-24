@@ -10,6 +10,7 @@ public class EquipmentSO : ItemSO
     [Tooltip("The equipment slot this item can be equipped in")]
     public EquipmentSlot Slot;
     public Rarity Rarity;
+    public bool IsTwoHanded;
     public BoundedInt PhysicalDefense;
     public BoundedInt SpecialDefense;
     public BoundedInt PhysicalAttack;
@@ -20,6 +21,7 @@ public class EquipmentSO : ItemSO
     public BoundedInt SPD;
     public BoundedInt CritChance;
     public BoundedInt BlockChance;
+    public BoundedInt BlockAmount;
     public BoundedInt DodgeChance;
     public List<TraitWithValue> Traits;
     public CombatActionSO Skill;
@@ -36,7 +38,7 @@ public class EquipmentSO : ItemSO
         // Action to roll a single BoundedInt and lock its value
         void RollStat(ref BoundedInt stat)
         {
-            if (stat.value == 0 && (stat.min > 0 || stat.max > 0))
+            if (stat.value == 0 && (stat.min != 0 || stat.max != 0))
             {
                 stat.value = stat.Roll();
                 // We set min/max to the value so it acts as a static rolled number from here on
@@ -55,6 +57,7 @@ public class EquipmentSO : ItemSO
         RollStat(ref instance.SPD);
         RollStat(ref instance.CritChance);
         RollStat(ref instance.BlockChance);
+        RollStat(ref instance.BlockAmount);
         RollStat(ref instance.DodgeChance);
 
         // Deep copy the Traits list so instances don't share memory references

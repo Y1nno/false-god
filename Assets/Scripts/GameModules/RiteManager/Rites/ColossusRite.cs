@@ -1,10 +1,12 @@
 using UnityEngine;
 
-public class ColossusRite : Rite
+public class ColossusRite : Rite, IObserver
 {
     private const int k_DamageBonus = 3;
+    private bool _isBonusActive = false;
+    private PlayerManager _player;
 
-    public override string Description => $"+{k_DamageBonus} Damage";
+    public override string Description => $"+{k_DamageBonus} DMG (2H Weapon)";
 
     public ColossusRite() : base("Colossus", 2, RiteType.Colossus) // ID: Colossus, Cost: 2
     {
@@ -13,20 +15,53 @@ public class ColossusRite : Rite
 
     public override void OnEquip(PlayerManager player)
     {
-        // TODO: Make this conditional on holding a "Heavy" weapon (Hammer, Greatsword, etc.)
-        // 1. Make ColossusRite implement IObserver.
-        // 2. Subscribe to InventoryManager (RunManager.Instance.GetService<InventoryManager>()).
-        // 3. InventoryManager needs to Notify(EventType.EquipmentChanged) when equipping/unequipping.
-        // 4. OnNotify, check player.Inventory.GetEquippedItem(EquipmentSlot.Weapon).ItemType.
-        // 5. If heavy, apply BonusDamage. If not, remove it.
-        player.BonusDamage += k_DamageBonus;
+        _player = player;
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+        if (eqm != null)
+        {
+            eqm.AddObserver(this);
+            CheckAndUpdateBonus(eqm);
+        }
     }
 
     public override void OnUnequip(PlayerManager player)
     {
-        // TODO: Unsubscribe from InventoryManager
-        player.BonusDamage -= k_DamageBonus;
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+        if (eqm != null)
+        {
+            eqm.RemoveObserver(this);
+        }
+        if (_isBonusActive)
+        {
+            player.BonusDamage -= k_DamageBonus;
+            _isBonusActive = false;
+        }
+        _player = null;
     }
 
-    // TODO: Implement OnNotify to handle equipment changes dynamically.
+    public void OnNotify(object subject, EventType eventType)
+    {
+        if (eventType == EventType.EquipmentChanged && subject is EquipmentManager eqm)
+        {
+            CheckAndUpdateBonus(eqm);
+        }
+    }
+
+    private void CheckAndUpdateBonus(EquipmentManager eqm)
+    {
+        if (_player == null) return;
+        
+        bool holdsTwoHanded = eqm.IsHoldingTwoHandedWeapon();
+        
+        if (holdsTwoHanded && !_isBonusActive)
+        {
+            _player.BonusDamage += k_DamageBonus;
+            _isBonusActive = true;
+        }
+        else if (!holdsTwoHanded && _isBonusActive)
+        {
+            _player.BonusDamage -= k_DamageBonus;
+            _isBonusActive = false;
+        }
+    }
 }

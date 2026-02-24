@@ -48,8 +48,8 @@ MonoBehaviour:
     max: 0
   SPD:
     value: 0
-    min: -10
-    max: -10
+    min: 2
+    max: 2
   CritChance:
     value: 0
     min: 0

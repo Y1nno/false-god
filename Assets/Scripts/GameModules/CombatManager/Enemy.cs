@@ -128,19 +128,27 @@ public class Enemy : Combatant
         }
     }
 
-    public override void GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null)
+    public override int GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null)
     {
+        bool hasTrueStrike = false;
+        if (attacker is PlayerCombatManager)
+        {
+            EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+            if (eqm != null && eqm.HasTrait(EquipmentTrait.TrueStrike))
+            {
+                hasTrueStrike = true;
+                TextOutputter.Instance.OutputText($"{attacker.GetName()}'s TrueStrike ignores defense!");
+            }
+        }
+
         switch (attackType)
         {
             case AttackType.Physical:
-                TakeDamage(damage - GetSecondaryStat(SecondaryStat.PHDEF));
-                break;
+                return TakeDamage(hasTrueStrike ? damage : damage - GetSecondaryStat(SecondaryStat.PHDEF));
             case AttackType.Special:
-                TakeDamage(damage - GetSecondaryStat(SecondaryStat.SPDEF));
-                break;
+                return TakeDamage(hasTrueStrike ? damage : damage - GetSecondaryStat(SecondaryStat.SPDEF));
             default:
-                TakeDamage(damage);
-                break;
+                return TakeDamage(damage);
         }
     }
 }

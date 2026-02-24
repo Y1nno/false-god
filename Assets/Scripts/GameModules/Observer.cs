@@ -19,6 +19,7 @@ public enum EventType
     GoldSpent,
     ItemAcquired,
     ItemRemoved,
+    EquipmentChanged,
     LevelUp,
     QuestComplete,
     XPAdded,

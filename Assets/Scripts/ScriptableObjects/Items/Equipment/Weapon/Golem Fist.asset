@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdad69720ae6f5248b7600463fade9a9, type: 3}
+  m_Name: Golem Fist
+  m_EditorClassIdentifier: Assembly-CSharp::EquipmentSO
+  ItemID: 96
+  ItemName: Golem Fist
+  ItemIcon: {fileID: 0}
+  Description: 
+  Slot: 5
+  Rarity: 2
+  IsTwoHanded: 0
+  PhysicalDefense:
+    value: 0
+    min: 0
+    max: 0
+  SpecialDefense:
+    value: 0
+    min: 0
+    max: 0
+  PhysicalAttack:
+    value: 0
+    min: 7
+    max: 10
+  SpecialAttack:
+    value: 0
+    min: 0
+    max: 0
+  STR:
+    value: 0
+    min: 2
+    max: 3
+  DEX:
+    value: 0
+    min: 4
+    max: 5
+  INT:
+    value: 0
+    min: 0
+    max: 0
+  SPD:
+    value: 0
+    min: 1
+    max: 1
+  CritChance:
+    value: 0
+    min: 0
+    max: 0
+  BlockChance:
+    value: 0
+    min: 0
+    max: 0
+  BlockAmount:
+    value: 0
+    min: 0
+    max: 0
+  DodgeChance:
+    value: 0
+    min: 0
+    max: 0
+  Traits:
+  - Trait: 11
+    Value: 0
+    CooldownType: 0
+    CooldownDuration: 0
+    CurrentCooldown: 0
+  Skill: {fileID: 0}

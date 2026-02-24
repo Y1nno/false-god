@@ -97,7 +97,7 @@ public abstract class CombatAction
 
     protected virtual int CalculateDamageBasedOnStats(int baseDamage, Combatant user)
     {
-        int finalDamage = baseDamage;
+        int finalDamage = baseDamage + user.GetBonusDamage(); // Add flat flat bonus damage
         if (ActionType == AttackType.Physical)
         {
             finalDamage *= (user.GetSecondaryStat(SecondaryStat.PHATK) + DiceRoller.Instance.RollD20())/k_attackCalculationDivisor;

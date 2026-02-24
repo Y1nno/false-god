@@ -12,6 +12,22 @@ public class PlayerAttackAction : CombatAction
         TargetType = TargetingType.SingleEnemy;
     }
 
+    public override bool CanUse(Combatant user)
+    {
+        if (!base.CanUse(user)) return false;
+
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+        if (eqm != null && eqm.HasMoveFirstAvailable(out EquipmentSO moveFirstItem, out int traitIndex))
+        {
+            if (moveFirstItem.Traits[traitIndex].CurrentCooldown > 0)
+            {
+                return false; // Attack blocked while Bow is reloading
+            }
+        }
+
+        return true;
+    }
+
     public override void Execute(Combatant user, Combatant target = null)
     {
         if (target == null)
@@ -21,7 +37,47 @@ public class PlayerAttackAction : CombatAction
         }
 
         int damage = _baseDamage;
+        TextOutputter.Instance.OutputText($"{user.GetName()} used {ActionName} on {target.GetName()}!");
         damage = CalculateDamageFromBase(damage, user);
-        target.GetAttacked(damage, ActionType);
+        int damageDealt = target.GetAttacked(damage, ActionType, user);
+
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+        
+        if (user is PlayerCombatManager pcmUser)
+        {
+            if (eqm != null && eqm.HasTraitAvailable(EquipmentTrait.DoubleStrike, out EquipmentSO item, out int traitIndex))
+            {
+                float procChance = item.Traits[traitIndex].Value;
+                if (Random.Range(0f, 100f) < procChance)
+                {
+                    if (target.IsAlive())
+                    {
+                        TextOutputter.Instance.OutputText($"{user.GetName()} strikes again!");
+                        damageDealt += target.GetAttacked(damage, ActionType, user);
+                    }
+                }
+            }
+            else if (eqm != null && eqm.HasTrait(EquipmentTrait.ComboStrike))
+            {
+                float roll = Random.Range(0f, 100f);
+                int totalStrikes = (roll < 50f) ? 2 : (roll < 80f) ? 3 : 4;
+                
+                for (int i = 1; i < totalStrikes; i++)
+                {
+                    if (target.IsAlive())
+                    {
+                        TextOutputter.Instance.OutputText($"{user.GetName()} combo strikes again!");
+                        damageDealt += target.GetAttacked(damage, ActionType, user);
+                    }
+                }
+            }
+
+            if (damageDealt > 0 && eqm != null && eqm.HasTrait(EquipmentTrait.SoulSteal))
+            {
+                int stealAmount = Mathf.Max(1, (int)(damageDealt * 0.2f));
+                pcmUser.GetMana().Increase(stealAmount);
+                TextOutputter.Instance.OutputText($"{user.GetName()} restored {stealAmount} Mana via SoulSteal!");
+            }
+        }
     }
 }

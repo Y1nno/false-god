@@ -16,6 +16,7 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         1, // Basic Attack
         2, // Basic Block
         3, // Fireball
+        999, // Switch Weapon
     };
 
     private List<int> _decisionsAvailable = new List<int>();
@@ -42,26 +43,59 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         return _pm.Mana;
     }
 
-    protected override void TakeDamage(int amount)
+    protected override int TakeDamage(int amount)
     {
         // Redirect damage to PlayerManager to ensure global events (like Lazarus Rite) trigger
-        _pm.TakeDamage(amount);
+        return _pm.TakeDamage(amount);
     }
 
-    public override void GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null)
+    public override int GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null)
     {
+        // Spell Reflection Interceptor
+        if (attackType == AttackType.Special && attacker != null)
+        {
+            EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+            if (eqm != null)
+            {
+                int reflectChance = eqm.GetTotalSpellReflectChance();
+                if (reflectChance > 0 && UnityEngine.Random.Range(0, 100) < reflectChance)
+                {
+                    TextOutputter.Instance.OutputText($"{GetName()} reflected the spell back at {attacker.GetName()}!");
+                    return attacker.GetAttacked(damage, AttackType.Special, this);
+                }
+            }
+        }
+
+        int damageDealt = 0;
         switch (attackType)
         {
             case AttackType.Physical:
-                TakeDamage(damage - _pm.CalculateSecondaryStat(SecondaryStat.PHDEF));
+                damageDealt = TakeDamage(damage - _pm.CalculateSecondaryStat(SecondaryStat.PHDEF));
                 break;
             case AttackType.Special:
-                TakeDamage(damage - _pm.CalculateSecondaryStat(SecondaryStat.SPDEF));
+                damageDealt = TakeDamage(damage - _pm.CalculateSecondaryStat(SecondaryStat.SPDEF));
                 break;
             default:
-                TakeDamage(damage);
+                damageDealt = TakeDamage(damage);
                 break;
         }
+
+        if (IsAlive() && attackType == AttackType.Physical && attacker != null && attacker.IsAlive())
+        {
+            EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+            if (eqm != null && eqm.HasTraitAvailable(EquipmentTrait.CounterChance, out EquipmentSO item, out int traitIndex))
+            {
+                float counterChance = item.Traits[traitIndex].Value;
+                if (UnityEngine.Random.Range(0f, 100f) < counterChance)
+                {
+                    TextOutputter.Instance.OutputText($"{GetName()} counters the attack!");
+                    PlayerAttackAction counterAttack = new PlayerAttackAction();
+                    counterAttack.Execute(this, attacker); // Counter-attacks can inherit DoubleStrike and ComboStrike intrinsically!
+                }
+            }
+        }
+
+        return damageDealt;
     }
 
     public override float GetCritChance()
@@ -99,6 +133,11 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     {
         if (CurrentAction != null)
         {
+            if (CurrentAction.Priority == 1 && CurrentAction.ActionID == 1) 
+            {
+               EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+               eqm?.TriggerMoveFirstCooldown();
+            }
             CurrentAction.Execute(this, _currentTarget);
         }
         CurrentAction = null;
@@ -138,7 +177,6 @@ public class PlayerCombatManager : Combatant, IPromptResponder
                         else
                         {
                             selectedAction.Priority = 1;
-                            eqm.TriggerMoveFirstCooldown();
                         }
                     }
                     else
@@ -192,6 +230,10 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     public override int GetSecondaryStat(SecondaryStat stat)
     {
         return _pm.CalculateSecondaryStat(stat);
+    }
+    public override int GetBonusDamage()
+    {
+        return _pm.BonusDamage;
     }
 
     public override bool TryUseMana(int amount)

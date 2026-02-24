@@ -18,6 +18,7 @@ MonoBehaviour:
   Description: 
   Slot: 1
   Rarity: 2
+  IsTwoHanded: 0
   PhysicalDefense:
     value: 0
     min: 4
@@ -55,6 +56,10 @@ MonoBehaviour:
     min: 0
     max: 0
   BlockChance:
+    value: 0
+    min: 0
+    max: 0
+  BlockAmount:
     value: 0
     min: 0
     max: 0

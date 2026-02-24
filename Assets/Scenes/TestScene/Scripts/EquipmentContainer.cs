@@ -73,6 +73,7 @@ public class EquipmentContainer : MonoBehaviour
         AppendStat("SPD", item.SPD);
         AppendStat("CRIT%", item.CritChance);
         AppendStat("BLK%", item.BlockChance);
+        AppendStat("BLK DMG", item.BlockAmount);
         AppendStat("DODGE%", item.DodgeChance);
 
         if (item.Traits != null)
@@ -83,6 +84,54 @@ public class EquipmentContainer : MonoBehaviour
                 {
                     if (hasStats) stats += ", ";
                     stats += $"CD: {trait.CurrentCooldown}";
+                    hasStats = true;
+                }
+                else if (trait.Trait == EquipmentTrait.SoulSteal)
+                {
+                    if (hasStats) stats += ", ";
+                    stats += "SoulSteal";
+                    hasStats = true;
+                }
+                else if (trait.Trait == EquipmentTrait.AllStats)
+                {
+                    if (hasStats) stats += ", ";
+                    stats += $"+{trait.Value} All Stats";
+                    hasStats = true;
+                }
+                else if (trait.Trait == EquipmentTrait.SpellReflect)
+                {
+                    if (hasStats) stats += ", ";
+                    stats += $"{trait.Value}% Reflect Spell";
+                    hasStats = true;
+                }
+                else if (trait.Trait == EquipmentTrait.MaxHP)
+                {
+                    if (hasStats) stats += ", ";
+                    stats += $"+{trait.Value}% Max HP";
+                    hasStats = true;
+                }
+                else if (trait.Trait == EquipmentTrait.DoubleStrike)
+                {
+                    if (hasStats) stats += ", ";
+                    stats += $"{trait.Value}% Double Strike";
+                    hasStats = true;
+                }
+                else if (trait.Trait == EquipmentTrait.TrueStrike)
+                {
+                    if (hasStats) stats += ", ";
+                    stats += "TrueStrike";
+                    hasStats = true;
+                }
+                else if (trait.Trait == EquipmentTrait.ComboStrike)
+                {
+                    if (hasStats) stats += ", ";
+                    stats += "Combo Strike";
+                    hasStats = true;
+                }
+                else if (trait.Trait == EquipmentTrait.CounterChance)
+                {
+                    if (hasStats) stats += ", ";
+                    stats += $"{trait.Value}% Counter Attack";
                     hasStats = true;
                 }
             }

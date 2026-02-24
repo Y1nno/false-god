@@ -15,6 +15,7 @@ public class ActionFactory
             case 1: return new PlayerAttackAction();
             case 2: return new PlayerBlockAction();
             case 3: return new FireballAction();
+            case 999: return new SwitchWeaponAction();
             default: return null;
         }
     }

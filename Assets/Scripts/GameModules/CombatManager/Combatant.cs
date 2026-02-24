@@ -19,23 +19,44 @@ public abstract class Combatant : Subject
     public abstract int GetSecondaryStat(SecondaryStat stat);
     public abstract Resource GetHealth();
     public abstract Resource GetMana();
+    public virtual int GetBonusDamage() { return 0; }
     public abstract string GetName();
     public abstract void Die();
 
-    public abstract void GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null);
+    public abstract int GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null);
     public abstract float GetCritChance();
     public Combatant()
     {
     }
-    protected virtual void TakeDamage(int amount)
+    protected virtual int TakeDamage(int amount)
     {
-        if (amount <= 0) return;
+        // Execute Blocking system before applying defense-mitigated damage
+        if (amount > 0 && this is PlayerCombatManager pcm && RunManager.Instance.GetService<EquipmentManager>() is EquipmentManager eqm)
+        {
+            int blockChance = eqm.GetTotalBlockChance();
+            if (blockChance > 0 && UnityEngine.Random.Range(0, 100) < blockChance)
+            {
+                int blockAmt = eqm.GetTotalBlockAmount();
+                amount -= blockAmt;
+                TextOutputter.Instance.OutputText($"{GetName()} blocked the attack! Mitigated {blockAmt} damage.");
+            }
+        }
+
+        if (amount <= 0) 
+        {
+            TextOutputter.Instance.OutputText($"{GetName()} blocked all incoming damage!");
+            return 0;
+        }
+
+        bool wasAlive = GetHealth().CurrentValue > 0;
         GetHealth().Decrease(amount);
         TextOutputter.Instance.OutputText($"{GetName()} took {amount} damage.");
-        if (GetHealth().CurrentValue <= 0)
+
+        if (wasAlive && GetHealth().CurrentValue <= 0)
         {
             Die();
         }
+        return amount;
     }
 
     public virtual bool TryUseMana(int amount)

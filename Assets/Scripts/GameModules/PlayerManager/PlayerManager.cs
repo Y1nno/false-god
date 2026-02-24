@@ -23,15 +23,33 @@ public class PlayerManager : GameModule
 
     public override void AttachDefaultObservers()
     {
-        // none for now
+        RefreshEquipmentStats();
+        Health.RestoreToFull();
+        Mana.RestoreToFull();
     }
 
     //API methods
 
     #region Health and Mana Management
-    public void TakeDamage(int amount)
+    public int TakeDamage(int amount)
     {
-        if (amount <= 0) return;
+        // Execute Blocking system before applying defense-mitigated damage
+        if (amount > 0 && RunManager.Instance.GetService<EquipmentManager>() is EquipmentManager eqm)
+        {
+            int blockChance = eqm.GetTotalBlockChance();
+            if (blockChance > 0 && UnityEngine.Random.Range(0, 100) < blockChance)
+            {
+                int blockAmt = eqm.GetTotalBlockAmount();
+                amount -= blockAmt;
+                TextOutputter.Instance.OutputText($"Blocked the attack! Mitigated {blockAmt} damage.");
+            }
+        }
+
+        if (amount <= 0) 
+        {
+            TextOutputter.Instance.OutputText("Blocked all incoming damage!");
+            return 0;
+        }
         Health.Decrease(amount);
         TextOutputter.Instance.OutputText($"Took {amount} damage.");
         if (Health.CurrentValue <= 0)
@@ -45,6 +63,7 @@ public class PlayerManager : GameModule
                 Die();
             }
         }
+        return amount;
     }
 
     public bool TryUseMana(int amount)
@@ -85,6 +104,7 @@ public class PlayerManager : GameModule
             Stat.DEX => eqm.GetTotalDEX(),
             Stat.INT => eqm.GetTotalINT(),
             Stat.SPD => eqm.GetTotalSPD(),
+            Stat.LCK => eqm.GetTotalLCK(),
             _ => 0
         };
 
@@ -94,16 +114,28 @@ public class PlayerManager : GameModule
     public void SetStat(Stat stat, int value)
     {
         PlayerStats.SetStat(stat, value);
-        if (stat == Stat.STR)
+        if (stat == Stat.STR || stat == Stat.INT)
         {
-            int mod = Mathf.RoundToInt((GetStat(Stat.STR) * k_HealthPerStrength));
-            Health.SetStatModifier(mod);
+            RefreshEquipmentStats();
         }
-        else if (stat == Stat.INT)
+    }
+
+    public void RefreshEquipmentStats()
+    {
+        // Update Health modifiers
+        int strMod = Mathf.RoundToInt((GetStat(Stat.STR) * k_HealthPerStrength));
+        Health.SetStatModifier(strMod);
+
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+        if (eqm != null)
         {
-            int mod = Mathf.RoundToInt((GetStat(Stat.INT) * k_ManaPerIntelligence));
-            Mana.SetStatModifier(mod);
+            float hpMultiplier = eqm.GetTotalMaxHPPercentage() / 100f;
+            Health.SetPercentageModifier(hpMultiplier);
         }
+
+        // Update Mana modifiers
+        int intMod = Mathf.RoundToInt((GetStat(Stat.INT) * k_ManaPerIntelligence));
+        Mana.SetStatModifier(intMod);
     }
 
     public void IncreaseStat(Stat stat, int amount)
