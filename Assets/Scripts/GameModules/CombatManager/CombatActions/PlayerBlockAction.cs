@@ -12,6 +12,6 @@ public class PlayerBlockAction : CombatAction
 
     public override void Execute(Combatant user , Combatant target = null)
     {
-        Debug.Log($"{user} is blocking and will take reduced damage next turn.");
+        TextOutputter.Instance.OutputText($"{user.GetName()} is blocking and will take reduced damage next turn!");
     }
 }

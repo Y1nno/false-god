@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1541fda7880b26f4da054bca175c143b, type: 3}
   m_Name: Green HerbSO
   m_EditorClassIdentifier: Assembly-CSharp::Consumable
+  ItemID: 104
   ItemName: Green Herb
+  ItemIcon: {fileID: 0}
   Description: Heal Hp
   Effects:
   - Type: 1

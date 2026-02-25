@@ -9,6 +9,7 @@ public class ManagerBox
     private DungeonManager _dungeonManager;
     private EncounterManager _encounterManager;
     private EconomyManager _economyManager;
+    private EquipmentManager _equipmentManager;
 
     private InventoryManager _inventoryManager;
     private PlayerManager _playerManager;
@@ -28,6 +29,7 @@ public class ManagerBox
         _dungeonManager = new DungeonManager();
         _encounterManager = new EncounterManager();
         _economyManager = new EconomyManager();
+        _equipmentManager = new EquipmentManager();
 
         _inventoryManager = new InventoryManager();
         _playerManager = new PlayerManager();
@@ -42,6 +44,7 @@ public class ManagerBox
         _allManagers.Add(_dungeonManager);
         _allManagers.Add(_encounterManager);
         _allManagers.Add(_economyManager);
+        _allManagers.Add(_equipmentManager);
         _allManagers.Add(_inventoryManager);
         _allManagers.Add(_playerManager);
         _allManagers.Add(_religionManager);
@@ -73,6 +76,8 @@ public class ManagerBox
             return _encounterManager as T;
         if (typeof(T) == typeof(EconomyManager))
             return _economyManager as T;
+        if (typeof(T) == typeof(EquipmentManager))
+            return _equipmentManager as T;
         if (typeof(T) == typeof(InventoryManager))
             return _inventoryManager as T;
         if (typeof(T) == typeof(PlayerManager))

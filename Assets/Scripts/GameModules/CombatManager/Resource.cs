@@ -5,6 +5,7 @@ public class Resource
     public int CurrentValue { get; private set; }
     public int MaxValue { get; private set; }
     public int StatModifier { get; private set; }
+    public float PercentageModifier { get; private set; }
 
     private int _baseMax;
 
@@ -56,9 +57,17 @@ public class Resource
         CurrentValue = Mathf.Min(CurrentValue, MaxValue);
     }
 
+    public void SetPercentageModifier(float modifier)
+    {
+        PercentageModifier = modifier;
+        RecalculateMax();
+        CurrentValue = Mathf.Min(CurrentValue, MaxValue);
+    }
+
     private void RecalculateMax()
     {
-        MaxValue = Mathf.Max(0, _baseMax + StatModifier);
+        int rawMax = Mathf.Max(0, _baseMax + StatModifier);
+        MaxValue = Mathf.FloorToInt(rawMax * (1f + PercentageModifier));
     }
 }
 

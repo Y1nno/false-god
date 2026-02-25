@@ -23,15 +23,17 @@ public class PlayerManager : GameModule
 
     public override void AttachDefaultObservers()
     {
-        // none for now
+        RefreshEquipmentStats();
+        Health.RestoreToFull();
+        Mana.RestoreToFull();
     }
 
     //API methods
 
     #region Health and Mana Management
-    public void TakeDamage(int amount)
+    public int TakeDamage(int amount)
     {
-        if (amount <= 0) return;
+        if (amount <= 0) return 0;
         Health.Decrease(amount);
         TextOutputter.Instance.OutputText($"Took {amount} damage.");
         if (Health.CurrentValue <= 0)
@@ -45,6 +47,7 @@ public class PlayerManager : GameModule
                 Die();
             }
         }
+        return amount;
     }
 
     public bool TryUseMana(int amount)
@@ -74,22 +77,49 @@ public class PlayerManager : GameModule
 
     public int GetStat(Stat stat)
     {
-        return PlayerStats.GetStat(stat);
+        int baseStat = PlayerStats.GetStat(stat);
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+        
+        if (eqm == null) return baseStat;
+
+        int bonus = stat switch
+        {
+            Stat.STR => eqm.GetTotalSTR(),
+            Stat.DEX => eqm.GetTotalDEX(),
+            Stat.INT => eqm.GetTotalINT(),
+            Stat.SPD => eqm.GetTotalSPD(),
+            Stat.LCK => eqm.GetTotalLCK(),
+            _ => 0
+        };
+
+        return baseStat + bonus;
     }
 
     public void SetStat(Stat stat, int value)
     {
         PlayerStats.SetStat(stat, value);
-        if (stat == Stat.STR)
+        if (stat == Stat.STR || stat == Stat.INT)
         {
-            int mod = Mathf.RoundToInt((GetStat(Stat.STR) * k_HealthPerStrength));
-            Health.SetStatModifier(mod);
+            RefreshEquipmentStats();
         }
-        else if (stat == Stat.INT)
+    }
+
+    public void RefreshEquipmentStats()
+    {
+        // Update Health modifiers
+        int strMod = Mathf.RoundToInt((GetStat(Stat.STR) * k_HealthPerStrength));
+        Health.SetStatModifier(strMod);
+
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+        if (eqm != null)
         {
-            int mod = Mathf.RoundToInt((GetStat(Stat.INT) * k_ManaPerIntelligence));
-            Mana.SetStatModifier(mod);
+            float hpMultiplier = eqm.GetTotalMaxHPPercentage() / 100f;
+            Health.SetPercentageModifier(hpMultiplier);
         }
+
+        // Update Mana modifiers
+        int intMod = Mathf.RoundToInt((GetStat(Stat.INT) * k_ManaPerIntelligence));
+        Mana.SetStatModifier(intMod);
     }
 
     public void IncreaseStat(Stat stat, int amount)
@@ -106,30 +136,32 @@ public class PlayerManager : GameModule
 
     public int CalculateSecondaryStat(SecondaryStat secondaryStat)
     {
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+
         switch (secondaryStat)
         {
             case SecondaryStat.SPATK:
-                int spatkFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.SPATK);
+                int spatkFromEquipment = eqm?.GetTotalSpecialAttack() ?? 0;
                 float spatkMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.SPATK);
                 return spatkFromEquipment * (int)(1.0f + spatkMultiplierFromRite);
             case SecondaryStat.SPDEF:
-                int spdefFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.SPDEF);
+                int spdefFromEquipment = eqm?.GetTotalSpecialDefense() ?? 0;
                 float spdefMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.SPDEF);
                 return spdefFromEquipment * (int)(1.0f + spdefMultiplierFromRite);
             case SecondaryStat.PHATK:
-                int phatkFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.PHATK);
+                int phatkFromEquipment = eqm?.GetTotalPhysicalAttack() ?? 0;
                 float phatkMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.PHATK);
                 return phatkFromEquipment * (int)(1.0f + phatkMultiplierFromRite);
             case SecondaryStat.PHDEF:
-                int phdefFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.PHDEF);
+                int phdefFromEquipment = eqm?.GetTotalPhysicalDefense() ?? 0;
                 float phdefMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.PHDEF);
                 return phdefFromEquipment * (int)(1.0f + phdefMultiplierFromRite);
             case SecondaryStat.CRIT:
-                int critFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.CRIT);
+                int critFromEquipment = eqm?.GetTotalBonus(item => item.CritChance.value) ?? 0;
                 int critFromRite = (int)(RunManager.Instance.GetService<RiteManager>().CalculateFlatStatBonus(SecondaryStat.CRIT) * 100f) ;
                 return critFromEquipment + critFromRite;
             case SecondaryStat.EVDE:
-                return RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.EVDE);
+                return eqm?.GetTotalBonus(item => item.DodgeChance.value) ?? 0;
             default:
                 throw new ArgumentOutOfRangeException(nameof(secondaryStat), secondaryStat, null);
         }

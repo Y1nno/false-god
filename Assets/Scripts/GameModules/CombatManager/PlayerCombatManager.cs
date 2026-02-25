@@ -16,6 +16,7 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         1, // Basic Attack
         2, // Basic Block
         3, // Fireball
+        999, // Switch Weapon
     };
 
     private List<int> _decisionsAvailable = new List<int>();
@@ -42,26 +43,85 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         return _pm.Mana;
     }
 
-    protected override void TakeDamage(int amount)
+    protected override int TakeDamage(int amount)
     {
         // Redirect damage to PlayerManager to ensure global events (like Lazarus Rite) trigger
-        _pm.TakeDamage(amount);
+        return _pm.TakeDamage(amount);
     }
 
-    public override void GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null)
+    public override int GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null)
     {
+        // Spell Reflection Interceptor
+        if (attackType == AttackType.Special && attacker != null)
+        {
+            EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+            if (eqm != null)
+            {
+                int reflectChance = eqm.GetTotalSpellReflectChance();
+                if (reflectChance > 0 && UnityEngine.Random.Range(0, 100) < reflectChance)
+                {
+                    TextOutputter.Instance.OutputText($"{GetName()} reflected the spell back at {attacker.GetName()}!");
+                    return attacker.GetAttacked(damage, AttackType.Special, this);
+                }
+            }
+        }
+
+        if (damage > 0)
+        {
+            EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+            if (eqm != null)
+            {
+                if (attackType == AttackType.Physical)
+                {
+                    eqm.DegradeEquippedArmor(); // Drain armor durability on physical hits taken
+                }
+
+                int blockChance = eqm.GetTotalBlockChance();
+                if (blockChance > 0 && UnityEngine.Random.Range(0, 100) < blockChance)
+                {
+                    int blockAmt = eqm.GetTotalBlockAmount();
+                    damage -= blockAmt;
+                    TextOutputter.Instance.OutputText($"{GetName()} blocked the attack! Mitigated {blockAmt} damage.");
+                }
+            }
+        }
+
+        if (damage <= 0) 
+        {
+            TextOutputter.Instance.OutputText($"{GetName()} blocked all incoming damage!");
+            return 0;
+        }
+
+        int damageDealt = 0;
         switch (attackType)
         {
             case AttackType.Physical:
-                TakeDamage(damage - _pm.CalculateSecondaryStat(SecondaryStat.PHDEF));
+                damageDealt = TakeDamage(damage - _pm.CalculateSecondaryStat(SecondaryStat.PHDEF));
                 break;
             case AttackType.Special:
-                TakeDamage(damage - _pm.CalculateSecondaryStat(SecondaryStat.SPDEF));
+                damageDealt = TakeDamage(damage - _pm.CalculateSecondaryStat(SecondaryStat.SPDEF));
                 break;
             default:
-                TakeDamage(damage);
+                damageDealt = TakeDamage(damage);
                 break;
         }
+
+        if (IsAlive() && attackType == AttackType.Physical && attacker != null && attacker.IsAlive())
+        {
+            EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+            if (eqm != null && eqm.HasTraitAvailable(EquipmentTrait.CounterChance, out EquipmentSO item, out int traitIndex))
+            {
+                float counterChance = item.Traits[traitIndex].Value;
+                if (UnityEngine.Random.Range(0f, 100f) < counterChance)
+                {
+                    TextOutputter.Instance.OutputText($"{GetName()} counters the attack!");
+                    PlayerAttackAction counterAttack = new PlayerAttackAction();
+                    counterAttack.Execute(this, attacker); // Counter-attacks can inherit DoubleStrike and ComboStrike intrinsically!
+                }
+            }
+        }
+
+        return damageDealt;
     }
 
     public override float GetCritChance()
@@ -75,6 +135,21 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     }
     public override void ChooseAction()
     {
+        _availableActions.Clear();
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+        EquipmentSO moveFirstItem = null;
+        int traitIndex = -1;
+        bool hasMoveFirst = eqm != null && eqm.HasMoveFirstAvailable(out moveFirstItem, out traitIndex);
+
+        foreach (int actionID in k_StartingActionIDs)
+        {
+            CombatAction action = ActionFactory.CreateActionByID(actionID);
+            if (action != null)
+            {
+                _availableActions.Add(action);
+            }
+        }
+
         Notify(EventType.PlayerTurnStart);
         _currentDecisionMode = DecisionMode.ChoosingAction;
         List<string> actionNames = GetAvailableActionNames();
@@ -84,6 +159,11 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     {
         if (CurrentAction != null)
         {
+            if (CurrentAction.Priority == 1 && CurrentAction.ActionID == 1) 
+            {
+               EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+               eqm?.TriggerMoveFirstCooldown();
+            }
             CurrentAction.Execute(this, _currentTarget);
         }
         CurrentAction = null;
@@ -109,8 +189,30 @@ public class PlayerCombatManager : Combatant, IPromptResponder
 
             case DecisionMode.ChoosingAction:
                 //Debug.Log($"Player selected action index: {decisionIndex}");
-                TextOutputter.Instance.OutputText($"Player selected action: {_availableActions[decisionIndex].ActionName}");
-                CurrentAction = _availableActions[decisionIndex];
+                CombatAction selectedAction = _availableActions[decisionIndex];
+
+                if (selectedAction.ActionID == 1) // Basic Attack
+                {
+                    EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+                    if (eqm != null && eqm.HasMoveFirstAvailable(out EquipmentSO item, out int traitIndex))
+                    {
+                        if (item.Traits[traitIndex].CurrentCooldown > 0)
+                        {
+                            selectedAction.Priority = 0;
+                        }
+                        else
+                        {
+                            selectedAction.Priority = 1;
+                        }
+                    }
+                    else
+                    {
+                        selectedAction.Priority = 0;
+                    }
+                }
+
+                TextOutputter.Instance.OutputText($"Player selected action: {selectedAction.ActionName}");
+                CurrentAction = selectedAction;
                 if (CurrentAction.NeedsTarget() == false)
                 {
                     _currentDecisionMode = DecisionMode.None;
@@ -154,6 +256,10 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     public override int GetSecondaryStat(SecondaryStat stat)
     {
         return _pm.CalculateSecondaryStat(stat);
+    }
+    public override int GetBonusDamage()
+    {
+        return _pm.BonusDamage;
     }
 
     public override bool TryUseMana(int amount)

@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+//TODO: Add inventory size limit and logic for refusing requests to add to inventory. 
+
 public class InventoryManager : GameModule
 {
     private EquipmentManager _eq = new EquipmentManager();
@@ -8,139 +10,57 @@ public class InventoryManager : GameModule
 
     #region Public API
 
-    #region Equipment Methods
+    public List<Item> UnEquippedItems { get; private set; } = new List<Item>();
 
-    public override void AttachDefaultObservers()
-    {
-        // none for now
-    }
+    #region Inventory Logic
 
-    public void EquipItem(EquipmentSlot slot, Item item)
-    {
-        if (item.CanBeEquipped() == false)
-        {
-            // Item cannot be equipped
-            return;
-        }
-
-        Item oldItem = _eq.EquipItem(slot, item);
-        if (oldItem != null)
-        {
-            _inv.AddItem(oldItem);
-        }
-    }
-
-    public Item GetEquippedItem(EquipmentSlot slot)
-    {
-        return _eq.GetEquippedItem(slot);
-    }
-
-    public Dictionary<EquipmentSlot, Item> GetAllEquippedItems()
-    {
-        return _eq.GetAllEquippedItems();
-    }
-
-    public bool IsSlotOccupied(EquipmentSlot slot)
-    {
-        return _eq.IsSlotOccupied(slot);
-    }
-
-    public void UnequipItem(EquipmentSlot slot)
-    {
-        if (_eq.GetEquippedItem(slot)?.CanBeUnequipped() == false)
-        {
-            // Item cannot be unequipped
-            return;
-        }
-        Item oldItem = _eq.UnequipItem(slot);
-        if (oldItem != null)
-        {
-            _inv.AddItem(oldItem);
-        }
-    }
-
-    public void UnequipItem(EquipmentSlot slot, int position)
-    {
-        Item item = _eq.GetEquippedItem(slot);
-        if (item == null)
-        {
-            // No item equipped in the specified slot
-            return;
-        }
-        if (item.CanBeUnequipped() == false)
-        {
-            // Item cannot be unequipped
-            return;
-        }
-        UnequipItem(slot);
-        _inv.AddItem(item, position);
-    }
-
-
-    #endregion
-
-    #region Inventory Methods
     public void AddItemToInventory(Item item)
     {
-        _inv.AddItem(item);
+        if (item == null) return;
+        UnEquippedItems.Add(item);
+        
+        string itemName = item is Equipment eq ? eq.ItemName :
+                          item is ConsumableInstance con ? con.BaseData.ItemName : "Unknown Item";
+                          
+        TextOutputter.Instance.OutputText($"Added {itemName} to Inventory.");
     }
 
     public void RemoveItemFromInventory(Item item)
     {
-        _inv.RemoveItem(item);
-    }
-
-    public void DiscardItemFromInventory(Item item)
-    {
-        _inv.DiscardItem(item);
-    }
-
-    public List<Item> GetAllInventoryItems()
-    {
-        return _inv.GetAllItems();
-    }
-
-    public bool IsItemInInventory(Item item)
-    {
-        return _inv.ContainsItem(item);
-    }
-
-    public void UseItem(Item item)
-    {
-        if (_inv.ContainsItem(item))
+        if (UnEquippedItems.Contains(item))
         {
-            item.Use();
-            _inv.RemoveItem(item);
+            UnEquippedItems.Remove(item);
         }
     }
-    #endregion
 
-    #endregion
-
-    #region Equipment Methods
-    public int CalculateSecondaryStatFromEquipment(SecondaryStat secondaryStat)
+    // Handles the UI passing down requests to either wear a weapon or drink a potion
+    public void UseOrEquipItem(Item itemToHandle)
     {
-        int total = 0;
-        foreach (Equipment equipment in _eq.GetAllEquippedItems().Values)
+        if (itemToHandle == null || !UnEquippedItems.Contains(itemToHandle)) return;
+
+        if (itemToHandle is Equipment equipment)
         {
-            switch (secondaryStat)
-                {
-                    case SecondaryStat.SPATK:
-                        total += equipment.SpecialAttack;
-                        break;
-                    case SecondaryStat.SPDEF:
-                        total += equipment.SpecialDefense;
-                        break;
-                    case SecondaryStat.CRIT:
-                        total += equipment.CritChance;
-                        break;
-                    case SecondaryStat.EVDE:
-                        total += equipment.DodgeChance;
-                        break;
-                }
+            // Equipment wrapper needs to unwrap and fetch its underlying SO if the Equipper requires it
+            if (equipment.BaseData != null)
+            {
+                RunManager.Instance.GetService<EquipmentManager>()?.EquipItem(equipment.BaseData);
+                RemoveItemFromInventory(equipment); // Successfully passed to EquipmentManager, so remove from unequipped pool
+            }
         }
-        return total;
+        else if (itemToHandle is ConsumableInstance consumableInstance)
+        {
+            RemoveItemFromInventory(consumableInstance); // Drink it
+            
+            // Assume Player target natively since it's the UI dropdown driving this request
+            CombatManager cm = RunManager.Instance.GetService<CombatManager>();
+            if (cm != null && cm.CurrentBattle != null && cm.CurrentBattle.Pcm != null)
+            {
+                consumableInstance.Use(cm.CurrentBattle.Pcm); 
+            }
+        }
     }
+
+    #endregion
     #endregion
 }
 

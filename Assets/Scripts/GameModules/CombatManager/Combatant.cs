@@ -19,23 +19,28 @@ public abstract class Combatant : Subject
     public abstract int GetSecondaryStat(SecondaryStat stat);
     public abstract Resource GetHealth();
     public abstract Resource GetMana();
+    public virtual int GetBonusDamage() { return 0; }
     public abstract string GetName();
     public abstract void Die();
 
-    public abstract void GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null);
+    public abstract int GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null);
     public abstract float GetCritChance();
     public Combatant()
     {
     }
-    protected virtual void TakeDamage(int amount)
+    protected virtual int TakeDamage(int amount)
     {
-        if (amount <= 0) return;
+        if (amount <= 0) return 0;
+
+        bool wasAlive = GetHealth().CurrentValue > 0;
         GetHealth().Decrease(amount);
         TextOutputter.Instance.OutputText($"{GetName()} took {amount} damage.");
-        if (GetHealth().CurrentValue <= 0)
+
+        if (wasAlive && GetHealth().CurrentValue <= 0)
         {
             Die();
         }
+        return amount;
     }
 
     public virtual bool TryUseMana(int amount)

@@ -64,7 +64,13 @@ public class Battle : Subject, IObserver
             }
         }
 
+        RunManager.Instance.GetService<EquipmentManager>()?.TickCooldowns(CooldownType.CombatRounds);
+
         //Debug.Log($"EndRound called, frame={Time.frameCount}");
+
+        InputInterface inputUI = GameObject.FindAnyObjectByType<InputInterface>();
+        if (inputUI != null) inputUI.SendMessage("RefreshUI");
+
         if (!CheckBattleOngoing())
         {
             Notify(EventType.BattleEnd);
@@ -107,8 +113,11 @@ public class Battle : Subject, IObserver
 
     public void CalculateResolutionOrder()
     {
-        // Sort combatants by SPD stat in descending order, first being highest SPD
-        combatants = combatants.OrderByDescending(c => c.GetStat(Stat.SPD)).ThenBy(_ => rng.Next()).ToList();
+        // Sort combatants by Action Priority first, then SPD stat in descending order
+        combatants = combatants
+            .OrderByDescending(c => c.CurrentAction != null ? c.CurrentAction.Priority : 0)
+            .ThenByDescending(c => c.GetStat(Stat.SPD))
+            .ThenBy(_ => rng.Next()).ToList();
     }
 
     public void ResolveCombatantsActions()

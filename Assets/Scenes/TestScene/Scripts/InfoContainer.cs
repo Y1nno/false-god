@@ -51,10 +51,10 @@ public class InfoContainer : MonoBehaviour
     private void AddStatInfo()
     {
         _content += "Stats:\n";
-        _content += "STR: " + _pm.PlayerStats.STR + "\n";
-        _content += "DEX: " + _pm.PlayerStats.DEX + "\n";
-        _content += "INT: " + _pm.PlayerStats.INT + "\n";
-        _content += "LCK: " + _pm.PlayerStats.LCK + "\n";
+        _content += "STR: " + _pm.GetStat(Stat.STR) + "\n";
+        _content += "DEX: " + _pm.GetStat(Stat.DEX) + "\n";
+        _content += "INT: " + _pm.GetStat(Stat.INT) + "\n";
+        _content += "LCK: " + _pm.GetStat(Stat.LCK) + "\n";
     }
 
     private void AddEconomyInfo()

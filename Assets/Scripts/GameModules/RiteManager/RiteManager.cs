@@ -288,15 +288,4 @@ public class RiteManager : GameModule
         TextOutputter.Instance.OutputText($"Added {amount} Rite Points. Total Base: {BaseRitePoints}");
     }
 
-    public Rite GetRite(RiteType type)
-    {
-        foreach (Rite rite in ActiveRites)
-        {
-            if (rite.RiteType == type)
-            {
-                return rite;
-            }
-        }
-        return null;
-    }
 }

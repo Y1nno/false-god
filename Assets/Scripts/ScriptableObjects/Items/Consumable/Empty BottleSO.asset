@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1541fda7880b26f4da054bca175c143b, type: 3}
   m_Name: Empty BottleSO
   m_EditorClassIdentifier: Assembly-CSharp::Consumable
+  ItemID: 106
   ItemName: Empty Bottle
+  ItemIcon: {fileID: 0}
   Description: Can fill from Fountain, gives HP or Mana
   Effects: []
