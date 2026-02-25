@@ -1,5 +1,6 @@
 using UnityEngine;
 
+[System.Serializable]
 public class Quest : IObserver
 {
     public int QuestProgress { get; private set; } = 0;
@@ -28,4 +29,10 @@ public class Quest : IObserver
 
     public virtual void OnAcceptQuest(){}
     public virtual void OnCompleteQuest(){}
+}
+
+public enum QuestType
+{
+    JoinReligion,
+    
 }
