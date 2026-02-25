@@ -19,7 +19,7 @@ public class ColossusRite : Rite, IObserver
         EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
         if (eqm != null)
         {
-            eqm.AddObserver(this);
+            eqm.AttachObserver(this);
             CheckAndUpdateBonus(eqm);
         }
     }
@@ -29,7 +29,7 @@ public class ColossusRite : Rite, IObserver
         EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
         if (eqm != null)
         {
-            eqm.RemoveObserver(this);
+            eqm.DetachObserver(this);
         }
         if (_isBonusActive)
         {

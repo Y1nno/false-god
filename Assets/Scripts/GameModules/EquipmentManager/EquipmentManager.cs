@@ -12,28 +12,7 @@ public class EquipmentManager : GameModule
     // Internal flag to prevent cooldown from ticking down on the very round it was used
     private bool _moveFirstUsedThisRound = false;
 
-    // Composite Subject Implementation due to GameModule inheritance
-    private List<IObserver> _observers = new List<IObserver>();
 
-    public void AddObserver(IObserver observer)
-    {
-        if (!_observers.Contains(observer)) _observers.Add(observer);
-    }
-    public void RemoveObserver(IObserver observer)
-    {
-        if (_observers.Contains(observer)) _observers.Remove(observer);
-    }
-    public new void Notify(EventType eventType)
-    {
-        List<IObserver> observersCopy = new List<IObserver>(_observers);
-        foreach (var observer in observersCopy)
-        {
-            observer.OnNotify(this, eventType);
-        }
-        
-        // Push notification back up to base GameModule (Subject) in case other listeners attached externally
-        base.Notify(eventType);
-    }
 
     public override void AttachDefaultObservers()
     {
