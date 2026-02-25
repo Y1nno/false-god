@@ -12,7 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1541fda7880b26f4da054bca175c143b, type: 3}
   m_Name: Monster MeatSO
   m_EditorClassIdentifier: Assembly-CSharp::Consumable
+  ItemID: 108
   ItemName: Monster Meat
+  ItemIcon: {fileID: 0}
   Description: Heals HP instantly and over time
   Effects:
   - Type: 1

@@ -33,6 +33,8 @@ public abstract class Combatant : Subject
         // Execute Blocking system before applying defense-mitigated damage
         if (amount > 0 && this is PlayerCombatManager pcm && RunManager.Instance.GetService<EquipmentManager>() is EquipmentManager eqm)
         {
+            eqm.DegradeEquippedArmor(); // Drain armor durability on physical hits taken
+            
             int blockChance = eqm.GetTotalBlockChance();
             if (blockChance > 0 && UnityEngine.Random.Range(0, 100) < blockChance)
             {

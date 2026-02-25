@@ -45,6 +45,8 @@ public class PlayerAttackAction : CombatAction
         
         if (user is PlayerCombatManager pcmUser)
         {
+            eqm?.DegradeEquippedWeapons(); // Drain durability on hit
+
             if (eqm != null && eqm.HasTraitAvailable(EquipmentTrait.DoubleStrike, out EquipmentSO item, out int traitIndex))
             {
                 float procChance = item.Traits[traitIndex].Value;

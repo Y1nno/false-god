@@ -181,12 +181,12 @@ public class EquipmentManager : GameModule
     
     public int GetTotalBonus(System.Func<EquipmentSO, int> statSelector)
     {
-        int total = 0;
+        float total = 0;
         foreach (var item in EquippedItems.Values)
         {
-            total += statSelector(item);
+            total += statSelector(item) * item.GetDurabilityMultiplier();
         }
-        return total;
+        return Mathf.RoundToInt(total);
     }
 
     public int GetTotalPhysicalAttack() => GetTotalBonus(item => item.PhysicalAttack.value);
@@ -195,7 +195,7 @@ public class EquipmentManager : GameModule
     public int GetTotalSpecialDefense() => GetTotalBonus(item => item.SpecialDefense.value);
     public int GetTotalAllStats()
     {
-        int total = 0;
+        float total = 0;
         foreach (var item in EquippedItems.Values)
         {
             if (item.Traits != null)
@@ -204,12 +204,12 @@ public class EquipmentManager : GameModule
                 {
                     if (trait.Trait == EquipmentTrait.AllStats)
                     {
-                        total += trait.Value;
+                        total += trait.Value * item.GetDurabilityMultiplier();
                     }
                 }
             }
         }
-        return total;
+        return Mathf.RoundToInt(total);
     }
 
     public int GetTotalSTR() => GetTotalBonus(item => item.STR.value) + GetTotalAllStats();
@@ -256,5 +256,95 @@ public class EquipmentManager : GameModule
             }
         }
         return total;
+    }
+
+    // --- Durability Degradation ---
+    
+    // Configurable percentage chances based on Rarity logic. (Values subject to change)
+    private bool RollDurabilityDegradeChance(EquipmentSO item)
+    {
+        int chance = 0;
+        switch (item.Rarity)
+        {
+            case Rarity.Common: chance = 5; break;
+            case Rarity.Uncommon: chance = 3; break;
+            case Rarity.Rare: chance = 1; break;
+            case Rarity.Legendary: chance = 0; break;
+        }
+
+        if (chance <= 0) return false;
+        
+        // Random.Range(int min, int maxLimit) is exclusive to maxLimit.
+        return Random.Range(0, 100) < chance;
+    }
+
+    public void DegradeEquippedWeapons()
+    {
+        List<EquipmentSlot> slotsToBreak = new List<EquipmentSlot>();
+        bool didDegrade = false;
+
+        if (EquippedItems.TryGetValue(EquipmentSlot.Weapon, out EquipmentSO weapon))
+        {
+            if (RollDurabilityDegradeChance(weapon))
+            {
+                didDegrade = true;
+                if (weapon.DegradeEquipment(2)) slotsToBreak.Add(EquipmentSlot.Weapon);
+            }
+        }
+
+        if (EquippedItems.TryGetValue(EquipmentSlot.OffHand, out EquipmentSO offhand))
+        {
+            if (RollDurabilityDegradeChance(offhand))
+            {
+                didDegrade = true;
+                if (offhand.DegradeEquipment(2)) slotsToBreak.Add(EquipmentSlot.OffHand);
+            }
+        }
+
+        foreach (var slot in slotsToBreak)
+        {
+            // TODO: Implement a Repair structure later. Currently we forcefully destroy broken gear.
+            TextOutputter.Instance.OutputText($"<color=red>Your {EquippedItems[slot].ItemName} broke!</color>");
+            EquippedItems.Remove(slot); // Fully wiped without pushing back to inventory
+        }
+
+        if (didDegrade)
+        {
+            RunManager.Instance.GetService<PlayerManager>()?.RefreshEquipmentStats();
+            Notify(EventType.EquipmentChanged);
+        }
+    }
+
+    public void DegradeEquippedArmor()
+    {
+        List<EquipmentSlot> slotsToBreak = new List<EquipmentSlot>();
+        bool didDegrade = false;
+
+        EquipmentSlot[] armorSlots = { EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Hands, EquipmentSlot.Belt, EquipmentSlot.Accessory1, EquipmentSlot.Accessory2 };
+        
+        foreach (var slot in armorSlots)
+        {
+            if (EquippedItems.TryGetValue(slot, out EquipmentSO armorPiece))
+            {
+                if (RollDurabilityDegradeChance(armorPiece))
+                {
+                    didDegrade = true;
+                    if (armorPiece.DegradeEquipment(5)) slotsToBreak.Add(slot);
+                }
+            }
+        }
+
+        foreach (var slot in slotsToBreak)
+        {
+            // Fully destroyed on break.
+            TextOutputter.Instance.OutputText($"<color=red>Your {EquippedItems[slot].ItemName} broke!</color>");
+            EquippedItems.Remove(slot);
+        }
+
+        if (didDegrade)
+        {
+            RunManager.Instance.GetService<PlayerManager>()?.RefreshEquipmentStats();
+            Notify(EventType.EquipmentChanged);
+        }
     }
 }

@@ -20,6 +20,11 @@ public class Equipment : Item
     public int BlockChance { get; private set; }
     public int BlockAmount { get; private set; }
     public int DodgeChance { get; private set; }
+    
+    // Durability System
+    public int MaxDurability { get; private set; }
+    public int CurrentDurability { get; private set; }
+
     public List<TraitWithValue> Traits { get; private set; }
     public CombatAction Skill { get; private set; }
 
@@ -44,9 +49,31 @@ public class Equipment : Item
         BlockAmount = baseData.BlockAmount.value != 0 ? baseData.BlockAmount.value : baseData.BlockAmount.max;
         DodgeChance = baseData.DodgeChance.value != 0 ? baseData.DodgeChance.value : baseData.DodgeChance.max;
 
+        MaxDurability = baseData.MaxDurability;
+        CurrentDurability = baseData.CurrentDurability;
+
         Traits = baseData.Traits != null ? new List<TraitWithValue>(baseData.Traits) : new List<TraitWithValue>();
         
         // Note: We leave Skill null for runtime resolution if we aren't instantiating combat actions here directly.
+    }
+
+    /// <summary>
+    /// Returns 0.5f (halving stats) if Durability is at or below 30%, otherwise returns 1.0f.
+    /// </summary>
+    public float GetDurabilityMultiplier()
+    {
+        if (MaxDurability <= 0) return 1.0f; // Safety against uninitiated items
+        return ((float)CurrentDurability / MaxDurability <= 0.3f) ? 0.5f : 1.0f;
+    }
+
+    /// <summary>
+    /// Reduces current durability by the given amount.
+    /// Returns TRUE if durability hit 0 (item destroyed), FALSE otherwise.
+    /// </summary>
+    public bool DegradeEquipment(int amount)
+    {
+        CurrentDurability = Mathf.Max(0, CurrentDurability - amount);
+        return CurrentDurability <= 0;
     }
 }
 

@@ -36,6 +36,8 @@ public class PlayerManager : GameModule
         // Execute Blocking system before applying defense-mitigated damage
         if (amount > 0 && RunManager.Instance.GetService<EquipmentManager>() is EquipmentManager eqm)
         {
+            eqm.DegradeEquippedArmor(); // Drain armor durability on physical hits taken
+            
             int blockChance = eqm.GetTotalBlockChance();
             if (blockChance > 0 && UnityEngine.Random.Range(0, 100) < blockChance)
             {

@@ -1,7 +1,7 @@
 using UnityEngine;
 using TMPro;
 
-public class EquipmentContainer : MonoBehaviour
+public class EquipmentContainer : MonoBehaviour, IObserver
 {
     private string _content;
     private RunManager _rm = null;
@@ -76,6 +76,10 @@ public class EquipmentContainer : MonoBehaviour
         AppendStat("BLK DMG", item.BlockAmount);
         AppendStat("DODGE%", item.DodgeChance);
 
+        if (hasStats) stats += ", ";
+        stats += $"DUR: {item.CurrentDurability}/{item.MaxDurability}";
+        hasStats = true;
+
         if (item.Traits != null)
         {
             foreach (var trait in item.Traits)
@@ -146,5 +150,18 @@ public class EquipmentContainer : MonoBehaviour
     {
         _rm = RunManager.Instance;
         _eqm = _rm.GetService<EquipmentManager>(); 
+        
+        if (_eqm != null)
+        {
+            _eqm.AttachObserver(this);
+        }
+    }
+
+    public void OnNotify(object subject, EventType eventType)
+    {
+        if (eventType == EventType.EquipmentChanged)
+        {
+            Refresh();
+        }
     }
 }

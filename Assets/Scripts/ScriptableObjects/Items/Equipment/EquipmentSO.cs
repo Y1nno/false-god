@@ -23,6 +23,11 @@ public class EquipmentSO : ItemSO
     public BoundedInt BlockChance;
     public BoundedInt BlockAmount;
     public BoundedInt DodgeChance;
+    
+    [Header("Durability")]
+    public int MaxDurability = 100;
+    public int CurrentDurability = 100;
+    
     public List<TraitWithValue> Traits;
     public CombatActionSO Skill;
 
@@ -67,6 +72,25 @@ public class EquipmentSO : ItemSO
         }
 
         return instance;
+    }
+    
+    /// <summary>
+    /// Returns 0.5f (halving stats) if Durability is at or below 30%, otherwise returns 1.0f.
+    /// </summary>
+    public float GetDurabilityMultiplier()
+    {
+        if (MaxDurability <= 0) return 1.0f; // Safety against uninitiated items
+        return ((float)CurrentDurability / MaxDurability <= 0.3f) ? 0.5f : 1.0f;
+    }
+
+    /// <summary>
+    /// Reduces current durability by the given amount.
+    /// Returns TRUE if durability hit 0 (item destroyed), FALSE otherwise.
+    /// </summary>
+    public bool DegradeEquipment(int amount)
+    {
+        CurrentDurability = Mathf.Max(0, CurrentDurability - amount);
+        return CurrentDurability <= 0;
     }
 }
 
