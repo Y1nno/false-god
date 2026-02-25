@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 
+//TODO: Add inventory size limit and logic for refusing requests to add to inventory. 
+
 public class InventoryManager : GameModule
 {
     private EquipmentManager _eq = new EquipmentManager();
