@@ -147,85 +147,47 @@ public class InputInterface : MonoBehaviour
 
     public void UseConsumableFromDropdown(UnityEngine.GameObject panel)
     {
-        if (panel == null)
-        {
-            Debug.LogError("Panel GameObject passed is null.");
-            return;
-        }
-
-        Transform dropdownTransform = panel.transform.Find("ConsumableDropdown");
-        Transform tierInputTransform = panel.transform.Find("TierInputField");
+        if (panel == null) return;
         
-        if (dropdownTransform == null)
-        {
-            // Fallback if the user passes the Dropdown directly instead of a panel
-            TMP_Dropdown dropdownDirect = panel.GetComponent<TMP_Dropdown>();
-            if (dropdownDirect != null)
-            {
-                dropdownTransform = panel.transform;
-            }
-            else
-            {
-                Debug.LogError("Could not find ConsumableDropdown inside panel, and panel is not a Dropdown.");
-                return;
-            }
-        }
-
+        // Find the dropdown in the panel
+        Transform dropdownTransform = panel.transform.Find("ConsumableDropdown") ?? panel.transform; 
         TMP_Dropdown dropdown = dropdownTransform.GetComponent<TMP_Dropdown>();
-        if (dropdown == null) return;
-
-        int tier = 1;
-        if (tierInputTransform != null)
+        
+        // If still null, search globally just in case
+        if (dropdown == null)
         {
-            TMP_InputField inputField = tierInputTransform.GetComponent<TMP_InputField>();
-            if (inputField != null && int.TryParse(inputField.text, out int parsedTier))
-            {
-                tier = parsedTier;
-            }
+            GameObject globalDropdown = GameObject.Find("ConsumableDropdown");
+            if (globalDropdown != null) dropdown = globalDropdown.GetComponent<TMP_Dropdown>();
         }
+        
+        if (dropdown == null || dropdown.options.Count == 0) return;
 
-        string selectedOption = dropdown.options[dropdown.value].text;
+        string selectedItemName = dropdown.options[dropdown.value].text;
+        InventoryManager invm = RunManager.Instance.GetService<InventoryManager>();
         
-        // Append "SO" to match the user's naming convention and load from Resources
-        string resourceName = selectedOption + "SO";
-        
-        Consumable baseConsumableData = null;
-#if UNITY_EDITOR
-        // If not using a Resources folder, search the AssetDatabase
-        string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Consumable");
-        foreach(string guid in guids)
+        if (invm == null) return;
+
+        // Find the corresponding consumable in the player's unequipped inventory list
+        Item itemToHandle = invm.UnEquippedItems.Find(item => 
         {
-            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
-            Consumable so = UnityEditor.AssetDatabase.LoadAssetAtPath<Consumable>(path);
+            if (item is ConsumableInstance con) return con.BaseData.ItemName == selectedItemName;
+            return false;
+        });
+
+        if (itemToHandle != null)
+        {
+            invm.UseOrEquipItem(itemToHandle);
             
-            if (so != null && (so.name == resourceName || so.name == selectedOption))
-            {
-                baseConsumableData = so;
-                break;
-            }
-        }
-#else
-        baseConsumableData = Resources.Load<Consumable>(resourceName);
-#endif
-        
-        if (baseConsumableData != null)
-        {
-            ConsumableInstance consumableInstance = new ConsumableInstance(baseConsumableData, tier);
-
-            // Use it on the player for debug purposes
-            CombatManager cm = RunManager.Instance.GetService<CombatManager>();
-            if (cm != null && cm.CurrentBattle != null && cm.CurrentBattle.Pcm != null)
-            {
-                consumableInstance.Use(cm.CurrentBattle.Pcm);
-            }
-            else
-            {
-                TextOutputter.Instance.OutputText("Cannot use consumable outside of battle for now.");
-            }
+            // Re-populate the dropdowns since the inventory changed
+            RefreshAllDropdowns(panel);
+            
+            // Refresh the equipment panel UI
+            EquipmentContainer eqUI = GameObject.FindAnyObjectByType<EquipmentContainer>();
+            if (eqUI != null) eqUI.Refresh();
         }
         else
         {
-            TextOutputter.Instance.OutputText($"Could not find Consumable named '{resourceName}' in the project!");
+             TextOutputter.Instance.OutputText($"Could not find '{selectedItemName}' in your Consumables Inventory.");
         }
     }
 
@@ -287,12 +249,25 @@ public class InputInterface : MonoBehaviour
         TMP_InputField inputField = txtInput.GetComponent<TMP_InputField>();
         string itemID = inputField.text.Trim();
 
+        int tier = 1;
+        // Attempt to blindly locate the floating Tier field to snag its multiplier before generating
+        GameObject tierObj = GameObject.Find("TierInputField");
+        if (tierObj != null)
+        {
+            TMP_InputField tierField = tierObj.GetComponent<TMP_InputField>();
+            if (tierField != null && int.TryParse(tierField.text, out int parsedTier))
+            {
+                tier = parsedTier;
+            }
+        }
+
         EquipmentSO newEquipment = null;
+        Consumable newConsumable = null;
         
 #if UNITY_EDITOR
         // If not using a Resources folder, we must search the AssetDatabase in the editor
-        string[] guids = UnityEditor.AssetDatabase.FindAssets("t:EquipmentSO");
-        foreach(string guid in guids)
+        string[] eqGuids = UnityEditor.AssetDatabase.FindAssets("t:EquipmentSO");
+        foreach(string guid in eqGuids)
         {
             string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
             EquipmentSO so = UnityEditor.AssetDatabase.LoadAssetAtPath<EquipmentSO>(path);
@@ -304,21 +279,47 @@ public class InputInterface : MonoBehaviour
                 break;
             }
         }
+        
+        string[] conGuids = UnityEditor.AssetDatabase.FindAssets("t:Consumable");
+        foreach(string guid in conGuids)
+        {
+            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+            Consumable so = UnityEditor.AssetDatabase.LoadAssetAtPath<Consumable>(path);
+            
+            if (so != null && (so.ItemID == itemID || so.name == itemID || so.name == itemID + "SO"))
+            {
+                newConsumable = so;
+                break;
+            }
+        }
 #else
         // If testing in a build later, they MUST be in Resources or an Addressables group.
         newEquipment = Resources.Load<EquipmentSO>(itemID) ?? Resources.Load<EquipmentSO>(itemID + "SO");
+        newConsumable = Resources.Load<Consumable>(itemID) ?? Resources.Load<Consumable>(itemID + "SO");
 #endif
 
         if (newEquipment != null)
         {
             // Give the player a uniquely rolled instance of the equipment
             EquipmentSO rolledInstance = newEquipment.InstantiateAndRollStats();
-            RunManager.Instance.GetService<EquipmentManager>()?.AddEquipmentToInventory(rolledInstance);
-            RefreshEquipmentDropdown();
+            
+            // Wrap the data inside an unequipped runtime model so the UI can cast it successfully later
+            Equipment weaponInstance = new Equipment(rolledInstance);
+            
+            RunManager.Instance.GetService<InventoryManager>()?.AddItemToInventory(weaponInstance);
+            RefreshAllDropdowns();
+        }
+        else if (newConsumable != null)
+        {
+            // Successfully fetched the consumable asset. Wrap it in an instance to lock in its Tier!
+            ConsumableInstance potionInstance = new ConsumableInstance(newConsumable, tier);
+            
+            RunManager.Instance.GetService<InventoryManager>()?.AddItemToInventory(potionInstance);
+            RefreshAllDropdowns();
         }
         else
         {
-            TextOutputter.Instance.OutputText($"Could not find Equipment with ID/filename '{itemID}' in the project.");
+            TextOutputter.Instance.OutputText($"Could not find Equipment or Consumable with ID/filename '{itemID}' in the project.");
         }
     }
 
@@ -340,20 +341,25 @@ public class InputInterface : MonoBehaviour
         if (dropdown == null || dropdown.options.Count == 0) return;
 
         string selectedItemName = dropdown.options[dropdown.value].text;
-        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+        InventoryManager invm = RunManager.Instance.GetService<InventoryManager>();
         
-        if (eqm == null) return;
+        if (invm == null) return;
 
-        // Find the corresponding item in the player's inventory list
+        // Find the corresponding item in the player's unequipped inventory list
         // Note: we're matching by ItemName here because the Dropdown displays names, not IDs.
-        EquipmentSO itemToEquip = eqm.Inventory.Find(item => item.ItemName == selectedItemName);
-
-        if (itemToEquip != null)
+        Item itemToHandle = invm.UnEquippedItems.Find(item => 
         {
-            eqm.EquipItem(itemToEquip);
+            if (item is Equipment eq) return eq.ItemName == selectedItemName;
+            if (item is ConsumableInstance con) return con.BaseData.ItemName == selectedItemName;
+            return false;
+        });
+
+        if (itemToHandle != null)
+        {
+            invm.UseOrEquipItem(itemToHandle);
             
-            // Re-populate the dropdown since the inventory changed (the item was removed from it)
-            RefreshEquipmentDropdown(panel);
+            // Re-populate the dropdowns since the inventory changed
+            RefreshAllDropdowns(panel);
             
             // Refresh the equipment panel UI
             EquipmentContainer eqUI = GameObject.FindAnyObjectByType<EquipmentContainer>();
@@ -365,35 +371,88 @@ public class InputInterface : MonoBehaviour
         }
     }
 
-    // Helper to keep the dropdown synchronized with the EquipmentManager.Inventory list
-    public void RefreshEquipmentDropdown(UnityEngine.GameObject panel = null)
+    // Helper to keep both dropdowns synchronized with the InventoryManager unified list
+    public void RefreshAllDropdowns(UnityEngine.GameObject panel = null)
     {
-         TMP_Dropdown dropdown = null;
+         TMP_Dropdown equipDropdown = null;
+         TMP_Dropdown consumableDropdown = null;
          
          if (panel != null)
          {
-             Transform dropdownTransform = panel.transform.Find("EquipmentDropdown");
-             if (dropdownTransform != null) dropdown = dropdownTransform.GetComponent<TMP_Dropdown>();
+             Transform eTransform = panel.transform.Find("EquipmentDropdown");
+             Transform cTransform = panel.transform.Find("ConsumableDropdown");
+             if (eTransform != null) equipDropdown = eTransform.GetComponent<TMP_Dropdown>();
+             if (cTransform != null) consumableDropdown = cTransform.GetComponent<TMP_Dropdown>();
          }
 
          // Fallback to global search if panel search failed or no panel was provided
-         if (dropdown == null)
+         if (equipDropdown == null)
          {
-             GameObject globalDropdown = GameObject.Find("EquipmentDropdown");
-             if (globalDropdown != null) dropdown = globalDropdown.GetComponent<TMP_Dropdown>();
+             GameObject globalEDropdown = GameObject.Find("EquipmentDropdown");
+             if (globalEDropdown != null) equipDropdown = globalEDropdown.GetComponent<TMP_Dropdown>();
          }
          
-         EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
-         if (dropdown == null || eqm == null) return;
+         if (consumableDropdown == null)
+         {
+             GameObject globalCDropdown = GameObject.Find("ConsumableDropdown");
+             if (globalCDropdown != null) consumableDropdown = globalCDropdown.GetComponent<TMP_Dropdown>();
+         }
+         
+         InventoryManager invm = RunManager.Instance.GetService<InventoryManager>();
+         if (invm == null) return;
+        
+         string consumablesText = "Consumables Inventory:\n\n";
+         string equipmentText = "Equipment Inventory:\n\n";
+         // TODO: Add Upgrade Materials inventory block here in the future
+         
+         List<string> equipOptions = new List<string>();
+         List<string> consumableOptions = new List<string>();
 
-         dropdown.ClearOptions();
-         
-         List<string> options = new List<string>();
-         foreach (var item in eqm.Inventory)
+         if (invm.UnEquippedItems.Count == 0)
          {
-             options.Add(item.ItemName); // We display the human-readable ItemName in the UI
+             consumablesText += "Empty";
+             equipmentText += "Empty";
+         }
+         else
+         {
+             bool hasConsumables = false;
+             bool hasEquipment = false;
+             
+             foreach (var item in invm.UnEquippedItems)
+             {
+                 if (item is ConsumableInstance con)
+                 {
+                     consumablesText += $"- {con.BaseData.ItemName} (Tier {con.Tier})\n";
+                     consumableOptions.Add(con.BaseData.ItemName); // We display Name in UI
+                     hasConsumables = true;
+                 }
+                 else if (item is Equipment eq)
+                 {
+                     equipmentText += $"- {eq.ItemName}\n";
+                     equipOptions.Add(eq.ItemName); // We display Name in UI
+                     hasEquipment = true;
+                 }
+             }
+             
+             if (!hasConsumables) consumablesText += "Empty";
+             if (!hasEquipment) equipmentText += "Empty";
          }
          
-         dropdown.AddOptions(options);
+         // Only print both splits back to the console box (or visual text box) if needed
+         TextOutputter.Instance.OutputText(consumablesText + "\n\n" + equipmentText);
+
+         // Populate Equipment UI Dropdown
+         if (equipDropdown != null)
+         {
+             equipDropdown.ClearOptions();
+             equipDropdown.AddOptions(equipOptions);
+         }
+         
+         // Populate Consumable UI Dropdown
+         if (consumableDropdown != null)
+         {
+             consumableDropdown.ClearOptions();
+             consumableDropdown.AddOptions(consumableOptions);
+         }
     }
 }

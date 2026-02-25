@@ -3,8 +3,7 @@ using UnityEngine;
 
 public class EquipmentManager : GameModule
 {
-    // The player's overall inventory of unequipped items
-    public List<EquipmentSO> Inventory { get; private set; } = new List<EquipmentSO>();
+
 
     // What the player is currently wearing
     public Dictionary<EquipmentSlot, EquipmentSO> EquippedItems { get; private set; } = new Dictionary<EquipmentSlot, EquipmentSO>();
@@ -19,36 +18,14 @@ public class EquipmentManager : GameModule
         // Add default observers here if needed later (e.g., listening for combat start)
     }
 
-    public void AddEquipmentToInventory(EquipmentSO equipment)
-    {
-        if (equipment == null) return;
-        Inventory.Add(equipment);
-        TextOutputter.Instance.OutputText($"Added {equipment.ItemName} to Inventory.");
-    }
-
-    public void RemoveEquipmentFromInventory(EquipmentSO equipment)
-    {
-        if (Inventory.Contains(equipment))
-        {
-            Inventory.Remove(equipment);
-        }
-    }
-
     public void EquipItem(EquipmentSO newItem)
     {
         if (newItem == null) return;
 
-        // If the player isn't holding this item in their inventory, they can't equip it!
-        if (!Inventory.Contains(newItem))
-        {
-            Debug.LogWarning($"Tried to equip {newItem.ItemName}, but it's not in the inventory!");
-            return;
-        }
-
         // 1. Check if something is already in this slot
         if (EquippedItems.TryGetValue(newItem.Slot, out EquipmentSO currentlyEquipped))
         {
-            // 2. If yes, unequip it and put it BACK into the inventory
+            // 2. If yes, unequip it and put it BACK into the InventoryManager's pool
             UnequipItem(newItem.Slot);
         }
 
@@ -73,13 +50,9 @@ public class EquipmentManager : GameModule
 
         // 3. Equip the new item
         EquippedItems[newItem.Slot] = newItem;
-        
-        // 4. Remove the newly equipped item from the general inventory pool
-        RemoveEquipmentFromInventory(newItem);
 
         TextOutputter.Instance.OutputText($"Equipped {newItem.ItemName} to {newItem.Slot}.");
 
-        // 5. Tell the PlayerManager to recalculate stats (Optional event could go here)
         // 5. Tell the PlayerManager to recalculate stats (Optional event could go here)
         RunManager.Instance.GetService<PlayerManager>()?.RefreshEquipmentStats();
         Notify(EventType.EquipmentChanged);
@@ -90,7 +63,10 @@ public class EquipmentManager : GameModule
         if (EquippedItems.TryGetValue(slot, out EquipmentSO itemToUnequip))
         {
             EquippedItems.Remove(slot);
-            AddEquipmentToInventory(itemToUnequip); // Put it back in our pockets
+            
+            Equipment unequippedWrapper = new Equipment(itemToUnequip);
+            RunManager.Instance.GetService<InventoryManager>()?.AddItemToInventory(unequippedWrapper); // Put it back in the central inventory
+            
             TextOutputter.Instance.OutputText($"Unequipped {itemToUnequip.ItemName}.");
             RunManager.Instance.GetService<PlayerManager>()?.RefreshEquipmentStats();
             Notify(EventType.EquipmentChanged);
