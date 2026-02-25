@@ -33,25 +33,7 @@ public class PlayerManager : GameModule
     #region Health and Mana Management
     public int TakeDamage(int amount)
     {
-        // Execute Blocking system before applying defense-mitigated damage
-        if (amount > 0 && RunManager.Instance.GetService<EquipmentManager>() is EquipmentManager eqm)
-        {
-            eqm.DegradeEquippedArmor(); // Drain armor durability on physical hits taken
-            
-            int blockChance = eqm.GetTotalBlockChance();
-            if (blockChance > 0 && UnityEngine.Random.Range(0, 100) < blockChance)
-            {
-                int blockAmt = eqm.GetTotalBlockAmount();
-                amount -= blockAmt;
-                TextOutputter.Instance.OutputText($"Blocked the attack! Mitigated {blockAmt} damage.");
-            }
-        }
-
-        if (amount <= 0) 
-        {
-            TextOutputter.Instance.OutputText("Blocked all incoming damage!");
-            return 0;
-        }
+        if (amount <= 0) return 0;
         Health.Decrease(amount);
         TextOutputter.Instance.OutputText($"Took {amount} damage.");
         if (Health.CurrentValue <= 0)

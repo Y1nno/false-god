@@ -30,25 +30,7 @@ public abstract class Combatant : Subject
     }
     protected virtual int TakeDamage(int amount)
     {
-        // Execute Blocking system before applying defense-mitigated damage
-        if (amount > 0 && this is PlayerCombatManager pcm && RunManager.Instance.GetService<EquipmentManager>() is EquipmentManager eqm)
-        {
-            eqm.DegradeEquippedArmor(); // Drain armor durability on physical hits taken
-            
-            int blockChance = eqm.GetTotalBlockChance();
-            if (blockChance > 0 && UnityEngine.Random.Range(0, 100) < blockChance)
-            {
-                int blockAmt = eqm.GetTotalBlockAmount();
-                amount -= blockAmt;
-                TextOutputter.Instance.OutputText($"{GetName()} blocked the attack! Mitigated {blockAmt} damage.");
-            }
-        }
-
-        if (amount <= 0) 
-        {
-            TextOutputter.Instance.OutputText($"{GetName()} blocked all incoming damage!");
-            return 0;
-        }
+        if (amount <= 0) return 0;
 
         bool wasAlive = GetHealth().CurrentValue > 0;
         GetHealth().Decrease(amount);

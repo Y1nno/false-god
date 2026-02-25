@@ -66,6 +66,32 @@ public class PlayerCombatManager : Combatant, IPromptResponder
             }
         }
 
+        if (damage > 0)
+        {
+            EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+            if (eqm != null)
+            {
+                if (attackType == AttackType.Physical)
+                {
+                    eqm.DegradeEquippedArmor(); // Drain armor durability on physical hits taken
+                }
+
+                int blockChance = eqm.GetTotalBlockChance();
+                if (blockChance > 0 && UnityEngine.Random.Range(0, 100) < blockChance)
+                {
+                    int blockAmt = eqm.GetTotalBlockAmount();
+                    damage -= blockAmt;
+                    TextOutputter.Instance.OutputText($"{GetName()} blocked the attack! Mitigated {blockAmt} damage.");
+                }
+            }
+        }
+
+        if (damage <= 0) 
+        {
+            TextOutputter.Instance.OutputText($"{GetName()} blocked all incoming damage!");
+            return 0;
+        }
+
         int damageDealt = 0;
         switch (attackType)
         {
