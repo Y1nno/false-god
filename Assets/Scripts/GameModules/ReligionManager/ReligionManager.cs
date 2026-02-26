@@ -16,6 +16,8 @@ public class ReligionManager : GameModule
 
     private const int MaxReligionsWhenChoosing = 3;
 
+    public ReligionStatBonuses StatBonues = new ReligionStatBonuses();
+
     public override void AttachDefaultObservers()
     {
         // none for now
@@ -80,5 +82,66 @@ public class ReligionManager : GameModule
 
         return availableReligions;
     }
+
+    public int GetReligiousStatBonus(Stat stat)
+    {
+        return StatBonues.StatBonuses[stat];
+    }
+
+    public float GetReligiousStatMultiplier(Stat stat)
+    {
+        return StatBonues.StatMultipliers[stat];
+    }
+
+    public int GetReligionBonus(SecondaryStat stat)
+    {
+        return StatBonues.SecondaryStatBonuses[stat];
+    }
+
+    public float GetReligionMultiplier(SecondaryStat stat)
+    {
+        return StatBonues.SecondaryStatMultipliers[stat];
+    }
+
+}
+
+public class ReligionStatBonuses
+{
+    public Dictionary<Stat, int> StatBonuses = new Dictionary<Stat, int>
+    {
+        { Stat.STR, 0 },
+        { Stat.DEX, 0 },
+        { Stat.SPD, 0 },
+        { Stat.INT, 0 },
+        { Stat.LCK, 0 }
+    };
+
+    public Dictionary<Stat, float> StatMultipliers = new Dictionary<Stat, float>
+    {
+        { Stat.STR, 1.0f },
+        { Stat.DEX, 1.0f },
+        { Stat.SPD, 1.0f },
+        { Stat.INT, 1.0f },
+        { Stat.LCK, 1.0f }
+    };
+    public Dictionary<SecondaryStat, int> SecondaryStatBonuses = new Dictionary<SecondaryStat, int>
+    {
+        { SecondaryStat.SPATK, 0 },
+        { SecondaryStat.SPDEF, 0 },
+        { SecondaryStat.PHATK, 0 },
+        { SecondaryStat.PHDEF, 0 },
+        { SecondaryStat.CRIT, 0 },
+        { SecondaryStat.EVDE, 0 }
+    };
+
+    public Dictionary<SecondaryStat, float> SecondaryStatMultipliers = new Dictionary<SecondaryStat, float>
+    {
+        { SecondaryStat.SPATK, 1.0f },
+        { SecondaryStat.SPDEF, 1.0f },
+        { SecondaryStat.PHATK, 1.0f },
+        { SecondaryStat.PHDEF, 1.0f },
+        { SecondaryStat.CRIT, 1.0f },
+        { SecondaryStat.EVDE, 1.0f }
+    };
 
 }

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System;
 
-[CreateAssetMenu(fileName = "New Religion", menuName = "Scriptable Objects/Religion")]
+[CreateAssetMenu(fileName = "New Religion", menuName = "Scriptable Objects/Religion/Religion")]
 public class ReligionSO : ScriptableObject
 {
     public string religionName;
@@ -16,13 +16,6 @@ public class ReligionSO : ScriptableObject
 [Serializable]
 public class ReligionLevel
 {
-    // Requirement (Quest)
-    public QuestType requirement;
-
-    // Requirement params (fill based on requirement)
-    public string requiredReligionName; // for JoinReligion (swap to ReligionSO if you have it)
-    public int requiredItemID;          // for GiveItem
-    public int requiredItemAmount;      // for GiveItem
-    public int bossID;                  // for KillBoss
+    public QuestDataSO quest;
     public ReligionRewardSO reward;
 }

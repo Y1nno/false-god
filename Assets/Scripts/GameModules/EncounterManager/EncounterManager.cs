@@ -25,7 +25,7 @@ public class EncounterManager : GameModule, IObserver
     {
         EncounterType encounterType = DetermineEncounterType();
         HandleEncounterChances(encounterType);
-        
+
         if (_forcedNextEncounter != null)
         {
             _currentEncounter = _forcedNextEncounter;
@@ -35,7 +35,7 @@ public class EncounterManager : GameModule, IObserver
         {
             _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), encounterType);
         }
-        
+
         AttachToEncounter(_currentEncounter);
         TextOutputter.Instance.OutputText("Encounter created: " + _currentEncounter.GetType().Name);
         _currentEncounter.StartEncounter();

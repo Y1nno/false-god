@@ -21,6 +21,14 @@ public class PlayerManager : GameModule
 
     public PlayerStatBox PlayerStats { get; private set; } = new PlayerStatBox();
 
+    public float HealingMultiplier = 1.0f;
+    public float ManaRecoveryPercentFromReligion { get; private set; } = 0.0f;
+    public int freeRepairs = 0;
+
+    public readonly Dictionary<Stat, float> StartOfCombatStatBonuses = new Dictionary<Stat, float>();
+    public readonly Dictionary<SecondaryStat, float> StartOfCombatSecondaryStatBonuses = new Dictionary<SecondaryStat, float>();
+    private Dictionary<Passive, PlayerPassive> _passives = new Dictionary<Passive, PlayerPassive>();
+
     public override void AttachDefaultObservers()
     {
         // none for now
@@ -60,6 +68,8 @@ public class PlayerManager : GameModule
     public void Heal(int amount)
     {
         if (amount <= 0) return;
+        int finalHeal = Mathf.RoundToInt(amount * HealingMultiplier);
+        Health.Increase(finalHeal);
         Health.Increase(amount);
     }
 
@@ -106,34 +116,109 @@ public class PlayerManager : GameModule
 
     public int CalculateSecondaryStat(SecondaryStat secondaryStat)
     {
+        int religionBonus = RunManager.Instance.GetService<ReligionManager>().GetReligionBonus(secondaryStat);
+        float religionMultiplier = RunManager.Instance.GetService<ReligionManager>().GetReligionMultiplier(secondaryStat);
         switch (secondaryStat)
         {
             case SecondaryStat.SPATK:
                 int spatkFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.SPATK);
                 float spatkMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.SPATK);
-                return spatkFromEquipment * (int)(1.0f + spatkMultiplierFromRite);
+                return spatkFromEquipment + religionBonus * Mathf.RoundToInt(religionMultiplier * spatkMultiplierFromRite);
             case SecondaryStat.SPDEF:
                 int spdefFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.SPDEF);
                 float spdefMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.SPDEF);
-                return spdefFromEquipment * (int)(1.0f + spdefMultiplierFromRite);
+                return spdefFromEquipment + religionBonus * Mathf.RoundToInt(religionMultiplier * spdefMultiplierFromRite);
             case SecondaryStat.PHATK:
                 int phatkFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.PHATK);
                 float phatkMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.PHATK);
-                return phatkFromEquipment * (int)(1.0f + phatkMultiplierFromRite);
+                return phatkFromEquipment + religionBonus * Mathf.RoundToInt(religionMultiplier * phatkMultiplierFromRite);
             case SecondaryStat.PHDEF:
                 int phdefFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.PHDEF);
                 float phdefMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.PHDEF);
-                return phdefFromEquipment * (int)(1.0f + phdefMultiplierFromRite);
+                return phdefFromEquipment + religionBonus * Mathf.RoundToInt(religionMultiplier * phdefMultiplierFromRite);
             case SecondaryStat.CRIT:
                 int critFromEquipment = RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.CRIT);
                 int critFromRite = (int)(RunManager.Instance.GetService<RiteManager>().CalculateFlatStatBonus(SecondaryStat.CRIT) * 100f) ;
-                return critFromEquipment + critFromRite;
+                return critFromEquipment + critFromRite + religionBonus * Mathf.RoundToInt(religionMultiplier);
             case SecondaryStat.EVDE:
-                return RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.EVDE);
+                return RunManager.Instance.GetService<InventoryManager>().CalculateSecondaryStatFromEquipment(SecondaryStat.EVDE) + religionBonus * Mathf.RoundToInt(religionMultiplier);
             default:
                 throw new ArgumentOutOfRangeException(nameof(secondaryStat), secondaryStat, null);
         }
 
+    }
+
+    public void AddManaRecoveryPercent(float amount)
+    {
+        ManaRecoveryPercentFromReligion += amount;
+    }
+
+    public void RemoveManaRecoveryPercent(float amount)
+    {
+        ManaRecoveryPercentFromReligion = Mathf.Max(0f, ManaRecoveryPercentFromReligion - amount);
+    }
+
+    public void AddStartOfCombatStatBuff(Stat stat, float amount)
+    {
+        if (!StartOfCombatStatBonuses.ContainsKey(stat))
+        {
+            StartOfCombatStatBonuses[stat] = 0f;
+        }
+
+        StartOfCombatStatBonuses[stat] += amount;
+    }
+
+    public void RemoveStartOfCombatStatBuff(Stat stat, float amount)
+    {
+        if (!StartOfCombatStatBonuses.ContainsKey(stat))
+        {
+            return;
+        }
+
+        StartOfCombatStatBonuses[stat] -= amount;
+        if (Mathf.Approximately(StartOfCombatStatBonuses[stat], 0f))
+        {
+            StartOfCombatStatBonuses.Remove(stat);
+        }
+    }
+
+    public void AddStartOfCombatSecondaryStatBuff(SecondaryStat stat, float amount)
+    {
+        if (!StartOfCombatSecondaryStatBonuses.ContainsKey(stat))
+        {
+            StartOfCombatSecondaryStatBonuses[stat] = 0f;
+        }
+
+        StartOfCombatSecondaryStatBonuses[stat] += amount;
+    }
+
+    public void RemoveStartOfCombatSecondaryStatBuff(SecondaryStat stat, float amount)
+    {
+        if (!StartOfCombatSecondaryStatBonuses.ContainsKey(stat))
+        {
+            return;
+        }
+
+        StartOfCombatSecondaryStatBonuses[stat] -= amount;
+        if (Mathf.Approximately(StartOfCombatSecondaryStatBonuses[stat], 0f))
+        {
+            StartOfCombatSecondaryStatBonuses.Remove(stat);
+        }
+    }
+
+    public void AddPassive(Passive passive)
+    {
+        _passives.Add(passive, new PlayerPassive());
+    }
+
+    public void RemovePassive(Passive passive)
+    {
+        _passives.Remove(passive);
+    }
+
+    public bool HasPassive(Passive passive)
+    {
+        return _passives.ContainsKey(passive);
     }
     #endregion
 

@@ -21,7 +21,7 @@ public class StatBox : Subject, IObserver
 
     public float ConsumableEffectivenessMultiplier { get; set; } = 1.0f;
 
-    protected StatBox(Dictionary<Stat, int> initialStats = null)
+    public StatBox(Dictionary<Stat, int> initialStats = null)
     {
         if (initialStats == null)
         {

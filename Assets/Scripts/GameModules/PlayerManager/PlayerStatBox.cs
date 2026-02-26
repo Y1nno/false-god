@@ -21,7 +21,7 @@ public class PlayerStatBox : StatBox
                 break;
         }
     }
-    private void AddStatPoints(int points)
+    public void AddStatPoints(int points)
     {
         AvailableStatPoints += points;
         Notify(EventType.StatPointsAdded);

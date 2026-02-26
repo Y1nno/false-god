@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b983dc504c06de74dbcbca5aa2a9a003, type: 3}
+  m_Name: Pale Moon
+  m_EditorClassIdentifier: Assembly-CSharp::ReligionSO
+  religionName: Children of the Pale Moon
+  description: Nocturnal mystics who draw strength from lunar phases
+  icon: {fileID: 0}
+  levels:
+  - quest: {fileID: 11400000, guid: e96967f78b3186043a57d2b0f5f2b040, type: 2}
+    reward: {fileID: 11400000, guid: 9924dbe7a49cf7e4aa8682e8a0d65912, type: 2}
+  - quest: {fileID: 11400000, guid: 316609e5b8e17c248a6c0b08eef21d0b, type: 2}
+    reward: {fileID: 11400000, guid: b5fce9b3c2c142041ac565ae37395b45, type: 2}
+  - quest: {fileID: 11400000, guid: 32b0c3728e4d52243a19b47eb9fc815c, type: 2}
+    reward: {fileID: 11400000, guid: 85fe39c9cf062804bbed059dc953d05a, type: 2}
+  - quest: {fileID: 11400000, guid: c2881a1d1c98c5040be801cf3297cff4, type: 2}
+    reward: {fileID: 11400000, guid: bcd252f70c6dc424f92b44ae5c2e5d69, type: 2}
