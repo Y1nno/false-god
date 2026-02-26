@@ -1,38 +1,27 @@
+using System;
 using UnityEngine;
 
-[System.Serializable]
+[Serializable]
 public class Quest : IObserver
 {
-    public int QuestProgress { get; private set; } = 0;
-    public readonly int QuestGoal;
+    [SerializeField] protected int questProgress = 0;
+    [SerializeField] protected int questGoal = 0;
+    [SerializeField] protected QuestType questType;
 
-    public Quest(int difficultyLevel)
-    {
-        QuestGoal = DetermineQuestGoal(difficultyLevel);
-    }
-
-    public virtual int DetermineQuestGoal(int difficultyLevel)
-    {
-        return difficultyLevel * 10;
-    }
+    public int QuestProgress => questProgress;
+    public int QuestGoal => questGoal;
+    public QuestType QuestType => questType;
 
     public void ProgressQuest(int progressAmount)
     {
-        QuestProgress += progressAmount;
-        if (QuestProgress >= QuestGoal)
-        {
+        questProgress += progressAmount;
+        if (questProgress >= questGoal)
             OnCompleteQuest();
-        }
     }
 
-    public virtual void AttachDefaultSubjects(){}
+    public virtual void AttachDefaultSubjects() {}
 
-    public virtual void OnAcceptQuest(){}
-    public virtual void OnCompleteQuest(){}
+    public virtual void OnAcceptQuest() {}
+    public virtual void OnCompleteQuest() {}
 }
 
-public enum QuestType
-{
-    JoinReligion,
-    
-}

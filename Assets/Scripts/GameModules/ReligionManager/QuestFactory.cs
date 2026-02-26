@@ -9,7 +9,7 @@ public class QuestFactory
             difficultyLevel = DetermineDifficultyLevel();
         }
 
-        return new Quest(difficultyLevel);
+        return new Quest();
     }
 
     private int DetermineDifficultyLevel()

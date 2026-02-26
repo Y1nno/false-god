@@ -1,0 +1,126 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b983dc504c06de74dbcbca5aa2a9a003, type: 3}
+  m_Name: Whispering Hlame
+  m_EditorClassIdentifier: Assembly-CSharp::ReligionSO
+  religionName: 'Coven of the Whispering Flame '
+  description: Fire-loving seers who use self-immolation as prophecy.
+  icon: {fileID: 0}
+  levels:
+  - requirement: 0
+    requiredReligionName: 
+    requiredItemID: 0
+    requiredItemAmount: 0
+    bossID: 0
+    rewardType: 6
+    value: 0
+    specificItemID: 0
+    randomSlot: 0
+    randomRarity: 0
+    startOfCombatStatBuff:
+      stat: 0
+      value: 0
+    startOfCombatSecondaryStatBuff:
+      stat: 0
+      value: 0
+    StatPointsToAllocate: 0
+    HealingMultiplier: 0
+    ailmentImmunity: 2
+    ailmentOnEnemy:
+      ailmentType: 0
+      chance: 0
+      maxEnemies: 0
+      encounterCooldown: 0
+    passive: 0
+    FreeRepairsAtBlackSmith: 0
+    UpgradeEquipment: 0
+  - requirement: 1
+    requiredReligionName: 
+    requiredItemID: -2147483648
+    requiredItemAmount: 1
+    bossID: 0
+    rewardType: 2
+    value: 0
+    specificItemID: 0
+    randomSlot: 0
+    randomRarity: 2
+    startOfCombatStatBuff:
+      stat: 0
+      value: 0
+    startOfCombatSecondaryStatBuff:
+      stat: 0
+      value: 0
+    StatPointsToAllocate: 0
+    HealingMultiplier: 0
+    ailmentImmunity: 2
+    ailmentOnEnemy:
+      ailmentType: 0
+      chance: 0
+      maxEnemies: 0
+      encounterCooldown: 0
+    passive: 0
+    FreeRepairsAtBlackSmith: 0
+    UpgradeEquipment: 0
+  - requirement: 1
+    requiredReligionName: 
+    requiredItemID: -2147483648
+    requiredItemAmount: 1
+    bossID: 0
+    rewardType: 7
+    value: 0
+    specificItemID: 0
+    randomSlot: 0
+    randomRarity: 2
+    startOfCombatStatBuff:
+      stat: 0
+      value: 0
+    startOfCombatSecondaryStatBuff:
+      stat: 0
+      value: 0
+    StatPointsToAllocate: 0
+    HealingMultiplier: 0
+    ailmentImmunity: 2
+    ailmentOnEnemy:
+      ailmentType: 2
+      chance: 0.15
+      maxEnemies: 1
+      encounterCooldown: 1
+    passive: 0
+    FreeRepairsAtBlackSmith: 0
+    UpgradeEquipment: 0
+  - requirement: 2
+    requiredReligionName: 
+    requiredItemID: -2147483648
+    requiredItemAmount: 1
+    bossID: 0
+    rewardType: 8
+    value: 0
+    specificItemID: 0
+    randomSlot: 0
+    randomRarity: 2
+    startOfCombatStatBuff:
+      stat: 0
+      value: 0
+    startOfCombatSecondaryStatBuff:
+      stat: 0
+      value: 0
+    StatPointsToAllocate: 0
+    HealingMultiplier: 0
+    ailmentImmunity: 2
+    ailmentOnEnemy:
+      ailmentType: 2
+      chance: 0.15
+      maxEnemies: 1
+      encounterCooldown: 1
+    passive: 0
+    FreeRepairsAtBlackSmith: 0
+    UpgradeEquipment: 0

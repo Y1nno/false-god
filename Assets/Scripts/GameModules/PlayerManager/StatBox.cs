@@ -71,6 +71,7 @@ public class StatBox : Subject, IObserver
     }
 }
 
+[Serializable]
 public enum Stat
 {
     STR,
@@ -80,6 +81,7 @@ public enum Stat
     LCK
 }
 
+[Serializable]
 public enum SecondaryStat
 {
     SPATK,

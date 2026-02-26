@@ -1,0 +1,142 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b983dc504c06de74dbcbca5aa2a9a003, type: 3}
+  m_Name: Serpent's Coil
+  m_EditorClassIdentifier: Assembly-CSharp::ReligionSO
+  religionName: "Serpent\u2019s Coil  "
+  description: Secretive cult of poison, rebirth, and endless cycles.
+  icon: {fileID: 0}
+  levels:
+  - requirement: 0
+    requiredReligionName: 
+    requiredItemID: 0
+    requiredItemAmount: 0
+    bossID: 0
+    rewardType: 12
+    value: 0
+    specificItemID: 0
+    randomSlot: 0
+    randomRarity: 0
+    startOfCombatStatBuff:
+      stat: 2
+      value: 4
+    startOfCombatSecondaryStatBuff:
+      stat: 0
+      value: 0
+    StatPointsToAllocate: 0
+    HealingMultiplier: 0
+    ailmentImmunity: 0
+    ailmentOnEnemy:
+      ailmentType: 0
+      chance: 0
+      maxEnemies: 0
+      encounterCooldown: 0
+    passive: 0
+    FreeRepairsAtBlackSmith: 0
+    UpgradeEquipment: 0
+    manaRecoveryPercent: 0
+    statBuff:
+      stat: 2
+      value: 4
+  - requirement: 1
+    requiredReligionName: 
+    requiredItemID: -2147483648
+    requiredItemAmount: 0
+    bossID: 0
+    rewardType: 2
+    value: 0
+    specificItemID: 0
+    randomSlot: 2
+    randomRarity: 2
+    startOfCombatStatBuff:
+      stat: 2
+      value: 4
+    startOfCombatSecondaryStatBuff:
+      stat: 0
+      value: 0
+    StatPointsToAllocate: 0
+    HealingMultiplier: 0
+    ailmentImmunity: 0
+    ailmentOnEnemy:
+      ailmentType: 0
+      chance: 0
+      maxEnemies: 0
+      encounterCooldown: 0
+    passive: 0
+    FreeRepairsAtBlackSmith: 0
+    UpgradeEquipment: 0
+    manaRecoveryPercent: 0
+    statBuff:
+      stat: 0
+      value: 0
+  - requirement: 1
+    requiredReligionName: 
+    requiredItemID: -2147483648
+    requiredItemAmount: 0
+    bossID: 0
+    rewardType: 7
+    value: 0
+    specificItemID: 0
+    randomSlot: 2
+    randomRarity: 2
+    startOfCombatStatBuff:
+      stat: 2
+      value: 4
+    startOfCombatSecondaryStatBuff:
+      stat: 0
+      value: 0
+    StatPointsToAllocate: 0
+    HealingMultiplier: 0
+    ailmentImmunity: 0
+    ailmentOnEnemy:
+      ailmentType: 1
+      chance: 0.35
+      maxEnemies: 1
+      encounterCooldown: 2
+    passive: 0
+    FreeRepairsAtBlackSmith: 0
+    UpgradeEquipment: 0
+    manaRecoveryPercent: 0
+    statBuff:
+      stat: 0
+      value: 0
+  - requirement: 1
+    requiredReligionName: 
+    requiredItemID: -2147483648
+    requiredItemAmount: 0
+    bossID: 0
+    rewardType: 8
+    value: 0
+    specificItemID: 0
+    randomSlot: 2
+    randomRarity: 2
+    startOfCombatStatBuff:
+      stat: 2
+      value: 4
+    startOfCombatSecondaryStatBuff:
+      stat: 0
+      value: 0
+    StatPointsToAllocate: 0
+    HealingMultiplier: 0
+    ailmentImmunity: 0
+    ailmentOnEnemy:
+      ailmentType: 0
+      chance: 0.35
+      maxEnemies: 1
+      encounterCooldown: 2
+    passive: 2
+    FreeRepairsAtBlackSmith: 0
+    UpgradeEquipment: 0
+    manaRecoveryPercent: 0
+    statBuff:
+      stat: 0
+      value: 0
