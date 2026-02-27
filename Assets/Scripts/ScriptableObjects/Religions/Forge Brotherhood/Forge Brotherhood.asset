@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b983dc504c06de74dbcbca5aa2a9a003, type: 3}
   m_Name: Forge Brotherhood
   m_EditorClassIdentifier: Assembly-CSharp::ReligionSO
-  religionName: 'Forge-Tongue Brotherhood '
-  description: Gear-worshippers and blacksmith-priests.
-  icon: {fileID: 0}
+  ReligionName: Forge-Tongue Brotherhood
+  Description: 
+  Icon: {fileID: 0}
   levels:
   - quest: {fileID: 11400000, guid: d930afb87c21d0841908409f3111d529, type: 2}
     reward: {fileID: 11400000, guid: 6cd7f3cdea7a1bc4f929d115e15accd5, type: 2}

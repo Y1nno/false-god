@@ -59,6 +59,19 @@ public class Inventory
         return _inventory.Contains(item);
     }
 
+    public int GetItemCount(int itemID)
+    {
+        int count = 0;
+        foreach (Item item in _inventory)
+        {
+            if (item != null && item.ID == itemID)
+            {
+                count++;
+            }
+        }
+        return count;
+    }
+
     public List<Item> GetAllItems()
     {
         return _inventory;

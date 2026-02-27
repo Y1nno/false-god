@@ -73,7 +73,7 @@ public class InfoContainer : MonoBehaviour
     {
         if (_relm.CurrentReligion != null)
         {
-            _content += "Religion: " + _relm.CurrentReligion.ReligionID + "\n";
+            _content += "Religion: " + _relm.CurrentReligion.ReligionName + "\n";
         }
         else
         {

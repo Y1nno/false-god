@@ -12,5 +12,5 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 2ffd7aa7745a714419e32cf0afe10076, type: 3}
   m_Name: L3 Quest
   m_EditorClassIdentifier: Assembly-CSharp::GiveItemQuestDataSO
-  requiredItemID: -2147483648
+  requiredItemID: 200
   requiredItemAmount: 1

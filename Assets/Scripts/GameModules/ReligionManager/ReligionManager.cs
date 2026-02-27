@@ -4,19 +4,34 @@ using System.Collections.Generic;
 public class ReligionManager : GameModule
 {
     public Religion CurrentReligion { get; private set; } = null;
-    private QuestFactory _questFactory = new QuestFactory();
-    private readonly List<Religion> _religionsPool = new List<Religion>()
-    {
-        new ExampleReligion1(),
-        new ExampleReligion2(),
-        new ExampleReligion3(),
-    };
+    private List<ReligionSO> _religionsPool = new List<ReligionSO>();
 
     public List<Quest> ActiveReligionQuests { get; private set; } = new List<Quest>();
 
     private const int MaxReligionsWhenChoosing = 3;
 
     public ReligionStatBonuses StatBonues = new ReligionStatBonuses();
+
+    public ReligionManager()
+    {
+        InitializeReligionsPool();
+    }
+
+    private void InitializeReligionsPool()
+    {
+        var religionSOPool = Resources.FindObjectsOfTypeAll<ReligionSO>();
+        foreach (ReligionSO ReligionSO in religionSOPool)
+        {
+            if (ReligionSO == null || string.IsNullOrWhiteSpace(ReligionSO.ReligionName)) {continue;}
+
+            _religionsPool.Add(ReligionSO);
+        }
+
+        if (_religionsPool.Count == 0)
+        {
+            Debug.LogWarning("No ReligionSO assets were found in Resources/Religions.");
+        }
+    }
 
     public override void AttachDefaultObservers()
     {
@@ -54,14 +69,9 @@ public class ReligionManager : GameModule
         ActiveReligionQuests.Add(newQuest);
     }
 
-    public Quest CreateReligionQuest(int questId = 0, int difficultyLevel = 0)
+    public List<ReligionSO> GenerateAvailableReligions()
     {
-        return _questFactory.CreateQuest(questId, difficultyLevel);
-    }
-
-    public List<Religion> GenerateAvailableReligions()
-    {
-        var availableReligions = new List<Religion>();
+        var availableReligions = new List<ReligionSO>();
 
         if (_religionsPool == null || _religionsPool.Count == 0)
             return availableReligions;
@@ -74,7 +84,7 @@ public class ReligionManager : GameModule
         while (availableReligions.Count < targetCount && safety++ < maxAttempts)
         {
             int index = Random.Range(0, _religionsPool.Count);
-            Religion religion = _religionsPool[index];
+            ReligionSO religion = _religionsPool[index];
 
             if (!availableReligions.Contains(religion))
                 availableReligions.Add(religion);

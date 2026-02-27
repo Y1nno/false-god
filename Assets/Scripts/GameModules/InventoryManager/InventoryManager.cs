@@ -89,6 +89,17 @@ public class InventoryManager : GameModule
     {
         _inv.RemoveItem(item);
     }
+    public void RemoveItemFromInventory(int itemID)
+    {
+        for (int i = 0; i < _inv.GetAllItems().Count; i++)
+        {
+            if (_inv.GetAllItems()[i].ID == itemID)
+            {
+                _inv.RemoveItem(_inv.GetAllItems()[i]);
+                break;
+            }
+        }
+    }
 
     public void DiscardItemFromInventory(Item item)
     {
@@ -103,6 +114,11 @@ public class InventoryManager : GameModule
     public bool IsItemInInventory(Item item)
     {
         return _inv.ContainsItem(item);
+    }
+
+    public int GetItemCount(int itemID)
+    {
+        return _inv.GetItemCount(itemID);
     }
 
     public void UseItem(Item item)

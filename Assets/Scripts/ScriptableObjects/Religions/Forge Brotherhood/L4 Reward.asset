@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 164e04c54ef150a46b215eaedf2c1932, type: 3}
   m_Name: L4 Reward
   m_EditorClassIdentifier: Assembly-CSharp::PassiveReligionRewardSO
-  passive: 0
+  passive: 1

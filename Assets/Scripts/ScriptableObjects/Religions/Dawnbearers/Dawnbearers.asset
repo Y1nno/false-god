@@ -12,12 +12,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b983dc504c06de74dbcbca5aa2a9a003, type: 3}
   m_Name: Dawnbearers
   m_EditorClassIdentifier: Assembly-CSharp::ReligionSO
-  religionName: Order of the Dawnbearers
-  description: A radiant, militant church dedicated to purging darkness.
-  icon: {fileID: 0}
+  ReligionName: Order of the Dawnbearers
+  Description: 
+  Icon: {fileID: 0}
   levels:
-  - quest: {fileID: 11400000, guid: 4122c57b6b7c78a4fbf057bf85397d92, type: 2}
-    reward: {fileID: 11400000, guid: b42543e45233e4b4090bddf5cc375828, type: 2}
+  - quest: {fileID: 0}
+    reward: {fileID: 0}
   - quest: {fileID: 11400000, guid: 10c4bded45edbc441a9ab2fcb4792431, type: 2}
     reward: {fileID: 11400000, guid: eb08c752e9e05fe468dec5666ea7d4e2, type: 2}
   - quest: {fileID: 11400000, guid: 8022a3ef78e50294898981e741efaa16, type: 2}

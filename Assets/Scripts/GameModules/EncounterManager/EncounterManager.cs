@@ -166,7 +166,6 @@ public class EncounterManager : GameModule, IObserver
         {
             // Propagate the event to EncounterManager's observers (like Rites)
             Notify(EventType.EncounterResolve);
-            
             // Clean up observer from the SPECIFIC encounter that just resolved
             // (Note: _currentEncounter might already be the NEXT encounter if DungeonManager advanced first)
             if (subject is Encounter resolvedEncounter)

@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b983dc504c06de74dbcbca5aa2a9a003, type: 3}
   m_Name: Pale Moon
   m_EditorClassIdentifier: Assembly-CSharp::ReligionSO
-  religionName: Children of the Pale Moon
-  description: Nocturnal mystics who draw strength from lunar phases
-  icon: {fileID: 0}
+  ReligionName: Children of the Pale Moon
+  Description: 
+  Icon: {fileID: 0}
   levels:
   - quest: {fileID: 11400000, guid: e96967f78b3186043a57d2b0f5f2b040, type: 2}
     reward: {fileID: 11400000, guid: 9924dbe7a49cf7e4aa8682e8a0d65912, type: 2}

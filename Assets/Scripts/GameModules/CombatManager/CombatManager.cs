@@ -24,7 +24,7 @@ public class CombatManager : GameModule, IObserver
 
     private List<Combatant> EnemiesByDifficulty(float difficulty)
     {
-        // Placeholder logic for generating enemies based on difficulty
+        // TODO: logic for generating enemies based on difficulty
         List<Combatant> enemies = new List<Combatant>();
         enemies.Add(new Goblin());
         return enemies;
@@ -34,6 +34,11 @@ public class CombatManager : GameModule, IObserver
     {
         CurrentBattle = null;
         Notify(EventType.BattleEnd);
+    }
+
+    public bool HasDefeatedBoss(int bossID)
+    {
+        return false; // TODO: Implement logic to check if a boss has been defeated
     }
 
     public void OnNotify(object subject, EventType eventType)

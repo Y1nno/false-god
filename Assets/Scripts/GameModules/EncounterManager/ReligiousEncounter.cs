@@ -5,8 +5,7 @@ public class ReligiousEncounter : Encounter, IPromptResponder
 {
 
     private ReligionManager _rm;
-    private List<Religion> _offeredReligions = new List<Religion>();
-    private List<Quest> _offeredQuests = new List<Quest>();
+    private List<ReligionSO> _offeredReligions = new List<ReligionSO>();
     public ReligiousEncounter(float difficulty) : base(difficulty)
     {
         _rm = RunManager.Instance.GetService<ReligionManager>();
@@ -30,7 +29,7 @@ public class ReligiousEncounter : Encounter, IPromptResponder
         }
         else
         {
-            // TODO: Implement religious encounter options for existing religion members
+            OfferCurrentReligionRequirement();
         }
     }
 
@@ -40,30 +39,39 @@ public class ReligiousEncounter : Encounter, IPromptResponder
         List<string> outputOptions = new List<string>();
         for (int i = 0; i < _offeredReligions.Count; i++)
         {
-            outputOptions.Add(_offeredReligions[i].ReligionID);
+            outputOptions.Add(_offeredReligions[i].ReligionName);
         }
         Prompt prompt = new Prompt("Choose a new religion:", outputOptions, this);
     }
 
     public override void RecieveDecision(int decisionIndex)
     {
-        if (_offeredReligions.Count == 0 && _offeredQuests.Count > 0)
+        Religion currentReligion = _rm.CurrentReligion;
+        if (_offeredReligions.Count > 0)
         {
-            Quest chosenQuest = _offeredQuests[decisionIndex];
-            _offeredQuests = new List<Quest>();
-            _rm.AcceptReligionQuest(chosenQuest);
+            ReligionSO chosenReligion = _offeredReligions[decisionIndex];
+            _offeredReligions = new List<ReligionSO>();
+            _rm.JoinReligion(new Religion(chosenReligion.ConvertToReligion()));
         }
-        else if (_offeredQuests.Count == 0 && _offeredReligions.Count > 0)
+        else if (decisionIndex == 0 && currentReligion.TryCompleteCurrentQuest())
         {
-            Religion chosenReligion = _offeredReligions[decisionIndex];
-            _offeredReligions = new List<Religion>();
-            _rm.JoinReligion(chosenReligion);
-        }
-        else
-        {
-            Debug.LogWarning("ReligiousEncounter received decision but no valid options are available.");
+            currentReligion.CompleteCurrentQuest();
+            TextOutputter.Instance.OutputText("You fulfilled the requirement and received the reward.");
         }
 
         ResolveEncounter();
+    }
+
+    private void OfferCurrentReligionRequirement()
+    {
+        Religion currentReligion = _rm.CurrentReligion;
+        TextOutputter.Instance.OutputText($"Religious requirement: {currentReligion.levels[currentReligion.FaithLevel].quest.GetCurrentRequirementDescription()}");
+
+        if (!currentReligion.CanPlayerCompleteQuest())
+        {
+            TextOutputter.Instance.OutputText("You cannot fulfill this requirement yet.");
+            return;
+        }
+        Prompt prompt = new Prompt("Do you want to complete the current quest?", new List<string> { "Yes", "No" }, this);
     }
 }
