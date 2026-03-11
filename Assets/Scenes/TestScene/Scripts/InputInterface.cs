@@ -119,7 +119,7 @@ public class InputInterface : MonoBehaviour
         DiceRoller.Instance.RollForStat(stat, threshold);
     }
 
-    private void RefreshUI()
+    public void RefreshUI()
     {
         InfoContainer info = GameObject.FindAnyObjectByType<InfoContainer>();
         if (info != null) info.Refresh();
@@ -219,7 +219,6 @@ public class InputInterface : MonoBehaviour
             return RiteType.Colossus;
         }
     }
-    
     
     // --- Legacy / Shared State Logic (Deprecated but kept to avoid breaking existing link immediately) ---
     private RiteType _selectedRite = RiteType.Colossus;

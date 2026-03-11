@@ -7,7 +7,7 @@ public class EncounterFactory
     private int _room;
     
     // Create an encounter based on dungeon floor data and encounter type
-    public Encounter CreateEncounter(DungeonFloorData floorData, EncounterType type)
+    public Encounter CreateEncounter(DungeonFloorData floorData, EncounterType type, TrapEncounterSO trapSO = null)
     {
         _floor = floorData.Floor;
         _room = floorData.Room;
@@ -20,7 +20,7 @@ public class EncounterFactory
             case EncounterType.Treasure:
                 return new TreasureEncounter(difficulty);
             case EncounterType.Trap:
-                return new TrapEncounter(difficulty);
+                return new TrapEncounter(difficulty, trapSO, _floor);
             case EncounterType.NPC:
                 return new NPCEncounter(difficulty);
             case EncounterType.Religious:

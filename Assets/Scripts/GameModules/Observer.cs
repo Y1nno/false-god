@@ -35,5 +35,6 @@ public enum EventType
     PlayerActionSet,
     EnemyDefeated,
     DiceRoll,
+    DiceRollFinalized,
     DecisionMade
 }
