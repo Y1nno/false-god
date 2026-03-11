@@ -135,6 +135,17 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     }
     public override void ChooseAction()
     {
+        if (HasAilment(AilmentType.Frozen))
+        {
+            TextOutputter.Instance.OutputText("You are frozen solid and cannot move!");
+            _availableActions.Clear();
+            _availableActions.Add(ActionFactory.CreateActionByID(000)); // Do Nothing action
+            
+            Notify(EventType.PlayerTurnStart);
+            _currentDecisionMode = DecisionMode.ChoosingAction;
+            Prompt frozenPrompt = new Prompt("You are frozen!", new List<string> { "Skip Turn" }, this);
+            return;
+        }
         _availableActions.Clear();
         EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
         EquipmentSO moveFirstItem = null;
@@ -255,7 +266,26 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     }
     public override int GetSecondaryStat(SecondaryStat stat)
     {
-        return _pm.CalculateSecondaryStat(stat);
+        int baseStat = _pm.CalculateSecondaryStat(stat);
+
+        if (HasAilment(AilmentType.Burn) && stat == SecondaryStat.PHATK)
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 0.90f);
+        }
+        else if (HasAilment(AilmentType.Poison) && stat == SecondaryStat.SPDEF)
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 0.95f);
+        }
+
+        if (HasAilment(AilmentType.Frozen))
+        {
+            if (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF)
+            {
+                baseStat = Mathf.RoundToInt(baseStat * 1.20f);
+            }
+        }
+
+        return baseStat;
     }
     public override int GetBonusDamage()
     {
