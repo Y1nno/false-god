@@ -4,11 +4,16 @@ using UnityEngine;
 public class CombatManager : GameModule, IObserver
 {
     public Battle CurrentBattle {get; private set;}
-    public override void AttachDefaultObservers(){}
+    public PlayerCombatManager Pcm { get; private set; } = new PlayerCombatManager();
+
+    public override void AttachDefaultObservers()
+    {
+        RunManager.Instance.GetService<EncounterManager>()?.AttachObserver(this);
+    }
 
     public void CreateNewBattle(float difficulty)
     {
-        CurrentBattle = new Battle(EnemiesByDifficulty(difficulty));
+        CurrentBattle = new Battle(EnemiesByDifficulty(difficulty), Pcm);
         CurrentBattle.AttachObserver(this);
     }
 
@@ -42,6 +47,10 @@ public class CombatManager : GameModule, IObserver
         {
             case EventType.BattleEnd:
                 FinishBattle();
+                break;
+            case EventType.EncounterResolve:
+                Pcm.ClearEncounterEffects();
+                Notify(EventType.EncounterResolve);
                 break;
             case EventType.EnemyDefeated:
                 Notify(EventType.EnemyDefeated);

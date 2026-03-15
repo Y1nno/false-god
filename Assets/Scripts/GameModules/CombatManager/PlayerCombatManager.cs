@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class PlayerCombatManager : Combatant, IPromptResponder
 {
-    private PlayerManager _pm = RunManager.Instance.GetService<PlayerManager>();
+    private PlayerManager _pm => RunManager.Instance.GetService<PlayerManager>();
 
     private List<CombatAction> _availableActions = new List<CombatAction>();
     private enum DecisionMode { None, ChoosingAction, ChoosingTarget }
@@ -90,6 +90,15 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         {
             TextOutputter.Instance.OutputText($"{GetName()} blocked all incoming damage!");
             return 0;
+        }
+
+        if (damage > 0 && attacker != null && attacker is Enemy)
+        {
+            RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
+            if (relicm != null)
+            {
+                damage = Mathf.RoundToInt(damage * relicm.GetEnemyDamageMultiplier());
+            }
         }
 
         int damageDealt = 0;
@@ -262,8 +271,25 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     }
     public override int GetStat(Stat stat)
     {
-        return _pm.GetStat(stat);
+        int baseStat = _pm.GetStat(stat);
+        return baseStat + GetStatBonus(stat);
     }
+
+    public int GetStatBonus(Stat stat)
+    {
+        float bonus = 0;
+        if (_activeEffects == null) return 0;
+        foreach (var effect in _activeEffects)
+        {
+            if ((effect.BaseEffect.Type == ConsumableEffectType.StatChange && effect.BaseEffect.TargetStat == stat) ||
+                effect.BaseEffect.Type == ConsumableEffectType.AllStatsChange)
+            {
+                bonus += effect.ModifiedAmount;
+            }
+        }
+        return Mathf.RoundToInt(bonus);
+    }
+
     public override int GetSecondaryStat(SecondaryStat stat)
     {
         int baseStat = _pm.CalculateSecondaryStat(stat);
@@ -285,7 +311,14 @@ public class PlayerCombatManager : Combatant, IPromptResponder
             }
         }
 
-        return baseStat;
+        return baseStat + GetSecondaryStatBonus(stat);
+    }
+
+    public int GetSecondaryStatBonus(SecondaryStat stat)
+    {
+        // Currently ConsumableEffectType doesn't distinguish secondary stats specifically in its TargetStat field (which is only 'Stat' enum),
+        // but if you add more specific consumable types later, this is where you'd aggregate those bonuses.
+        return 0;
     }
     public override int GetBonusDamage()
     {
@@ -294,8 +327,8 @@ public class PlayerCombatManager : Combatant, IPromptResponder
 
     public override bool TryUseMana(int amount)
     {
-        // 1. Try normal mana usage first
-        if (base.TryUseMana(amount))
+        // 1. Try normal mana usage first (includes Blessed Cross check)
+        if (_pm.TryUseMana(amount))
         {
             return true;
         }
@@ -313,10 +346,6 @@ public class PlayerCombatManager : Combatant, IPromptResponder
             }
 
             // Consume health for the rest
-            // Check if we have enough health (don't kill self unless intended? usually allow suicide or block)
-            // Let's allow suicide for drama, or check CanAfford if we want safety.
-            // Requirement says "Use HP as Mana", usually implies "Blood Magic".
-
             if (_pm.Health.CurrentValue > deficit)
             {
                 _pm.TakeDamage(deficit);
@@ -351,9 +380,6 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         {
             int deficit = amount - _pm.Mana.CurrentValue;
             // Ensure we have enough health to cover the deficit
-            // Depending on design, we might require > deficit to stay alive, or >= to cast and die.
-            // Let's go with > 0 after cost (strict survival) or >= (allowed to die).
-            // Given "Die()" exists, allowing >= seems consistent.
             return _pm.Health.CurrentValue > deficit;
         }
         return false;

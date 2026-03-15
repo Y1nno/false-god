@@ -27,6 +27,12 @@ public class EncounterFactory
                 return new ReligiousEncounter(difficulty);
             case EncounterType.Rest:
                 return new RestEncounter(difficulty);
+            case EncounterType.Blacksmith:
+                return new BlacksmithEncounter(difficulty);
+            case EncounterType.Merchant:
+                return new MerchantEncounter(difficulty);
+            case EncounterType.Portal:
+                return new PortalEncounter(difficulty);
             default:
                 throw new ArgumentOutOfRangeException("Invalid encounter type.");
         }

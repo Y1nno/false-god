@@ -97,7 +97,13 @@ public abstract class CombatAction
 
     protected virtual int CalculateDamageBasedOnStats(int baseDamage, Combatant user)
     {
-        int finalDamage = baseDamage + user.GetBonusDamage(); // Add flat flat bonus damage
+        RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
+        float relicMultiplier = (user is PlayerCombatManager) && relicm != null ? relicm.GetDamageMultiplier() : 1.0f;
+        int relicFlatBonus = (user is PlayerCombatManager) && relicm != null ? relicm.GetFlatDamageBonus() : 0;
+        int hunterTrophyBonus = (user is PlayerCombatManager) && relicm != null ? relicm.GetHunterTrophyFlatBonus() : 0;
+
+        int finalDamage = Mathf.RoundToInt((baseDamage + user.GetBonusDamage() + relicFlatBonus + hunterTrophyBonus) * relicMultiplier);
+        
         if (ActionType == AttackType.Physical)
         {
             finalDamage *= (user.GetSecondaryStat(SecondaryStat.PHATK) + DiceRoller.Instance.RollD20())/k_attackCalculationDivisor;
@@ -113,11 +119,14 @@ public abstract class CombatAction
     {
         int finalDamage = baseDamage;
 
-            if (Random.Range(0f, 100f) < user.GetCritChance())
-            {
-                finalDamage *= 2; // Standard 2x Crit
-                TextOutputter.Instance.OutputText("CRITICAL HIT!");
-            }
+        if (Random.Range(0f, 100f) < user.GetCritChance())
+        {
+            RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
+            float multiplier = (user is PlayerCombatManager) && relicm != null ? relicm.GetCritDamageMultiplier() : 2.0f;
+            
+            finalDamage = Mathf.RoundToInt(finalDamage * multiplier);
+            TextOutputter.Instance.OutputText("CRITICAL HIT!");
+        }
 
         return finalDamage;
     }

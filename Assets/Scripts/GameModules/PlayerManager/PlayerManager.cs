@@ -2,7 +2,7 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 
-public class PlayerManager : GameModule
+public class PlayerManager : GameModule, IObserver
 {
     private const int k_StartingMaxHealth = 100;
     private const int k_StartingMaxMana = 50;
@@ -23,6 +23,7 @@ public class PlayerManager : GameModule
 
     public override void AttachDefaultObservers()
     {
+        RunManager.Instance.GetService<InventoryManager>()?.AttachObserver(this);
         RefreshEquipmentStats();
         Health.RestoreToFull();
         Mana.RestoreToFull();
@@ -56,6 +57,13 @@ public class PlayerManager : GameModule
         {
             return false;
         }
+        RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
+        if (relicm != null && relicm.TryFreeMana())
+        {
+            TextOutputter.Instance.OutputText("Blessed Cross glows! The spell costs no mana.");
+            return true;
+        }
+
         Mana.Decrease(amount);
         return true;
     }
@@ -92,7 +100,10 @@ public class PlayerManager : GameModule
             _ => 0
         };
 
-        return baseStat + bonus;
+        CombatManager cm = RunManager.Instance.GetService<CombatManager>();
+        int combatBonus = cm?.Pcm?.GetStatBonus(stat) ?? 0;
+
+        return baseStat + bonus + combatBonus;
     }
 
     public void SetStat(Stat stat, int value)
@@ -107,7 +118,10 @@ public class PlayerManager : GameModule
     public void RefreshEquipmentStats()
     {
         // Update Health modifiers
-        int strMod = Mathf.RoundToInt((GetStat(Stat.STR) * k_HealthPerStrength));
+        RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
+        int relicHPBonus = relicm != null ? relicm.GetMaxHPBonus() : 0;
+
+        int strMod = Mathf.RoundToInt((GetStat(Stat.STR) * k_HealthPerStrength)) + relicHPBonus;
         Health.SetStatModifier(strMod);
 
         EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
@@ -161,7 +175,7 @@ public class PlayerManager : GameModule
                 int critFromRite = (int)(RunManager.Instance.GetService<RiteManager>().CalculateFlatStatBonus(SecondaryStat.CRIT) * 100f) ;
                 return critFromEquipment + critFromRite;
             case SecondaryStat.EVDE:
-                return eqm?.GetTotalBonus(item => item.DodgeChance.value) ?? 0;
+                return (eqm?.GetTotalBonus(item => item.DodgeChance.value) ?? 0) + (RunManager.Instance.GetService<CombatManager>()?.Pcm?.GetSecondaryStatBonus(SecondaryStat.EVDE) ?? 0);
             default:
                 throw new ArgumentOutOfRangeException(nameof(secondaryStat), secondaryStat, null);
         }
@@ -185,6 +199,16 @@ public class PlayerManager : GameModule
     {
         // Notify observers about player death
         Notify(EventType.PlayerDeath);
+    }
+
+    public void OnNotify(object subject, EventType eventType)
+    {
+        if (eventType == EventType.ItemAcquired || eventType == EventType.ItemRemoved)
+        {
+            RefreshEquipmentStats();
+            
+            // Re-broadcast stats refreshed event if needed
+        }
     }
 }
 

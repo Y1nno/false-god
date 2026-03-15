@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Linq;
 
 public class PlayerAttackAction : CombatAction
 {
@@ -40,6 +41,36 @@ public class PlayerAttackAction : CombatAction
         TextOutputter.Instance.OutputText($"{user.GetName()} used {ActionName} on {target.GetName()}!");
         damage = CalculateDamageFromBase(damage, user);
         int damageDealt = target.GetAttacked(damage, ActionType, user);
+
+        // Relic: Splash Damage
+        RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
+        if (relicm != null)
+        {
+            float splashPercent = relicm.GetSplashDamagePercentage();
+            if (splashPercent > 0)
+            {
+                int splashDamage = Mathf.RoundToInt(damageDealt * splashPercent);
+                if (splashDamage > 0)
+                {
+                    CombatManager cm = RunManager.Instance.GetService<CombatManager>();
+                    if (cm != null && cm.CurrentBattle != null)
+                    {
+                        var otherEnemies = cm.CurrentBattle.GetEnemies()
+                            .Where(e => e != target && e.IsAlive())
+                            .ToList();
+                        
+                        if (otherEnemies.Count > 0)
+                        {
+                            TextOutputter.Instance.OutputText($"Splash damage dealt {splashDamage} to other enemies!");
+                            foreach (var enemy in otherEnemies)
+                            {
+                                enemy.GetAttacked(splashDamage, ActionType, user);
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
         

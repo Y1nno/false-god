@@ -154,6 +154,7 @@ public class EncounterManager : GameModule, IObserver
         }
         else
         {
+            // TODO: Apply Relic multiplier for Unique Enemy chance here
             return EncounterType.Enemy;
         }
     }
@@ -224,5 +225,8 @@ public enum EncounterType
     Trap,
     NPC,
     Rest,
-    Religious
+    Religious,
+    Blacksmith,
+    Merchant,
+    Portal
 }

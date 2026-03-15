@@ -7,12 +7,16 @@ public class Battle : Subject, IObserver
 {
     List<Combatant> combatants = new List<Combatant>();
     PlayerManager _pm = RunManager.Instance.GetService<PlayerManager>();
-    public PlayerCombatManager Pcm { get; private set; } = new PlayerCombatManager();
+    public PlayerCombatManager Pcm { get; private set; }
     System.Random rng = new System.Random();
+    private bool _turnRefreshedThisEncounter = false;
+    private bool _needsTurnRefresh = false;
+    public int TurnCount { get; private set; } = 1;
 
-    public Battle(List<Combatant> enemies)
+    public Battle(List<Combatant> enemies, PlayerCombatManager player)
     {
         combatants = enemies;
+        Pcm = player;
         combatants.Add(Pcm);
         foreach (Combatant combatant in combatants)
         {
@@ -50,6 +54,9 @@ public class Battle : Subject, IObserver
             return;
         }
         Notify(EventType.RoundStart);
+        if (TurnCount > 1) 
+        {
+        }
         SetActions();
     }
 
@@ -77,6 +84,7 @@ public class Battle : Subject, IObserver
             return;
         }
         Notify(EventType.RoundEnd);
+        TurnCount++;
         StartRound();
     }
     public void SetActions()
@@ -140,12 +148,28 @@ public class Battle : Subject, IObserver
                 //Debug.Log($"Player action set, calculating resolution order and resolving actions. Called from frame={Time.frameCount} by {((Combatant)subject).GetName()}");
                 CalculateResolutionOrder();
                 ResolveCombatantsActions();
-                EndRound();
+                
+                if (_needsTurnRefresh)
+                {
+                    _needsTurnRefresh = false;
+                    SetActions();
+                }
+                else
+                {
+                    EndRound();
+                }
                 break;
             case EventType.EnemyDefeated:
                 // Notify observers (CombatManager) that an enemy was defeated
                 Notify(EventType.EnemyDefeated);
-                // Do not end battle here. EndRound() will check CheckBattleOngoing() and handle it.
+                
+                RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
+                if (relicm != null && relicm.HasTurnRefreshOnKill() && !_turnRefreshedThisEncounter)
+                {
+                    _turnRefreshedThisEncounter = true;
+                    _needsTurnRefresh = true;
+                    TextOutputter.Instance.OutputText("Relic of Eternal Hunt glows! Your turn is refreshed.");
+                }
                 break;
             default:
                 break;

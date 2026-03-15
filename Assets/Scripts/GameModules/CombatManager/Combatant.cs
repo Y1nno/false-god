@@ -7,10 +7,30 @@ public abstract class Combatant : Subject
     protected static ActionFactory ActionFactory = new ActionFactory();
     protected Combatant _currentTarget = null;
 
+    public bool IsBoss { get; set; } = false;
     public CombatAction CurrentAction = null;
 
     // Tracking active effects like HealOverTime or ManaOverTime
     protected List<ActiveOverTimeEffect> _activeEffects = new List<ActiveOverTimeEffect>();
+
+    public void ClearEncounterEffects()
+    {
+        if (_activeEffects.Count == 0) return;
+
+        for (int i = _activeEffects.Count - 1; i >= 0; i--)
+        {
+            var effect = _activeEffects[i];
+            if (effect.BaseEffect.DurationType == EffectDurationType.Encounter)
+            {
+                effect.DecrementDuration();
+                if (effect.RoundsRemaining <= 0)
+                {
+                    _activeEffects.RemoveAt(i);
+                    TextOutputter.Instance.OutputText($"{GetName()}'s encounter effect ({effect.BaseEffect.Type}) has expired.");
+                }
+            }
+        }
+    }
 
     // Tracking active ailments (Burn, Poison, Frozen, Bleed, etc)
     public List<Ailment> ActiveAilments = new List<Ailment>();
@@ -36,6 +56,13 @@ public abstract class Combatant : Subject
         if (amount <= 0) return 0;
 
         bool wasAlive = GetHealth().CurrentValue > 0;
+        
+        RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
+        if (relicm != null)
+        {
+            amount = Mathf.Max(0, amount - relicm.GetFlatDamageReduction());
+        }
+
         GetHealth().Decrease(amount);
         TextOutputter.Instance.OutputText($"{GetName()} took {amount} damage.");
 
@@ -87,8 +114,7 @@ public abstract class Combatant : Subject
 
     public void ApplyAilment(AilmentType type, int duration)
     {
-        // Check if we already have this ailment. If so, just refresh/extend the duration based on what's longer, or overwrite.
-        // For simplicity, we'll overwrite it if the new duration is longer, or just reset it.
+        // Check if we already have this ailment.
         Ailment existing = ActiveAilments.Find(a => a.Type == type);
         if (existing != null)
         {
@@ -124,6 +150,17 @@ public abstract class Combatant : Subject
     {
         if (!IsAlive()) return;
 
+        RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
+        if (relicm != null)
+        {
+            int hpLoss = relicm.GetHpLossPerTurn();
+            if (hpLoss > 0)
+            {
+                TextOutputter.Instance.OutputText($"{GetName()} loses {hpLoss} HP from the Idol of Endless Hunger.");
+                TakeDamage(hpLoss);
+            }
+        }
+
         if (_activeEffects.Count > 0)
         {
             for (int i = _activeEffects.Count - 1; i >= 0; i--)
@@ -144,12 +181,15 @@ public abstract class Combatant : Subject
                 TextOutputter.Instance.OutputText($"{GetName()} regenerates {manaAmount} Mana from {effect.BaseEffect.Type}.");
             }
 
-            // Decrement and remove if finished
+        // Decrement and remove if finished
+        if (effect.BaseEffect.DurationType == EffectDurationType.Turns)
+        {
             effect.DecrementDuration();
             if (effect.RoundsRemaining <= 0)
             {
                 _activeEffects.RemoveAt(i);
             }
+        }
             }
         }
 
