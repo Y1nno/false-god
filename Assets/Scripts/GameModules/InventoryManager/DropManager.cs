@@ -35,12 +35,9 @@ public class DropManager : GameModule, IObserver
         _dropTables["Golbin Rogue"] = new List<DropData> { new DropData("115", 0.2f) };
 
         // Generic Drops (Drop from "Enemies")
-        _genericDrops.Add(new DropData("Broken gemshard", 0.1f));
-        _genericDrops.Add(new DropData("Torn paper", 0.1f));
-        _genericDrops.Add(new DropData("Paper", 0.1f));
-        _genericDrops.Add(new DropData("Ink", 0.1f));
-        _genericDrops.Add(new DropData("Iron Key", 0.1f));
-        _genericDrops.Add(new DropData("Lockpick", 0.1f));
+        _genericDrops.Add(new DropData("Broken GemShard", 0.1f));
+        _genericDrops.Add(new DropData("Broken Bones", 0.05f));
+        _genericDrops.Add(new DropData("Skeleton Key", 0.02f));
     }
 
     public override void AttachDefaultObservers()
@@ -52,12 +49,26 @@ public class DropManager : GameModule, IObserver
     {
         if (eventType == EventType.EnemyDefeated && subject is Enemy enemy)
         {
-            RollDrops(enemy.GetName());
+            RollDrops(enemy);
         }
     }
 
-    private void RollDrops(string enemyName)
+    private void RollDrops(Enemy enemy)
     {
+        if (enemy is Boss boss)
+        {
+            foreach (string dropID in boss.BossData.DropIDs)
+            {
+                Item newItem = ItemFactory.CreateItemByID(dropID);
+                if (newItem != null)
+                {
+                    RunManager.Instance.GetService<InventoryManager>()?.AddItemToInventory(newItem);
+                    TextOutputter.Instance.OutputText($"{boss.GetName()} dropped {newItem.GetName()}!");
+                }
+            }
+        }
+
+        string enemyName = enemy.GetName();
         // TODO: Specific enemy drop check
         // For now, as requested, every enemy drops them, but we'll include the specific ones too for future proofing.
         

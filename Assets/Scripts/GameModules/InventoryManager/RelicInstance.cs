@@ -3,6 +3,7 @@ using UnityEngine;
 public class RelicInstance : Item
 {
     public RelicSO BaseData { get; private set; }
+    public override string GetName() => BaseData != null ? BaseData.ItemName : "Unknown Relic";
 
     public RelicInstance(RelicSO so)
     {

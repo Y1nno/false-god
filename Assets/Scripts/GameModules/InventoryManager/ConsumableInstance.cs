@@ -3,6 +3,7 @@ using UnityEngine;
 public class ConsumableInstance : Item
 {
     public Consumable BaseData { get; private set; }
+    public override string GetName() => BaseData != null ? BaseData.ItemName : "Unknown Consumable";
     public int Tier { get; private set; }
 
     public ConsumableInstance(Consumable baseData, int tier)

@@ -36,7 +36,14 @@ public class Enemy : Combatant
             foreach (int actionID in availableActionIDs)
             {
                 CombatAction action = ActionFactory.CreateActionByID(actionID);
-                _availableActions.Add(action);
+                if (action != null)
+                {
+                    _availableActions.Add(action);
+                }
+                else
+                {
+                    Debug.LogWarning($"Enemy {name}: Action ID {actionID} returned null from ActionFactory.");
+                }
             }
         }
         _goldValue = goldValue;
@@ -124,6 +131,16 @@ public class Enemy : Combatant
             {
                 baseStat = Mathf.RoundToInt(baseStat * 1.20f); // +20% Def and Sp.Def
             }
+        }
+
+        if (HasAilment(AilmentType.AtkBonus) && (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK))
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 1.40f); // +40% Attack
+        }
+
+        if (HasAilment(AilmentType.Shielded) && (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF))
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 1.20f); // +20% Defense
         }
 
         return baseStat;

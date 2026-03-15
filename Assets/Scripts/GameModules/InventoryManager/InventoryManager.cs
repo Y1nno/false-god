@@ -17,13 +17,23 @@ public class InventoryManager : GameModule
     public void AddItemToInventory(Item item)
     {
         if (item == null) return;
+
+        // Consolidation Logic: Merge MaterialInstances if they are identical
+        if (item is MaterialInstance newMat)
+        {
+            MaterialInstance existing = UnEquippedItems.Find(i => i is MaterialInstance m && m.BaseData == newMat.BaseData) as MaterialInstance;
+            if (existing != null)
+            {
+                existing.Quantity += newMat.Quantity;
+                TextOutputter.Instance.OutputText($"Added {newMat.GetName()} x{newMat.Quantity} to Inventory (Total: {existing.Quantity}).");
+                Notify(EventType.ItemAcquired);
+                return;
+            }
+        }
+
         UnEquippedItems.Add(item);
         
-        string itemName = item is Equipment eq ? eq.ItemName :
-                          item is ConsumableInstance con ? con.BaseData.ItemName :
-                          item is MaterialInstance mat ? mat.BaseData.ItemName :
-                          item is RelicInstance rel ? rel.BaseData.ItemName :
-                          item is KeyInstance key ? key.BaseData.ItemName : "Unknown Item";
+        string itemName = item.GetName();
                           
         TextOutputter.Instance.OutputText($"Added {itemName} to Inventory.");
         Notify(EventType.ItemAcquired);

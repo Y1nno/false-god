@@ -87,6 +87,15 @@ public class Battle : Subject, IObserver
         TurnCount++;
         StartRound();
     }
+
+    // Detach this battle as an observer from all combatants to prevent ghost battles
+    public void Cleanup()
+    {
+        foreach (Combatant combatant in combatants)
+        {
+            combatant.DetachObserver(this);
+        }
+    }
     public void SetActions()
     {
         //Debug.Log("Setting actions for all combatants.");
@@ -160,8 +169,8 @@ public class Battle : Subject, IObserver
                 }
                 break;
             case EventType.EnemyDefeated:
-                // Notify observers (CombatManager) that an enemy was defeated
-                Notify(EventType.EnemyDefeated);
+                // Notify observers (CombatManager) that an enemy was defeated, passing the enemy object
+                Notify(subject, EventType.EnemyDefeated);
                 
                 RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
                 if (relicm != null && relicm.HasTurnRefreshOnKill() && !_turnRefreshedThisEncounter)

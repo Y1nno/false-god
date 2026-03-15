@@ -33,6 +33,8 @@ public class EncounterFactory
                 return new MerchantEncounter(difficulty);
             case EncounterType.Portal:
                 return new PortalEncounter(difficulty);
+            case EncounterType.Boss:
+                return new BossEncounter(difficulty);
             default:
                 throw new ArgumentOutOfRangeException("Invalid encounter type.");
         }

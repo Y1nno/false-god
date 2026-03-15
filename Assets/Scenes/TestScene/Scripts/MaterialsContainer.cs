@@ -15,11 +15,14 @@ public class MaterialsContainer : MonoBehaviour, IObserver
         {
             HookUpManagers();
         }
-        _content = "Materials Inventory:\n\n";
-
+        
+        _content = "Materials Inventory:\n";
         AddMaterialsInfo();
 
-        _content += "\nRelics Inventory:\n\n";
+        _content += "\nKeys Inventory:\n";
+        AddKeysInfo();
+
+        _content += "\nRelics Inventory:\n";
         AddRelicsInfo();
 
         textBox.text = _content;
@@ -27,13 +30,11 @@ public class MaterialsContainer : MonoBehaviour, IObserver
 
     private void AddMaterialsInfo()
     {
-        if (_invm == null)
-        {
-            _content += "No Inventory Manager connected.\n";
-            return;
-        }
+        if (_invm == null) return;
 
         bool hasMaterials = false;
+        // Since Materials are now consolidated in InventoryManager, we just list them
+        // but we'll group them here too just in case or if multiple stacks are allowed later.
         foreach (var item in _invm.UnEquippedItems)
         {
             if (item is MaterialInstance mat)
@@ -43,10 +44,24 @@ public class MaterialsContainer : MonoBehaviour, IObserver
             }
         }
 
-        if (!hasMaterials)
+        if (!hasMaterials) _content += "None\n";
+    }
+
+    private void AddKeysInfo()
+    {
+        if (_invm == null) return;
+
+        bool hasKeys = false;
+        foreach (var item in _invm.UnEquippedItems)
         {
-            _content += "Empty\n";
+            if (item is KeyInstance key)
+            {
+                _content += $"- {key.BaseData.ItemName} ({key.RemainingUses} Uses)\n";
+                hasKeys = true;
+            }
         }
+
+        if (!hasKeys) _content += "None\n";
     }
 
     private void AddRelicsInfo()
@@ -63,10 +78,7 @@ public class MaterialsContainer : MonoBehaviour, IObserver
             }
         }
 
-        if (!hasRelics)
-        {
-            _content += "None\n";
-        }
+        if (!hasRelics) _content += "None\n";
     }
 
     private void HookUpManagers()

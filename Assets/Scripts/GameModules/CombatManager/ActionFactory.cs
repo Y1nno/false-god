@@ -16,6 +16,10 @@ public class ActionFactory
             case 2: return new PlayerBlockAction();
             case 3: return new FireballAction();
             case 999: return new SwitchWeaponAction();
+            case 101: return new RottenCleaverAction();
+            case 102: return new DemonicSacrificeAction();
+            case 103: return new BloodDrainAction();
+            case 104: return new DivineShieldAction();
             default: return null;
         }
     }

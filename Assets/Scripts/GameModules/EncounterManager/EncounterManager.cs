@@ -129,15 +129,10 @@ public class EncounterManager : GameModule, IObserver
         int floor = floorData.Floor;
         int room = floorData.Room;
 
-        //Every 20 encounters is a religious encounter
-        if (floor % 2 == 0 && room == 10)
+        // Every 10 encounters is a Boss encounter
+        if (room == 10)
         {
-            return EncounterType.Religious;
-        }
-        // Every 10 encounters is an NPC encounter
-        else if (room == 10)
-        {
-            return EncounterType.NPC;
+            return EncounterType.Boss;
         }
         // The last room on the floor is always a rest encounter
         else if (room % 11 ==0)
@@ -228,5 +223,6 @@ public enum EncounterType
     Religious,
     Blacksmith,
     Merchant,
-    Portal
+    Portal,
+    Boss
 }

@@ -2,6 +2,8 @@ using UnityEngine;
 
 public class Item
 {
+    public virtual string GetName() => "Unknown Item";
+
     public virtual void Use()
     {
         Debug.Log("Using item: ");

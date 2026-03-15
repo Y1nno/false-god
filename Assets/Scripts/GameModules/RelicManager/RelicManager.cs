@@ -73,7 +73,6 @@ public class RelicManager : GameModule, IObserver
         if (cm != null && cm.CurrentBattle != null)
         {
             float duelBonus = GetDuelDamageBonus(cm.CurrentBattle.TurnCount);
-
         }
 
         // Add damage from Hunter's Trophy

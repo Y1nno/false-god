@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using System.Linq;
 
 public abstract class CombatAction
 {
@@ -104,6 +105,20 @@ public abstract class CombatAction
 
         int finalDamage = Mathf.RoundToInt((baseDamage + user.GetBonusDamage() + relicFlatBonus + hunterTrophyBonus) * relicMultiplier);
         
+        // Aura of the Fallen (Fallen Saint Passive): Reduces enemy damage by 20%
+        if (user is PlayerCombatManager)
+        {
+            CombatManager cm = RunManager.Instance.GetService<CombatManager>();
+            if (cm != null && cm.CurrentBattle != null)
+            {
+                if (cm.CurrentBattle.GetEnemies().Any(e => e.GetName() == "Fallen Saint" && e.IsAlive()))
+                {
+                    finalDamage = Mathf.RoundToInt(finalDamage * 0.8f);
+                    // We don't log here to avoid spamming every hit, but the effect is applied.
+                }
+            }
+        }
+
         if (ActionType == AttackType.Physical)
         {
             finalDamage *= (user.GetSecondaryStat(SecondaryStat.PHATK) + DiceRoller.Instance.RollD20())/k_attackCalculationDivisor;

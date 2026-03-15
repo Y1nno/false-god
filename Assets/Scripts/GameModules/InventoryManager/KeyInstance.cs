@@ -10,7 +10,7 @@ public class KeyInstance : Item
         BaseData = data;
         RemainingUses = data.MaxUses;
     }
-
+    public override string GetName() => BaseData != null ? BaseData.ItemName : "Unknown Key";
     public override void Use()
     {
         TextOutputter.Instance.OutputText($"The {BaseData.ItemName} is used contextualy on chests. You cannot use it from the menu.");
