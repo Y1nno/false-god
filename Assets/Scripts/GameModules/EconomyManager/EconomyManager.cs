@@ -57,7 +57,14 @@ public class EconomyManager : GameModule, IObserver
                         MidasRite midasRite = (MidasRite)rm.GetRite(RiteType.Midas);
                         gold = midasRite.ApplyMidasEffect(gold);
                     }
-                    TextOutputter.Instance.OutputText($"Gained {gold} gold.");
+
+                    RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
+                    if (relicm != null)
+                    {
+                        gold = Mathf.RoundToInt(gold * relicm.GetGoldMultiplier());
+                    }
+
+                    AddGold(gold);
                 }
                 break;
         }

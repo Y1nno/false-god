@@ -14,16 +14,20 @@ public class ConsumableInstance : Item
     public override void Use()
     {
         // For ConsumableInstance, the inventory or UI normally calls this.
-        // We need a target; we assume Player for now if invoked directly without target.
         CombatManager cm = RunManager.Instance.GetService<CombatManager>();
-        if (cm != null && cm.CurrentBattle != null && cm.CurrentBattle.Pcm != null)
+        EncounterManager em = RunManager.Instance.GetService<EncounterManager>();
+
+        if (em != null && em.GetCurrentEncounter() != null)
         {
-            Use(cm.CurrentBattle.Pcm);
+            // We have an encounter active. Use the persistent PCM from CombatManager.
+            if (cm != null && cm.Pcm != null)
+            {
+                Use(cm.Pcm);
+                return;
+            }
         }
-        else
-        {
-            TextOutputter.Instance.OutputText("Cannot use consumable outside of battle for now.");
-        }
+        
+        TextOutputter.Instance.OutputText("Cannot use consumable outside of an encounter.");
     }
 
     public void Use(Combatant target)

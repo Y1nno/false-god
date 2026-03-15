@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public class InputInterface : MonoBehaviour
 {
@@ -119,13 +120,16 @@ public class InputInterface : MonoBehaviour
         DiceRoller.Instance.RollForStat(stat, threshold);
     }
 
-    private void RefreshUI()
+    public void RefreshUI()
     {
         InfoContainer info = GameObject.FindAnyObjectByType<InfoContainer>();
         if (info != null) info.Refresh();
 
         EquipmentContainer eq = GameObject.FindAnyObjectByType<EquipmentContainer>();
         if (eq != null) eq.Refresh();
+
+        MaterialsContainer mat = GameObject.FindAnyObjectByType<MaterialsContainer>();
+        if (mat != null) mat.Refresh();
     }
 
     // --- Improved UI Logic: Direct Read ---
@@ -220,7 +224,6 @@ public class InputInterface : MonoBehaviour
         }
     }
     
-    
     // --- Legacy / Shared State Logic (Deprecated but kept to avoid breaking existing link immediately) ---
     private RiteType _selectedRite = RiteType.Colossus;
 
@@ -261,65 +264,16 @@ public class InputInterface : MonoBehaviour
             }
         }
 
-        EquipmentSO newEquipment = null;
-        Consumable newConsumable = null;
-        
-#if UNITY_EDITOR
-        // If not using a Resources folder, we must search the AssetDatabase in the editor
-        string[] eqGuids = UnityEditor.AssetDatabase.FindAssets("t:EquipmentSO");
-        foreach(string guid in eqGuids)
-        {
-            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
-            EquipmentSO so = UnityEditor.AssetDatabase.LoadAssetAtPath<EquipmentSO>(path);
-            
-            // Check if either the filename matches OR the new ItemID field matches exactly
-            if (so != null && (so.ItemID == itemID || so.name == itemID || so.name == itemID + "SO"))
-            {
-                newEquipment = so;
-                break;
-            }
-        }
-        
-        string[] conGuids = UnityEditor.AssetDatabase.FindAssets("t:Consumable");
-        foreach(string guid in conGuids)
-        {
-            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
-            Consumable so = UnityEditor.AssetDatabase.LoadAssetAtPath<Consumable>(path);
-            
-            if (so != null && (so.ItemID == itemID || so.name == itemID || so.name == itemID + "SO"))
-            {
-                newConsumable = so;
-                break;
-            }
-        }
-#else
-        // If testing in a build later, they MUST be in Resources or an Addressables group.
-        newEquipment = Resources.Load<EquipmentSO>(itemID) ?? Resources.Load<EquipmentSO>(itemID + "SO");
-        newConsumable = Resources.Load<Consumable>(itemID) ?? Resources.Load<Consumable>(itemID + "SO");
-#endif
+        Item newItem = ItemFactory.CreateItemByID(itemID, tier);
 
-        if (newEquipment != null)
+        if (newItem != null)
         {
-            // Give the player a uniquely rolled instance of the equipment
-            EquipmentSO rolledInstance = newEquipment.InstantiateAndRollStats();
-            
-            // Wrap the data inside an unequipped runtime model so the UI can cast it successfully later
-            Equipment weaponInstance = new Equipment(rolledInstance);
-            
-            RunManager.Instance.GetService<InventoryManager>()?.AddItemToInventory(weaponInstance);
-            RefreshAllDropdowns();
-        }
-        else if (newConsumable != null)
-        {
-            // Successfully fetched the consumable asset. Wrap it in an instance to lock in its Tier!
-            ConsumableInstance potionInstance = new ConsumableInstance(newConsumable, tier);
-            
-            RunManager.Instance.GetService<InventoryManager>()?.AddItemToInventory(potionInstance);
+            RunManager.Instance.GetService<InventoryManager>()?.AddItemToInventory(newItem);
             RefreshAllDropdowns();
         }
         else
         {
-            TextOutputter.Instance.OutputText($"Could not find Equipment or Consumable with ID/filename '{itemID}' in the project.");
+            TextOutputter.Instance.OutputText($"Could not find Item with ID/filename '{itemID}' in the project.");
         }
     }
 
@@ -376,13 +330,16 @@ public class InputInterface : MonoBehaviour
     {
          TMP_Dropdown equipDropdown = null;
          TMP_Dropdown consumableDropdown = null;
+         TMP_Dropdown materialDropdown = null;
          
          if (panel != null)
          {
              Transform eTransform = panel.transform.Find("EquipmentDropdown");
              Transform cTransform = panel.transform.Find("ConsumableDropdown");
+             Transform mTransform = panel.transform.Find("MaterialDropdown");
              if (eTransform != null) equipDropdown = eTransform.GetComponent<TMP_Dropdown>();
              if (cTransform != null) consumableDropdown = cTransform.GetComponent<TMP_Dropdown>();
+             if (mTransform != null) materialDropdown = mTransform.GetComponent<TMP_Dropdown>();
          }
 
          // Fallback to global search if panel search failed or no panel was provided
@@ -397,12 +354,19 @@ public class InputInterface : MonoBehaviour
              GameObject globalCDropdown = GameObject.Find("ConsumableDropdown");
              if (globalCDropdown != null) consumableDropdown = globalCDropdown.GetComponent<TMP_Dropdown>();
          }
+
+         if (materialDropdown == null)
+         {
+             GameObject globalMDropdown = GameObject.Find("MaterialDropdown");
+             if (globalMDropdown != null) materialDropdown = globalMDropdown.GetComponent<TMP_Dropdown>();
+         }
          
          InventoryManager invm = RunManager.Instance.GetService<InventoryManager>();
          if (invm == null) return;
         
          string consumablesText = "Consumables Inventory:\n\n";
          string equipmentText = "Equipment Inventory:\n\n";
+         string relicsText = "Relics Inventory:\n\n";
          // TODO: Add Upgrade Materials inventory block here in the future
          
          List<string> equipOptions = new List<string>();
@@ -412,11 +376,13 @@ public class InputInterface : MonoBehaviour
          {
              consumablesText += "Empty";
              equipmentText += "Empty";
+             relicsText += "Empty";
          }
          else
          {
              bool hasConsumables = false;
              bool hasEquipment = false;
+             bool hasRelics = false;
              
              foreach (var item in invm.UnEquippedItems)
              {
@@ -432,14 +398,23 @@ public class InputInterface : MonoBehaviour
                      equipOptions.Add(eq.ItemName); // We display Name in UI
                      hasEquipment = true;
                  }
+                 else if (item is RelicInstance rel)
+                 {
+                     relicsText += $"- {rel.BaseData.ItemName}\n";
+                     hasRelics = true;
+                 }
              }
              
              if (!hasConsumables) consumablesText += "Empty";
              if (!hasEquipment) equipmentText += "Empty";
+             if (!hasRelics) relicsText += "Empty";
          }
          
          // Only print both splits back to the console box (or visual text box) if needed
-         TextOutputter.Instance.OutputText(consumablesText + "\n\n" + equipmentText);
+         MaterialsContainer mc = GameObject.FindAnyObjectByType<MaterialsContainer>();
+         if (mc != null) mc.Refresh();
+         
+         TextOutputter.Instance.OutputText(consumablesText + "\n\n" + equipmentText + "\n\n" + relicsText);
 
          // Populate Equipment UI Dropdown
          if (equipDropdown != null)

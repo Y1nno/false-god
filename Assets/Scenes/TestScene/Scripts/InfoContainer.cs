@@ -32,6 +32,7 @@ public class InfoContainer : MonoBehaviour
         AddXPInfo();
         AddReligionInfo();
         AddRiteInfo();
+        AddAilmentInfo();
         textBox.text = _content;
     }
 
@@ -87,6 +88,27 @@ public class InfoContainer : MonoBehaviour
         foreach (Rite rite in _ritem.ActiveRites.Values)
         {
             _content += $"- {rite.RiteID}: {rite.Description}\n";
+        }
+    }
+
+    private void AddAilmentInfo()
+    {
+        CombatManager cbm = RunManager.Instance.GetService<CombatManager>();
+        if (cbm != null && cbm.CurrentBattle != null && cbm.CurrentBattle.Pcm != null)
+        {
+            _content += "Ailments:\n";
+            var ailments = cbm.CurrentBattle.Pcm.ActiveAilments;
+            if (ailments.Count == 0)
+            {
+                _content += "- None\n";
+            }
+            else
+            {
+                foreach (var ailment in ailments)
+                {
+                    _content += $"- {ailment.Type} ({ailment.RoundsRemaining} rds)\n";
+                }
+            }
         }
     }
 

@@ -20,9 +20,13 @@ public class InventoryManager : GameModule
         UnEquippedItems.Add(item);
         
         string itemName = item is Equipment eq ? eq.ItemName :
-                          item is ConsumableInstance con ? con.BaseData.ItemName : "Unknown Item";
+                          item is ConsumableInstance con ? con.BaseData.ItemName :
+                          item is MaterialInstance mat ? mat.BaseData.ItemName :
+                          item is RelicInstance rel ? rel.BaseData.ItemName :
+                          item is KeyInstance key ? key.BaseData.ItemName : "Unknown Item";
                           
         TextOutputter.Instance.OutputText($"Added {itemName} to Inventory.");
+        Notify(EventType.ItemAcquired);
     }
 
     public void RemoveItemFromInventory(Item item)
@@ -30,6 +34,7 @@ public class InventoryManager : GameModule
         if (UnEquippedItems.Contains(item))
         {
             UnEquippedItems.Remove(item);
+            Notify(EventType.ItemRemoved);
         }
     }
 
@@ -51,12 +56,15 @@ public class InventoryManager : GameModule
         {
             RemoveItemFromInventory(consumableInstance); // Drink it
             
-            // Assume Player target natively since it's the UI dropdown driving this request
             CombatManager cm = RunManager.Instance.GetService<CombatManager>();
             if (cm != null && cm.CurrentBattle != null && cm.CurrentBattle.Pcm != null)
             {
                 consumableInstance.Use(cm.CurrentBattle.Pcm); 
             }
+        }
+        else if (itemToHandle is KeyInstance key)
+        {
+            TextOutputter.Instance.OutputText("Keys must be used directly on locked chests.");
         }
     }
 
