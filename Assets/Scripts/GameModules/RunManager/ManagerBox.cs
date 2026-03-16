@@ -18,6 +18,8 @@ public class ManagerBox
     private SaveManager _saveManager;
     private ScoreManager _scoreManager;
     private XPManager _xpManager;
+    private DropManager _dropManager;
+    private RelicManager _relicManager;
 
     private List<GameModule> _allManagers = new List<GameModule>();
 
@@ -38,6 +40,8 @@ public class ManagerBox
         _saveManager = new SaveManager();
         _scoreManager = new ScoreManager();
         _xpManager = new XPManager();
+        _dropManager = new DropManager();
+        _relicManager = new RelicManager();
 
         _allManagers.Add(_commandManager);
         _allManagers.Add(_combatManager);
@@ -52,6 +56,8 @@ public class ManagerBox
         _allManagers.Add(_saveManager);
         _allManagers.Add(_scoreManager);
         _allManagers.Add(_xpManager);
+        _allManagers.Add(_dropManager);
+        _allManagers.Add(_relicManager);
 
         SetupObservers();
     }
@@ -92,6 +98,10 @@ public class ManagerBox
             return _scoreManager as T;
         if (typeof(T) == typeof(XPManager))
             return _xpManager as T;
+        if (typeof(T) == typeof(DropManager))
+            return _dropManager as T;
+        if (typeof(T) == typeof(RelicManager))
+            return _relicManager as T;
 
         return null;
     }

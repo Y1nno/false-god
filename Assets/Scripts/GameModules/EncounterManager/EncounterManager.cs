@@ -12,13 +12,35 @@ public class EncounterManager : GameModule, IObserver
     private float _trapEncounterChance = 0.0f;
     private float k_trapEncounterIncrement = 0.025f;
 
+    private List<TrapEncounterSO> _availableTrapEncounters;
+
     private DungeonManager _dm = RunManager.Instance.GetService<DungeonManager>();
 
     #region Public API
 
     public override void AttachDefaultObservers()
     {
-        // none for now
+        _availableTrapEncounters = new List<TrapEncounterSO>();
+        
+#if UNITY_EDITOR
+        string[] trapGuids = UnityEditor.AssetDatabase.FindAssets("t:TrapEncounterSO");
+        foreach(string guid in trapGuids)
+        {
+            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+            TrapEncounterSO so = UnityEditor.AssetDatabase.LoadAssetAtPath<TrapEncounterSO>(path);
+            if (so != null)
+            {
+                _availableTrapEncounters.Add(so);
+            }
+        }
+#else
+        _availableTrapEncounters.AddRange(Resources.LoadAll<TrapEncounterSO>("Encounters/Traps"));
+#endif
+
+        if (_availableTrapEncounters == null || _availableTrapEncounters.Count == 0)
+        {
+            Debug.LogWarning("EncounterManager: No TrapEncounterSOs found in project (AssetDatabase or Resources)!");
+        }
     }
 
     public void CreateEncounter()
@@ -33,7 +55,12 @@ public class EncounterManager : GameModule, IObserver
         }
         else
         {
-            _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), encounterType);
+            TrapEncounterSO selectedTrap = null;
+            if (encounterType == EncounterType.Trap && _availableTrapEncounters != null && _availableTrapEncounters.Count > 0)
+            {
+                selectedTrap = _availableTrapEncounters[UnityEngine.Random.Range(0, _availableTrapEncounters.Count)];
+            }
+            _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), encounterType, selectedTrap);
         }
         
         AttachToEncounter(_currentEncounter);
@@ -54,7 +81,13 @@ public class EncounterManager : GameModule, IObserver
             // We do NOT resolve the old encounter, just discard it. The new one will take its place.
         }
 
-        _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), type);
+        TrapEncounterSO selectedTrap = null;
+        if (type == EncounterType.Trap && _availableTrapEncounters != null && _availableTrapEncounters.Count > 0)
+        {
+            selectedTrap = _availableTrapEncounters[UnityEngine.Random.Range(0, _availableTrapEncounters.Count)];
+        }
+
+        _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), type, selectedTrap);
         AttachToEncounter(_currentEncounter);
         TextOutputter.Instance.OutputText("Encounter switched to: " + _currentEncounter.GetType().Name);
         _currentEncounter.StartEncounter();
@@ -96,15 +129,10 @@ public class EncounterManager : GameModule, IObserver
         int floor = floorData.Floor;
         int room = floorData.Room;
 
-        //Every 20 encounters is a religious encounter
-        if (floor % 2 == 0 && room == 10)
+        // Every 10 encounters is a Boss encounter
+        if (room == 10)
         {
-            return EncounterType.Religious;
-        }
-        // Every 10 encounters is an NPC encounter
-        else if (room == 10)
-        {
-            return EncounterType.NPC;
+            return EncounterType.Boss;
         }
         // The last room on the floor is always a rest encounter
         else if (room % 11 ==0)
@@ -121,6 +149,7 @@ public class EncounterManager : GameModule, IObserver
         }
         else
         {
+            // TODO: Apply Relic multiplier for Unique Enemy chance here
             return EncounterType.Enemy;
         }
     }
@@ -191,5 +220,9 @@ public enum EncounterType
     Trap,
     NPC,
     Rest,
-    Religious
+    Religious,
+    Blacksmith,
+    Merchant,
+    Portal,
+    Boss
 }

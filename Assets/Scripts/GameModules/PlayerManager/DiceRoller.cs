@@ -65,6 +65,10 @@ public class DiceRoller : Subject, IObserver, IPromptResponder
             TextOutputter.Instance.OutputText($"You have { _playerManager.DiceRerollCount - result.RollNumber + 1} rerolls left.");
             Prompt rerollPrompt = new Prompt("Would you like to reroll?", new List<string> { "Yes", "No" }, this);
         }
+        else
+        {
+            Notify(EventType.DiceRollFinalized);
+        }
         Notify(EventType.DiceRoll);
         return;
     }
@@ -98,6 +102,7 @@ public class DiceRoller : Subject, IObserver, IPromptResponder
                 break;
             case 1:
                 TextOutputter.Instance.OutputText("You chose not to reroll.");
+                Notify(EventType.DiceRollFinalized);
                 break;
             default:
                 TextOutputter.Instance.OutputText("Invalid decision index for dice roll.");

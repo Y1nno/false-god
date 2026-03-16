@@ -23,6 +23,7 @@ public class EnemyEncounter : Encounter, IObserver
 
     public override void ResolveEncounter()
     {
+        _combatManager.InstaKillCurrentBattle();
         _combatManager.DetachObserver(this);
         base.ResolveEncounter();
     }

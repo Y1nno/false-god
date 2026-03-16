@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c802f8ed424a1eb4887cf57b2197a082, type: 3}
+  m_Name: ScythesStr
+  m_EditorClassIdentifier: 
+  Description: You attempt to jam the gears and destroy the scythes.
+  Choices:
+  - StatToRoll: 0
+    RelativeDifficulty: 6
+    PassDamage: 0
+    FailDamage: 14

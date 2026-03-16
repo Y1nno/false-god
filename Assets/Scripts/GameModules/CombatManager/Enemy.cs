@@ -13,8 +13,9 @@ public class Enemy : Combatant
     protected int _goldValue = 0;
     public int GoldValue => _goldValue;
 
-    public Enemy(string name = "No Name", Dictionary<Stat, int> initialStats = null, int initialHealth = 1, int initialMana = 1, List<int> availableActionIDs = null, int goldValue = 0)
+    public Enemy(string name = "No Name", Dictionary<Stat, int> initialStats = null, int initialHealth = 1, int initialMana = 1, List<int> availableActionIDs = null, int goldValue = 0, bool isBoss = false)
     {
+        IsBoss = isBoss;
         Name = name;
         if (initialStats == null) initialStats = new Dictionary<Stat, int>()
         {
@@ -35,12 +36,20 @@ public class Enemy : Combatant
             foreach (int actionID in availableActionIDs)
             {
                 CombatAction action = ActionFactory.CreateActionByID(actionID);
-                _availableActions.Add(action);
+                if (action != null)
+                {
+                    _availableActions.Add(action);
+                }
+                else
+                {
+                    Debug.LogWarning($"Enemy {name}: Action ID {actionID} returned null from ActionFactory.");
+                }
             }
         }
         _goldValue = goldValue;
 
         AttachObserver(RunManager.Instance.GetService<EconomyManager>());
+        AttachObserver(RunManager.Instance.GetService<DropManager>());
     }
 
     public override string GetName()
@@ -65,6 +74,13 @@ public class Enemy : Combatant
 
     public override void ChooseAction()
     {
+        if (HasAilment(AilmentType.Frozen))
+        {
+            CurrentAction = ActionFactory.CreateActionByID(000); // Do Nothing
+            TextOutputter.Instance.OutputText($"{Name} is frozen solid and cannot move!");
+            return;
+        }
+
         CombatAction selectedAction = ActionFactory.CreateActionByID(000); // "Do Nothing" action
         int randomIndx = UnityEngine.Random.Range(0, _availableActions.Count);
         if (_availableActions.Count == 0)
@@ -98,7 +114,36 @@ public class Enemy : Combatant
 
     public override int GetSecondaryStat(SecondaryStat stat)
     {
-        return Stats.GetSecondaryStat(stat);
+        int baseStat = Stats.GetSecondaryStat(stat);
+
+        if (HasAilment(AilmentType.Burn) && stat == SecondaryStat.PHATK)
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 0.90f); // Reduces attack damage by 10%
+        }
+        else if (HasAilment(AilmentType.Poison) && stat == SecondaryStat.SPDEF)
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 0.95f); // Reduces Sp.Def by 5%
+        }
+
+        if (HasAilment(AilmentType.Frozen))
+        {
+            if (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF)
+            {
+                baseStat = Mathf.RoundToInt(baseStat * 1.20f); // +20% Def and Sp.Def
+            }
+        }
+
+        if (HasAilment(AilmentType.AtkBonus) && (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK))
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 1.40f); // +40% Attack
+        }
+
+        if (HasAilment(AilmentType.Shielded) && (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF))
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 1.20f); // +20% Defense
+        }
+
+        return baseStat;
     }
 
     public override float GetCritChance()

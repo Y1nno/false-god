@@ -5,6 +5,7 @@ public class Equipment : Item
 {
     public EquipmentSO BaseData { get; private set; }
     public string ItemName { get; private set; }
+    public override string GetName() => ItemName;
     public EquipmentSlot Slot { get; private set; }
     public Rarity Rarity { get; private set; }
     public new bool IsTwoHanded { get; private set; }
