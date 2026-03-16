@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 //TODO: Add inventory size limit and logic for refusing requests to add to inventory. 
 
@@ -12,11 +13,39 @@ public class InventoryManager : GameModule
 
     public List<Item> UnEquippedItems { get; private set; } = new List<Item>();
 
+    public override void AttachDefaultObservers()
+    {
+        // Automatically find and attach UI components that need to refresh on inventory changes
+        MaterialsContainer mc = GameObject.FindAnyObjectByType<MaterialsContainer>();
+        if (mc != null) AttachObserver(mc);
+
+        InputInterface ii = GameObject.FindAnyObjectByType<InputInterface>();
+        if (ii != null) AttachObserver(ii);
+    }
+
+    public bool HasRelic(string relicName)
+    {
+        // Check unequipped items
+        bool inInventory = UnEquippedItems.Any(i => i is RelicInstance r && (r.GetName() == relicName || r.BaseData.ItemName == relicName));
+        if (inInventory) return true;
+
+        // Check active relics
+        RelicManager rm = RunManager.Instance.GetService<RelicManager>();
+        return rm != null && rm.HasRelic(relicName);
+    }
+
     #region Inventory Logic
 
     public void AddItemToInventory(Item item)
     {
         if (item == null) return;
+
+        // Force Relic Uniqueness: Re-check here to catch manual additions (test buttons, etc)
+        if (item is RelicInstance relic && HasRelic(relic.GetName()))
+        {
+            TextOutputter.Instance.OutputText($"You already possess '{relic.GetName()}'. Duplicate relic rejected.");
+            return;
+        }
 
         // Consolidation Logic: Merge MaterialInstances if they are identical
         if (item is MaterialInstance newMat)
@@ -67,9 +96,9 @@ public class InventoryManager : GameModule
             RemoveItemFromInventory(consumableInstance); // Drink it
             
             CombatManager cm = RunManager.Instance.GetService<CombatManager>();
-            if (cm != null && cm.CurrentBattle != null && cm.CurrentBattle.Pcm != null)
+            if (cm != null && cm.Pcm != null)
             {
-                consumableInstance.Use(cm.CurrentBattle.Pcm); 
+                consumableInstance.Use(cm.Pcm); 
             }
         }
         else if (itemToHandle is KeyInstance key)

@@ -13,6 +13,12 @@ public class RelicManager : GameModule, IObserver
         RefreshRelics();
     }
 
+    public bool HasRelic(string relicName)
+    {
+        RefreshRelics();
+        return _activeRelics.Any(r => r.GetName() == relicName || r.BaseData.ItemName == relicName);
+    }
+
     public void RefreshRelics()
     {
         InventoryManager invm = RunManager.Instance.GetService<InventoryManager>();

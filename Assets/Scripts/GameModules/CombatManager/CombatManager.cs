@@ -41,6 +41,36 @@ public class CombatManager : GameModule, IObserver
         return enemies;
     }
 
+    private HashSet<string> _defeatedBosses = new HashSet<string>();
+
+    public void InstaKillCurrentBattle()
+    {
+        if (CurrentBattle == null) return;
+
+        // Collect all enemies currently in the battle
+        List<Enemy> enemiesToKill = new List<Enemy>();
+        foreach (var combatant in CurrentBattle.combatants)
+        {
+            if (combatant is Enemy enemy && enemy.IsAlive())
+            {
+                enemiesToKill.Add(enemy);
+            }
+        }
+
+        // Kill them all!
+        foreach (var enemy in enemiesToKill)
+        {
+            // Apply massive damage to ensure death
+            enemy.TakeConsumableDamage(99999); 
+            
+            // Explicitly notify observers that THIS specific enemy was defeated
+            // This ensures DropManager rolls loot and CombatManager marks it as defeated if it's a boss
+            Notify(enemy, EventType.EnemyDefeated);
+        }
+
+        TextOutputter.Instance.OutputText("Encounter skipped via instant resolution.");
+    }
+
     private Boss CreateBoss()
     {
         DungeonManager dm = RunManager.Instance.GetService<DungeonManager>();
@@ -54,8 +84,24 @@ public class CombatManager : GameModule, IObserver
         }
         else
         {
-            string[] earlyBosses = { "Gorvath", "Molech", "Vlad" };
-            bossName = earlyBosses[Random.Range(0, earlyBosses.Length)];
+            List<string> earlyBossPool = new List<string> { "Gorvath", "Molech", "Vlad" };
+            // Filter out already defeated bosses
+            List<string> availableBosses = new List<string>();
+            foreach(string b in earlyBossPool)
+            {
+                if (!_defeatedBosses.Contains(b))
+                {
+                    availableBosses.Add(b);
+                }
+            }
+
+            // If we ran out of unique bosses, reset the pool (or fallback)
+            if (availableBosses.Count == 0)
+            {
+                availableBosses = earlyBossPool;
+            }
+
+            bossName = availableBosses[Random.Range(0, availableBosses.Count)];
         }
 
         BossSO bossData = Resources.Load<BossSO>($"Bosses/{bossName}");
@@ -90,6 +136,10 @@ public class CombatManager : GameModule, IObserver
                 Notify(EventType.EncounterResolve);
                 break;
             case EventType.EnemyDefeated:
+                if (subject is Boss boss)
+                {
+                    _defeatedBosses.Add(boss.BossData.BossName);
+                }
                 Notify(EventType.EnemyDefeated);
                 break;
             default:

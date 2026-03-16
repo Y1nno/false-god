@@ -16,19 +16,15 @@ public class ConsumableInstance : Item
     {
         // For ConsumableInstance, the inventory or UI normally calls this.
         CombatManager cm = RunManager.Instance.GetService<CombatManager>();
-        EncounterManager em = RunManager.Instance.GetService<EncounterManager>();
-
-        if (em != null && em.GetCurrentEncounter() != null)
+        
+        // We can use consumables anytime as long as the PCM exists
+        if (cm != null && cm.Pcm != null)
         {
-            // We have an encounter active. Use the persistent PCM from CombatManager.
-            if (cm != null && cm.Pcm != null)
-            {
-                Use(cm.Pcm);
-                return;
-            }
+            Use(cm.Pcm);
+            return;
         }
         
-        TextOutputter.Instance.OutputText("Cannot use consumable outside of an encounter.");
+        TextOutputter.Instance.OutputText("Cannot use consumable: Player state not found.");
     }
 
     public void Use(Combatant target)

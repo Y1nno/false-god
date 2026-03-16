@@ -4,8 +4,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-public class InputInterface : MonoBehaviour
+public class InputInterface : MonoBehaviour, IObserver
 {
+    public void OnNotify(object subject, EventType eventType)
+    {
+        if (eventType == EventType.ItemAcquired)
+        {
+            RefreshAllDropdowns();
+        }
+    }
+
     public Prompt activePrompt = null;
     public void StartNewRun()
     {
@@ -181,7 +189,7 @@ public class InputInterface : MonoBehaviour
         // Find the corresponding consumable in the player's unequipped inventory list
         Item itemToHandle = invm.UnEquippedItems.Find(item => 
         {
-            if (item is ConsumableInstance con) return con.BaseData.ItemName == selectedItemName;
+            if (item is ConsumableInstance con) return $"{con.GetName()} (Tier {con.Tier})" == selectedItemName;
             return false;
         });
 
@@ -371,77 +379,28 @@ public class InputInterface : MonoBehaviour
          InventoryManager invm = RunManager.Instance.GetService<InventoryManager>();
          if (invm == null) return;
         
-         string consumablesText = "Consumables Inventory:\n\n";
-         string equipmentText = "Equipment Inventory:\n\n";
-         string relicsText = "Relics Inventory:\n\n";
-         string materialsText = "Materials Inventory:\n\n";
-         string keysText = "Keys Inventory:\n\n";
-         
          List<string> equipOptions = new List<string>();
          List<string> consumableOptions = new List<string>();
-
-         if (invm.UnEquippedItems.Count == 0)
+         
+         if (invm.UnEquippedItems.Count != 0)
          {
-             consumablesText += "Empty";
-             equipmentText += "Empty";
-             relicsText += "Empty";
-             materialsText += "Empty";
-             keysText += "Empty";
-         }
-         else
-         {
-             // Dictionaries for grouping
-             Dictionary<string, int> weaponCounts = new Dictionary<string, int>();
-             Dictionary<string, int> consumableCounts = new Dictionary<string, int>();
-             Dictionary<string, int> materialCounts = new Dictionary<string, int>();
-             Dictionary<string, int> keyCounts = new Dictionary<string, int>();
-             Dictionary<string, int> relicCounts = new Dictionary<string, int>();
-
              foreach (var item in invm.UnEquippedItems)
              {
-                 string name = item.GetName();
+                 string baseName = item.GetName();
                  if (item is ConsumableInstance con)
                  {
-                     consumableCounts[name] = consumableCounts.GetValueOrDefault(name) + 1;
-                     if (!consumableOptions.Contains(name)) consumableOptions.Add(name);
+                     string nameWithTier = $"{baseName} (Tier {con.Tier})";
+                     if (!consumableOptions.Contains(nameWithTier)) consumableOptions.Add(nameWithTier);
                  }
                  else if (item is Equipment eq)
                  {
-                     weaponCounts[name] = weaponCounts.GetValueOrDefault(name) + 1;
-                     if (!equipOptions.Contains(name)) equipOptions.Add(name);
-                 }
-                 else if (item is MaterialInstance mat)
-                 {
-                     materialCounts[name] = materialCounts.GetValueOrDefault(name) + mat.Quantity;
-                 }
-                 else if (item is KeyInstance key)
-                 {
-                     keyCounts[name] = keyCounts.GetValueOrDefault(name) + 1;
-                 }
-                 else if (item is RelicInstance rel)
-                 {
-                     relicCounts[name] = relicCounts.GetValueOrDefault(name) + 1;
+                     if (!equipOptions.Contains(baseName)) equipOptions.Add(baseName);
                  }
              }
-             
-             // Build text displays
-             foreach (var pair in consumableCounts) consumablesText += $"- {pair.Key} x{pair.Value}\n";
-             foreach (var pair in weaponCounts) equipmentText += $"- {pair.Key} x{pair.Value}\n";
-             foreach (var pair in materialCounts) materialsText += $"- {pair.Key} x{pair.Value}\n";
-             foreach (var pair in keyCounts) keysText += $"- {pair.Key} x{pair.Value}\n";
-             foreach (var pair in relicCounts) relicsText += $"- {pair.Key} x{pair.Value}\n";
-
-             if (consumableCounts.Count == 0) consumablesText += "Empty";
-             if (weaponCounts.Count == 0) equipmentText += "Empty";
-             if (materialCounts.Count == 0) materialsText += "Empty";
-             if (keyCounts.Count == 0) keysText += "Empty";
-             if (relicCounts.Count == 0) relicsText += "Empty";
          }
          
          MaterialsContainer mc = GameObject.FindAnyObjectByType<MaterialsContainer>();
          if (mc != null) mc.Refresh();
-         
-         TextOutputter.Instance.OutputText(consumablesText + "\n" + equipmentText + "\n" + materialsText + "\n" + keysText + "\n" + relicsText);
 
          // Populate Equipment UI Dropdown
          if (equipDropdown != null)

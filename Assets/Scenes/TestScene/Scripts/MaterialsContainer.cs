@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System.Collections.Generic;
 
 public class MaterialsContainer : MonoBehaviour, IObserver
 {
@@ -16,69 +17,107 @@ public class MaterialsContainer : MonoBehaviour, IObserver
             HookUpManagers();
         }
         
-        _content = "Materials Inventory:\n";
+        _content = "<size=120%><color=#FFA500>UNIFIED INVENTORY</color></size>\n\n";
+        
+        AddConsumablesInfo();
+        AddEquipmentInfo();
         AddMaterialsInfo();
-
-        _content += "\nKeys Inventory:\n";
         AddKeysInfo();
-
-        _content += "\nRelics Inventory:\n";
         AddRelicsInfo();
 
         textBox.text = _content;
     }
 
+    private void AddConsumablesInfo()
+    {
+        _content += "<b>Consumables:</b>\n";
+        Dictionary<string, int> counts = new Dictionary<string, int>();
+        foreach (var item in _invm.UnEquippedItems)
+        {
+            if (item is ConsumableInstance con)
+            {
+                string nameWithTier = $"{con.GetName()} (Tier {con.Tier})";
+                counts[nameWithTier] = counts.GetValueOrDefault(nameWithTier) + 1;
+            }
+        }
+        AppendGroupedInfo(counts);
+    }
+
+    private void AddEquipmentInfo()
+    {
+        _content += "<b>Equipment:</b>\n";
+        Dictionary<string, int> counts = new Dictionary<string, int>();
+        foreach (var item in _invm.UnEquippedItems)
+        {
+            if (item is Equipment eq)
+            {
+                string name = eq.GetName();
+                counts[name] = counts.GetValueOrDefault(name) + 1;
+            }
+        }
+        AppendGroupedInfo(counts);
+    }
+
     private void AddMaterialsInfo()
     {
-        if (_invm == null) return;
-
-        bool hasMaterials = false;
-        // Since Materials are now consolidated in InventoryManager, we just list them
-        // but we'll group them here too just in case or if multiple stacks are allowed later.
+        _content += "<b>Materials:</b>\n";
+        Dictionary<string, int> counts = new Dictionary<string, int>();
         foreach (var item in _invm.UnEquippedItems)
         {
             if (item is MaterialInstance mat)
             {
-                _content += $"- {mat.BaseData.ItemName} x{mat.Quantity} ({mat.BaseData.SellPrice} Gold)\n";
-                hasMaterials = true;
+                string name = mat.GetName();
+                counts[name] = counts.GetValueOrDefault(name) + mat.Quantity;
             }
         }
-
-        if (!hasMaterials) _content += "None\n";
+        AppendGroupedInfo(counts);
     }
 
     private void AddKeysInfo()
     {
-        if (_invm == null) return;
-
-        bool hasKeys = false;
+        _content += "<b>Keys:</b>\n";
+        Dictionary<string, int> counts = new Dictionary<string, int>();
         foreach (var item in _invm.UnEquippedItems)
         {
             if (item is KeyInstance key)
             {
-                _content += $"- {key.BaseData.ItemName} ({key.RemainingUses} Uses)\n";
-                hasKeys = true;
+                string name = key.GetName();
+                counts[name] = counts.GetValueOrDefault(name) + 1;
             }
         }
-
-        if (!hasKeys) _content += "None\n";
+        AppendGroupedInfo(counts);
     }
 
     private void AddRelicsInfo()
     {
-        if (_invm == null) return;
-
+        _content += "<b>Relics:</b>\n";
         bool hasRelics = false;
         foreach (var item in _invm.UnEquippedItems)
         {
             if (item is RelicInstance relic)
             {
-                _content += $"- {relic.BaseData.ItemName}\n";
+                _content += $"- {relic.GetName()}\n";
                 hasRelics = true;
             }
         }
-
         if (!hasRelics) _content += "None\n";
+        _content += "\n";
+    }
+
+    private void AppendGroupedInfo(Dictionary<string, int> counts)
+    {
+        if (counts.Count == 0)
+        {
+            _content += "None\n";
+        }
+        else
+        {
+            foreach (var pair in counts)
+            {
+                _content += $"- {pair.Key} x{pair.Value}\n";
+            }
+        }
+        _content += "\n";
     }
 
     private void HookUpManagers()
@@ -86,13 +125,17 @@ public class MaterialsContainer : MonoBehaviour, IObserver
         _rm = RunManager.Instance;
         _invm = _rm.GetService<InventoryManager>(); 
         
-        // Note: InventoryManager doesn't currently notify on change, 
-        // but it's good practice to attach for future logic.
-        // For now, InputInterface manual refreshes it.
+        if (_invm != null)
+        {
+            _invm.AttachObserver(this);
+        }
     }
 
     public void OnNotify(object subject, EventType eventType)
     {
-        // Add listeners here if InventoryManager/DropManager start broadcasting specific events
+        if (eventType == EventType.ItemAcquired)
+        {
+            Refresh();
+        }
     }
 }

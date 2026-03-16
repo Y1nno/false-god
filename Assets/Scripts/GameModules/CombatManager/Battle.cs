@@ -5,7 +5,7 @@ using System.Linq;
 
 public class Battle : Subject, IObserver
 {
-    List<Combatant> combatants = new List<Combatant>();
+    public List<Combatant> combatants = new List<Combatant>();
     PlayerManager _pm = RunManager.Instance.GetService<PlayerManager>();
     public PlayerCombatManager Pcm { get; private set; }
     System.Random rng = new System.Random();

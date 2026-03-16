@@ -55,42 +55,100 @@ public class DropManager : GameModule, IObserver
 
     private void RollDrops(Enemy enemy)
     {
+        InventoryManager invm = RunManager.Instance.GetService<InventoryManager>();
+        if (invm == null) return;
+
         if (enemy is Boss boss)
         {
+            // Guaranteed Unique Relic Drop
+            RollGuaranteedRelic(invm);
+
+            // Specific Boss Drops
             foreach (string dropID in boss.BossData.DropIDs)
             {
                 Item newItem = ItemFactory.CreateItemByID(dropID);
                 if (newItem != null)
                 {
-                    RunManager.Instance.GetService<InventoryManager>()?.AddItemToInventory(newItem);
+                    // Check for relic uniqueness if the drop is a relic
+                    if (newItem is RelicInstance rel && invm.HasRelic(rel.GetName()))
+                    {
+                        continue;
+                    }
+
+                    invm.AddItemToInventory(newItem);
                     TextOutputter.Instance.OutputText($"{boss.GetName()} dropped {newItem.GetName()}!");
                 }
             }
         }
 
-        string enemyName = enemy.GetName();
-        // TODO: Specific enemy drop check
-        // For now, as requested, every enemy drops them, but we'll include the specific ones too for future proofing.
-        
-        // TODO: Relics should only drop from Unique Enemies and Bosses (Bosses not yet implemented)
-        // Roll Generic Drops
+        // Generic Drops
         foreach (var drop in _genericDrops)
         {
-            TryDrop(drop);
+            TryDrop(drop, invm);
         }
 
-        // Roll Specific Drops
+        // Specific Drops
         foreach (var table in _dropTables)
         {
             foreach (var drop in table.Value)
             {
-                // TODO: Check if enemyName == table.Key once more enemies are added
-                TryDrop(drop);
+                TryDrop(drop, invm);
             }
         }
     }
 
-    private void TryDrop(DropData drop)
+    private void RollGuaranteedRelic(InventoryManager invm)
+    {
+        List<string> allRelicIDs = new List<string>();
+        
+#if UNITY_EDITOR
+        string[] guids = UnityEditor.AssetDatabase.FindAssets("t:RelicSO");
+        foreach (string guid in guids)
+        {
+            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+            RelicSO so = UnityEditor.AssetDatabase.LoadAssetAtPath<RelicSO>(path);
+            if (so != null) allRelicIDs.Add(so.ItemID != "" ? so.ItemID : so.name);
+        }
+#else
+        // In a real build, you'd load from Resources or a pre-populated list
+        // For now, let's use a small subset of known IDs if we're not in editor
+        allRelicIDs.Add("Whispering Reliquary");
+        allRelicIDs.Add("Shattered Halo Rare");
+#endif
+
+        // Filter out what we already have
+        List<string> availableRelics = new List<string>();
+        foreach(string id in allRelicIDs)
+        {
+            // We need to be careful with ID vs Name. ItemFactory uses both.
+            // Let's create the item temporarily to check name, or just use ID if we're confident.
+            Item temp = ItemFactory.CreateItemByID(id);
+            if (temp != null && temp is RelicInstance rel)
+            {
+                if (!invm.HasRelic(rel.GetName()))
+                {
+                    availableRelics.Add(id);
+                }
+            }
+        }
+
+        if (availableRelics.Count > 0)
+        {
+            string selectedID = availableRelics[Random.Range(0, availableRelics.Count)];
+            Item finalRelic = ItemFactory.CreateItemByID(selectedID);
+            if (finalRelic != null)
+            {
+                 invm.AddItemToInventory(finalRelic);
+                 TextOutputter.Instance.OutputText($"Boss dropped a unique relic: {finalRelic.GetName()}!");
+            }
+        }
+        else
+        {
+             TextOutputter.Instance.OutputText("You already possessed all available relics!");
+        }
+    }
+
+    private void TryDrop(DropData drop, InventoryManager invm)
     {
         if (Random.value <= drop.Chance)
         {
@@ -98,8 +156,14 @@ public class DropManager : GameModule, IObserver
             Item newItem = ItemFactory.CreateItemByID(drop.ItemID);
             if (newItem != null)
             {
+                // Uniqueness check for relics
+                if (newItem is RelicInstance rel && invm.HasRelic(rel.GetName()))
+                {
+                    return;
+                }
+
                 if (newItem is MaterialInstance mat) mat.Quantity = qty;
-                RunManager.Instance.GetService<InventoryManager>()?.AddItemToInventory(newItem);
+                invm.AddItemToInventory(newItem);
             }
         }
     }
