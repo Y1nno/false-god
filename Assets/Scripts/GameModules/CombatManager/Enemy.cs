@@ -13,6 +13,64 @@ public class Enemy : Combatant
     protected int _goldValue = 0;
     public int GoldValue => _goldValue;
 
+    public Enemy(EnemySO data, int level)
+    {
+        IsBoss = false;
+        Name = data.EnemyName;
+        
+        float l_factor = level - 1;
+        int maxHp = Mathf.RoundToInt(data.BaseHealth * (1 + l_factor * 0.25f));
+        Health = new Resource(maxHp);
+        
+        Mana = new Resource(data.BaseMana);
+        
+        int atk = Mathf.RoundToInt(data.BaseAtk * (1 + l_factor * 0.18f));
+        int spAtk = Mathf.RoundToInt(data.BaseSpAtk * (1 + l_factor * 0.18f));
+        int def = Mathf.RoundToInt(data.BaseDef * (1 + l_factor * 0.12f));
+        int spDef = Mathf.RoundToInt(data.BaseSpDef * (1 + l_factor * 0.12f));
+        
+        DungeonManager dm = RunManager.Instance.GetService<DungeonManager>();
+        int dungeonFloor = dm != null ? dm.CurrentDungeonFloor : 1;
+        int speed = data.BaseSpeed + Mathf.FloorToInt(dungeonFloor * l_factor * 0.4f);
+
+        Dictionary<Stat, int> primStats = new Dictionary<Stat, int>
+        {
+            { Stat.STR, atk },
+            { Stat.DEX, 10 },    // Base placeholder if strictly required
+            { Stat.INT, spAtk },
+            { Stat.SPD, speed }
+        };
+
+        Dictionary<SecondaryStat, int> secStats = new Dictionary<SecondaryStat, int>
+        {
+            { SecondaryStat.PHATK, atk },
+            { SecondaryStat.SPATK, spAtk },
+            { SecondaryStat.PHDEF, def },
+            { SecondaryStat.SPDEF, spDef },
+            { SecondaryStat.CRIT, Mathf.RoundToInt(data.CritChance) },
+            { SecondaryStat.EVDE, Mathf.RoundToInt(data.DodgeChance) }
+        };
+        
+        Stats = new EnemyStatBox(primStats, secStats);
+
+        if (data.AvailableActionIDs != null)
+        {
+            foreach (int actionID in data.AvailableActionIDs)
+            {
+                CombatAction action = ActionFactory.CreateActionByID(actionID);
+                if (action != null) _availableActions.Add(action);
+            }
+        }
+        
+        _goldValue = data.GoldValue;
+        
+        EconomyManager em = RunManager.Instance.GetService<EconomyManager>();
+        if (em != null) AttachObserver(em);
+        
+        DropManager dropm = RunManager.Instance.GetService<DropManager>();
+        if (dropm != null) AttachObserver(dropm);
+    }
+
     public Enemy(string name = "No Name", Dictionary<Stat, int> initialStats = null, int initialHealth = 1, int initialMana = 1, List<int> availableActionIDs = null, int goldValue = 0, bool isBoss = false)
     {
         IsBoss = isBoss;

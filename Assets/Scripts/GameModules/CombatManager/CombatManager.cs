@@ -35,10 +35,64 @@ public class CombatManager : GameModule, IObserver
             return new List<Combatant> { CreateBoss() };
         }
 
-        // Placeholder logic for generating enemies based on difficulty
         List<Combatant> enemies = new List<Combatant>();
-        enemies.Add(new Goblin());
+        DungeonManager dm = RunManager.Instance.GetService<DungeonManager>();
+        int floor = dm != null ? dm.CurrentDungeonFloor : 1;
+
+        DepthEncounterTableSO[] tables = Resources.LoadAll<DepthEncounterTableSO>("EncounterTables");
+        DepthEncounterTableSO activeTable = null;
+        foreach (var t in tables)
+        {
+            if (floor >= t.MinDepth && floor <= t.MaxDepth)
+            {
+                activeTable = t;
+                break;
+            }
+        }
+
+        if (activeTable == null)
+        {
+            Debug.LogWarning($"No Encounter Table found for depth {floor}. Falling back to default Skeleton.");
+            var fallbackSo = Resources.Load<EnemySO>("Enemies/Skeleton");
+            if (fallbackSo != null) enemies.Add(new Enemy(fallbackSo, floor));
+            return enemies;
+        }
+
+        // Roll spawn count
+        int spawnCount = 1;
+        float roll = Random.Range(0f, 100f);
+        if (roll < activeTable.OneEnemyChance) spawnCount = 1;
+        else if (roll < activeTable.OneEnemyChance + activeTable.TwoEnemyChance) spawnCount = 2;
+        else spawnCount = 3;
+
+        for (int i = 0; i < spawnCount; i++)
+        {
+            EnemySO rolledEnemy = PickRandomEnemy(activeTable.EnemyPool);
+            int rolledLevel = Random.Range(activeTable.MinLevel, activeTable.MaxLevel + 1);
+            if (rolledEnemy != null) 
+            {
+                enemies.Add(new Enemy(rolledEnemy, rolledLevel));
+            }
+        }
+
         return enemies;
+    }
+
+    private EnemySO PickRandomEnemy(List<EnemySpawnWeight> pool)
+    {
+        if (pool == null || pool.Count == 0) return Resources.Load<EnemySO>("Enemies/Skeleton");
+        
+        int totalWeight = 0;
+        foreach (var e in pool) totalWeight += e.weight;
+        
+        int r = Random.Range(0, totalWeight);
+        int currentWeight = 0;
+        foreach (var e in pool)
+        {
+            currentWeight += e.weight;
+            if (r < currentWeight) return e.enemyData;
+        }
+        return pool[0].enemyData;
     }
 
     private HashSet<string> _defeatedBosses = new HashSet<string>();
