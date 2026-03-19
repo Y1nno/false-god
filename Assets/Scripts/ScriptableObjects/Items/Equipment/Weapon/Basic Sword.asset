@@ -18,6 +18,8 @@ MonoBehaviour:
   Description: 
   Slot: 5
   Rarity: 0
+  IsTwoHanded: 0
+  ScalingStat: 1
   PhysicalDefense:
     value: 0
     min: 0

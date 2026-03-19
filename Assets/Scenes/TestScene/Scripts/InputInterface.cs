@@ -318,7 +318,7 @@ public class InputInterface : MonoBehaviour, IObserver
         // Note: we're matching by ItemName here because the Dropdown displays names, not IDs.
         Item itemToHandle = invm.UnEquippedItems.Find(item => 
         {
-            if (item is Equipment eq) return eq.ItemName == selectedItemName;
+            if (item is Equipment eq) return eq.GetName() == selectedItemName;
             if (item is ConsumableInstance con) return con.BaseData.ItemName == selectedItemName;
             return false;
         });

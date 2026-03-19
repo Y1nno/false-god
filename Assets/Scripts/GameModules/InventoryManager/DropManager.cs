@@ -20,6 +20,7 @@ public class DropManager : GameModule, IObserver
         InventoryManager invm = RunManager.Instance.GetService<InventoryManager>();
         EconomyManager economy = RunManager.Instance.GetService<EconomyManager>();
         DungeonManager dm = RunManager.Instance.GetService<DungeonManager>();
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
         if (invm == null || dm == null) return;
 
         int floor = dm.CurrentDungeonFloor;
@@ -43,36 +44,46 @@ public class DropManager : GameModule, IObserver
         // --- GLOBAL DROP CATEGORY ROLL ---
         float roll = Random.Range(0f, 100f);
         
-        // 1. No Drop (50%) // TODO: Reduce by 20% for active quest, 10% for unique
-        float noDropThreshold = 50f;
+        int totalMF = eqm != null ? eqm.GetTotalMagicFind() : 0;
+        float mfMultiplier = 1.0f + (totalMF / 100.0f);
+
+        // 1. No Drop (50% Base)
+        // Adjust no-drop threshold. If base is 50%, then 50% chance to find something.
+        // With 20 MF, chance to find something becomes 50% * 1.2 = 60%.
+        // No-drop threshold becomes 100 - 60 = 40.
+        float baseTotalDropChance = 50f;
+        float adjustedTotalDropChance = Mathf.Min(100f, baseTotalDropChance * mfMultiplier);
+        float noDropThreshold = 100f - adjustedTotalDropChance;
+
         if (roll <= noDropThreshold) return;
 
         // 2. Gold (5%)
-        float goldThreshold = noDropThreshold + 5f;
+        float goldThreshold = noDropThreshold + (5f * mfMultiplier);
         if (roll <= goldThreshold) { RollGold(floor, economy); return; }
 
         // 3. Consumables (10%)
-        float consumablesThreshold = goldThreshold + 10f;
+        float consumablesThreshold = goldThreshold + (10f * mfMultiplier);
         if (roll <= consumablesThreshold) { RollConsumables(floor, invm); return; }
 
         // 4. Materials (10%)
-        float materialsThreshold = consumablesThreshold + 10f;
+        float materialsThreshold = consumablesThreshold + (10f * mfMultiplier);
         if (roll <= materialsThreshold) { RollMaterials(enemy, invm); return; }
 
         // 5. Equipment (10%)
-        float equipmentThreshold = materialsThreshold + 10f;
+        float equipmentThreshold = materialsThreshold + (10f * mfMultiplier);
         if (roll <= equipmentThreshold) { RollEquipment(floor, invm); return; }
 
-        // 6. Quest Item (3.5%) // TODO: Boost by 16.5% if Quest Active
-        float questThreshold = equipmentThreshold + 3.5f;
+        // 6. Quest Item (3.5%)
+        float questThreshold = equipmentThreshold + (3.5f * mfMultiplier);
         if (roll <= questThreshold) { RollQuestItem(invm, enemy); return; }
 
         // 7. Relic (1.5% Base, 10% if Unique)
-        float relicChance = enemy.IsUnique ? 10.0f : 1.5f;
+        float baseRelicChance = enemy.IsUnique ? 10.0f : 1.5f;
+        float relicChance = baseRelicChance * mfMultiplier;
         float relicThreshold = questThreshold + relicChance;
         if (roll <= relicThreshold) { RollRelic(invm); return; }
 
-        // 8. Key Item (10%)
+        // 8. Key Item (Remaining)
         RollKeyItem(invm);
     }
 

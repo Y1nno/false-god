@@ -118,7 +118,7 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         if (IsAlive() && attackType == AttackType.Physical && attacker != null && attacker.IsAlive())
         {
             EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
-            if (eqm != null && eqm.HasTraitAvailable(EquipmentTrait.CounterChance, out EquipmentSO item, out int traitIndex))
+            if (eqm != null && eqm.HasTraitAvailable(EquipmentTrait.CounterChance, out Equipment item, out int traitIndex))
             {
                 float counterChance = item.Traits[traitIndex].Value;
                 if (UnityEngine.Random.Range(0f, 100f) < counterChance)
@@ -163,7 +163,7 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         }
         _availableActions.Clear();
         EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
-        EquipmentSO moveFirstItem = null;
+        Equipment moveFirstItem = null;
         int traitIndex = -1;
         bool hasMoveFirst = eqm != null && eqm.HasMoveFirstAvailable(out moveFirstItem, out traitIndex);
 
@@ -220,7 +220,7 @@ public class PlayerCombatManager : Combatant, IPromptResponder
                 if (selectedAction.ActionID == 1) // Basic Attack
                 {
                     EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
-                    if (eqm != null && eqm.HasMoveFirstAvailable(out EquipmentSO item, out int traitIndex))
+                    if (eqm != null && eqm.HasMoveFirstAvailable(out Equipment item, out int traitIndex))
                     {
                         if (item.Traits[traitIndex].CurrentCooldown > 0)
                         {

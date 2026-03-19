@@ -11,6 +11,7 @@ public class EquipmentSO : ItemSO
     public EquipmentSlot Slot;
     public Rarity Rarity;
     public bool IsTwoHanded;
+    public MainAttribute ScalingStat;
     public BoundedInt PhysicalDefense;
     public BoundedInt SpecialDefense;
     public BoundedInt PhysicalAttack;

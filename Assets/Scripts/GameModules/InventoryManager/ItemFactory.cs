@@ -16,7 +16,9 @@ public static class ItemFactory
 
         if (so is EquipmentSO eqSO)
         {
-            return new Equipment(eqSO.InstantiateAndRollStats());
+            Equipment newEq = new Equipment(eqSO.InstantiateAndRollStats());
+            ModifierGenerator.ApplyRandomModifiers(newEq);
+            return newEq;
         }
         else if (so is Consumable conSO)
         {

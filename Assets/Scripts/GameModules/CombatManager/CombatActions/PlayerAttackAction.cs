@@ -18,7 +18,7 @@ public class PlayerAttackAction : CombatAction
         if (!base.CanUse(user)) return false;
 
         EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
-        if (eqm != null && eqm.HasMoveFirstAvailable(out EquipmentSO moveFirstItem, out int traitIndex))
+        if (eqm != null && eqm.HasMoveFirstAvailable(out Equipment moveFirstItem, out int traitIndex))
         {
             if (moveFirstItem.Traits[traitIndex].CurrentCooldown > 0)
             {
@@ -38,6 +38,15 @@ public class PlayerAttackAction : CombatAction
         }
 
         int damage = _baseDamage;
+
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+        Equipment weapon = eqm?.GetEquippedItem(EquipmentSlot.Weapon);
+        if (weapon != null && user is PlayerCombatManager)
+        {
+            damage = weapon.PhysicalAttack > 0 ? weapon.PhysicalAttack : weapon.SpecialAttack;
+            // Note: In case of range, Wp is the rolled value. 
+            // Currently Equipment class stores the rolled value and factors in modifiers.
+        }
 
         TextOutputter.Instance.OutputText($"{user.GetName()} used {ActionName} on {target.GetName()}!");
         damage = CalculateDamageFromBase(damage, user);
@@ -72,14 +81,12 @@ public class PlayerAttackAction : CombatAction
                 }
             }
         }
-
-        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
         
         if (user is PlayerCombatManager pcmUser)
         {
             eqm?.DegradeEquippedWeapons(); // Drain durability on hit
 
-            if (eqm != null && eqm.HasTraitAvailable(EquipmentTrait.DoubleStrike, out EquipmentSO item, out int traitIndex))
+            if (eqm != null && eqm.HasTraitAvailable(EquipmentTrait.DoubleStrike, out Equipment item, out int traitIndex))
             {
                 float procChance = item.Traits[traitIndex].Value;
                 if (Random.Range(0f, 100f) < procChance)

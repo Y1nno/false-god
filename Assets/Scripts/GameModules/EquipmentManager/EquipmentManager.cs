@@ -3,27 +3,29 @@ using UnityEngine;
 
 public class EquipmentManager : GameModule
 {
-
-
     // What the player is currently wearing
-    public Dictionary<EquipmentSlot, EquipmentSO> EquippedItems { get; private set; } = new Dictionary<EquipmentSlot, EquipmentSO>();
+    public Dictionary<EquipmentSlot, Equipment> EquippedItems { get; private set; } = new Dictionary<EquipmentSlot, Equipment>();
     
     // Internal flag to prevent cooldown from ticking down on the very round it was used
     private bool _moveFirstUsedThisRound = false;
 
-
+    public Equipment GetEquippedItem(EquipmentSlot slot)
+    {
+        EquippedItems.TryGetValue(slot, out Equipment item);
+        return item;
+    }
 
     public override void AttachDefaultObservers()
     {
         // Add default observers here if needed later (e.g., listening for combat start)
     }
 
-    public void EquipItem(EquipmentSO newItem)
+    public void EquipItem(Equipment newItem)
     {
         if (newItem == null) return;
 
         // 1. Check if something is already in this slot
-        if (EquippedItems.TryGetValue(newItem.Slot, out EquipmentSO currentlyEquipped))
+        if (EquippedItems.TryGetValue(newItem.Slot, out Equipment currentlyEquipped))
         {
             // 2. If yes, unequip it and put it BACK into the InventoryManager's pool
             UnequipItem(newItem.Slot);
@@ -39,7 +41,7 @@ public class EquipmentManager : GameModule
         }
         else if (newItem.Slot == EquipmentSlot.OffHand)
         {
-            if (EquippedItems.TryGetValue(EquipmentSlot.Weapon, out EquipmentSO currentWeapon))
+            if (EquippedItems.TryGetValue(EquipmentSlot.Weapon, out Equipment currentWeapon))
             {
                 if (currentWeapon.IsTwoHanded)
                 {
@@ -51,23 +53,23 @@ public class EquipmentManager : GameModule
         // 3. Equip the new item
         EquippedItems[newItem.Slot] = newItem;
 
-        TextOutputter.Instance.OutputText($"Equipped {newItem.ItemName} to {newItem.Slot}.");
+        TextOutputter.Instance.OutputText($"Equipped {newItem.GetName()} to {newItem.Slot}.");
 
-        // 5. Tell the PlayerManager to recalculate stats (Optional event could go here)
+        // 5. Tell the PlayerManager to recalculate stats
         RunManager.Instance.GetService<PlayerManager>()?.RefreshEquipmentStats();
         Notify(EventType.EquipmentChanged);
     }
 
     public void UnequipItem(EquipmentSlot slot)
     {
-        if (EquippedItems.TryGetValue(slot, out EquipmentSO itemToUnequip))
+        if (EquippedItems.TryGetValue(slot, out Equipment itemToUnequip))
         {
             EquippedItems.Remove(slot);
-            
-            Equipment unequippedWrapper = new Equipment(itemToUnequip);
-            RunManager.Instance.GetService<InventoryManager>()?.AddItemToInventory(unequippedWrapper); // Put it back in the central inventory
-            
-            TextOutputter.Instance.OutputText($"Unequipped {itemToUnequip.ItemName}.");
+
+            // Restore the original wrapper to inventory
+            RunManager.Instance.GetService<InventoryManager>()?.AddItemToInventory(itemToUnequip);
+
+            TextOutputter.Instance.OutputText($"Unequipped {itemToUnequip.GetName()}.");
             RunManager.Instance.GetService<PlayerManager>()?.RefreshEquipmentStats();
             Notify(EventType.EquipmentChanged);
         }
@@ -75,14 +77,14 @@ public class EquipmentManager : GameModule
 
     public bool IsHoldingTwoHandedWeapon()
     {
-        if (EquippedItems.TryGetValue(EquipmentSlot.Weapon, out EquipmentSO currentWeapon))
+        if (EquippedItems.TryGetValue(EquipmentSlot.Weapon, out Equipment currentWeapon))
         {
             return currentWeapon.IsTwoHanded;
         }
         return false;
     }
 
-    public bool HasMoveFirstAvailable(out EquipmentSO moveFirstItem, out int traitIndex)
+    public bool HasMoveFirstAvailable(out Equipment moveFirstItem, out int traitIndex)
     {
         moveFirstItem = null;
         traitIndex = -1;
@@ -119,7 +121,7 @@ public class EquipmentManager : GameModule
         return false;
     }
 
-    public bool HasTraitAvailable(EquipmentTrait searchTrait, out EquipmentSO foundItem, out int traitIndex)
+    public bool HasTraitAvailable(EquipmentTrait searchTrait, out Equipment foundItem, out int traitIndex)
     {
         foundItem = null;
         traitIndex = -1;
@@ -143,7 +145,7 @@ public class EquipmentManager : GameModule
 
     public void TriggerMoveFirstCooldown()
     {
-        if (HasMoveFirstAvailable(out EquipmentSO item, out int traitIndex))
+        if (HasMoveFirstAvailable(out Equipment item, out int traitIndex))
         {
             var trait = item.Traits[traitIndex];
             trait.CurrentCooldown = trait.CooldownDuration;
@@ -179,7 +181,7 @@ public class EquipmentManager : GameModule
 
     // --- Stat Calculation Helpers ---
     
-    public int GetTotalBonus(System.Func<EquipmentSO, int> statSelector)
+    public int GetTotalBonus(System.Func<Equipment, int> statSelector)
     {
         float total = 0;
         foreach (var item in EquippedItems.Values)
@@ -189,10 +191,10 @@ public class EquipmentManager : GameModule
         return Mathf.RoundToInt(total);
     }
 
-    public int GetTotalPhysicalAttack() => GetTotalBonus(item => item.PhysicalAttack.value);
-    public int GetTotalSpecialAttack() => GetTotalBonus(item => item.SpecialAttack.value);
-    public int GetTotalPhysicalDefense() => GetTotalBonus(item => item.PhysicalDefense.value);
-    public int GetTotalSpecialDefense() => GetTotalBonus(item => item.SpecialDefense.value);
+    public int GetTotalPhysicalAttack() => GetTotalBonus(item => item.PhysicalAttack);
+    public int GetTotalSpecialAttack() => GetTotalBonus(item => item.SpecialAttack);
+    public int GetTotalPhysicalDefense() => GetTotalBonus(item => item.PhysicalDefense);
+    public int GetTotalSpecialDefense() => GetTotalBonus(item => item.SpecialDefense);
     public int GetTotalAllStats()
     {
         float total = 0;
@@ -212,13 +214,13 @@ public class EquipmentManager : GameModule
         return Mathf.RoundToInt(total);
     }
 
-    public int GetTotalSTR() => GetTotalBonus(item => item.STR.value) + GetTotalAllStats();
-    public int GetTotalDEX() => GetTotalBonus(item => item.DEX.value) + GetTotalAllStats();
-    public int GetTotalINT() => GetTotalBonus(item => item.INT.value) + GetTotalAllStats();
-    public int GetTotalSPD() => GetTotalBonus(item => item.SPD.value) + GetTotalAllStats();
+    public int GetTotalSTR() => GetTotalBonus(item => item.STR) + GetTotalAllStats();
+    public int GetTotalDEX() => GetTotalBonus(item => item.DEX) + GetTotalAllStats();
+    public int GetTotalINT() => GetTotalBonus(item => item.INT) + GetTotalAllStats();
+    public int GetTotalSPD() => GetTotalBonus(item => item.SPD) + GetTotalAllStats();
     public int GetTotalLCK() => GetTotalAllStats(); // LCK is exclusively handled by AllStats right now
-    public int GetTotalBlockChance() => GetTotalBonus(item => item.BlockChance.value);
-    public int GetTotalBlockAmount() => GetTotalBonus(item => item.BlockAmount.value);
+    public int GetTotalBlockChance() => GetTotalBonus(item => item.BlockChance);
+    public int GetTotalBlockAmount() => GetTotalBonus(item => item.BlockAmount);
     
     public int GetTotalSpellReflectChance()
     {
@@ -258,10 +260,28 @@ public class EquipmentManager : GameModule
         return total;
     }
 
+    public int GetTotalMagicFind()
+    {
+        float total = 0;
+        foreach (var item in EquippedItems.Values)
+        {
+            if (item.Traits != null)
+            {
+                foreach (var trait in item.Traits)
+                {
+                    if (trait.Trait == EquipmentTrait.MagicFind)
+                    {
+                        total += trait.Value * item.GetDurabilityMultiplier();
+                    }
+                }
+            }
+        }
+        return Mathf.RoundToInt(total);
+    }
+
     // --- Durability Degradation ---
     
-    // Configurable percentage chances based on Rarity logic. (Values subject to change)
-    private bool RollDurabilityDegradeChance(EquipmentSO item)
+    private bool RollDurabilityDegradeChance(Equipment item)
     {
         int chance = 0;
         switch (item.Rarity)
@@ -273,9 +293,7 @@ public class EquipmentManager : GameModule
         }
 
         if (chance <= 0) return false;
-        
-        // Random.Range(int min, int maxLimit) is exclusive to maxLimit.
-        return Random.Range(0, 100) < chance;
+        return UnityEngine.Random.Range(0, 100) < chance;
     }
 
     public void DegradeEquippedWeapons()
@@ -283,7 +301,7 @@ public class EquipmentManager : GameModule
         List<EquipmentSlot> slotsToBreak = new List<EquipmentSlot>();
         bool didDegrade = false;
 
-        if (EquippedItems.TryGetValue(EquipmentSlot.Weapon, out EquipmentSO weapon))
+        if (EquippedItems.TryGetValue(EquipmentSlot.Weapon, out Equipment weapon))
         {
             if (RollDurabilityDegradeChance(weapon))
             {
@@ -292,7 +310,7 @@ public class EquipmentManager : GameModule
             }
         }
 
-        if (EquippedItems.TryGetValue(EquipmentSlot.OffHand, out EquipmentSO offhand))
+        if (EquippedItems.TryGetValue(EquipmentSlot.OffHand, out Equipment offhand))
         {
             if (RollDurabilityDegradeChance(offhand))
             {
@@ -303,9 +321,8 @@ public class EquipmentManager : GameModule
 
         foreach (var slot in slotsToBreak)
         {
-            // TODO: Implement a Repair structure later. Currently we forcefully destroy broken gear.
-            TextOutputter.Instance.OutputText($"<color=red>Your {EquippedItems[slot].ItemName} broke!</color>");
-            EquippedItems.Remove(slot); // Fully wiped without pushing back to inventory
+            TextOutputter.Instance.OutputText($"<color=red>Your {EquippedItems[slot].GetName()} broke!</color>");
+            EquippedItems.Remove(slot); 
         }
 
         if (didDegrade)
@@ -320,11 +337,15 @@ public class EquipmentManager : GameModule
         List<EquipmentSlot> slotsToBreak = new List<EquipmentSlot>();
         bool didDegrade = false;
 
-        EquipmentSlot[] armorSlots = { EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, EquipmentSlot.Hands, EquipmentSlot.Belt, EquipmentSlot.Accessory1, EquipmentSlot.Accessory2 };
+        EquipmentSlot[] armorSlots = { 
+            EquipmentSlot.Head, EquipmentSlot.Chest, EquipmentSlot.Legs, 
+            EquipmentSlot.Hands, EquipmentSlot.Belt, 
+            EquipmentSlot.Accessory1, EquipmentSlot.Accessory2 
+        };
         
         foreach (var slot in armorSlots)
         {
-            if (EquippedItems.TryGetValue(slot, out EquipmentSO armorPiece))
+            if (EquippedItems.TryGetValue(slot, out Equipment armorPiece))
             {
                 if (RollDurabilityDegradeChance(armorPiece))
                 {
@@ -336,8 +357,7 @@ public class EquipmentManager : GameModule
 
         foreach (var slot in slotsToBreak)
         {
-            // Fully destroyed on break.
-            TextOutputter.Instance.OutputText($"<color=red>Your {EquippedItems[slot].ItemName} broke!</color>");
+            TextOutputter.Instance.OutputText($"<color=red>Your {EquippedItems[slot].GetName()} broke!</color>");
             EquippedItems.Remove(slot);
         }
 

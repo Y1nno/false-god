@@ -10,16 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fdad69720ae6f5248b7600463fade9a9, type: 3}
-  m_Name: Simple Staff
+  m_Name: Ring of Discovery
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentSO
-  ItemID: 79
-  ItemName: Simple Staff
+  ItemID: 146
+  ItemName: Ring of Discovery
   ItemIcon: {fileID: 0}
-  Description: 
-  Slot: 5
-  Rarity: 0
-  IsTwoHanded: 1
-  ScalingStat: 3
+  Description: A rare ring that significantly boosts the chance of finding items.
+  Slot: 7
+  Rarity: 2
   PhysicalDefense:
     value: 0
     min: 0
@@ -30,28 +28,28 @@ MonoBehaviour:
     max: 0
   PhysicalAttack:
     value: 0
-    min: 1
-    max: 1
+    min: 0
+    max: 0
   SpecialAttack:
     value: 0
     min: 0
     max: 0
   STR:
-    value: 0
-    min: 0
-    max: 0
+    value: 1
+    min: 1
+    max: 1
   DEX:
-    value: 0
-    min: 0
+    value: 1
+    min: 1
     max: 1
   INT:
-    value: 0
-    min: 2
-    max: 3
+    value: 1
+    min: 1
+    max: 1
   SPD:
-    value: 0
-    min: 0
-    max: 0
+    value: 1
+    min: 1
+    max: 1
   CritChance:
     value: 0
     min: 0
@@ -68,5 +66,10 @@ MonoBehaviour:
     value: 0
     min: 0
     max: 0
-  Traits: []
-  Skill: {fileID: 11400000, guid: b6d603e668c7576479afb51a0b48a925, type: 2}
+  Traits:
+  - Trait: 13
+    Value: 20
+    CooldownType: 0
+    CooldownDuration: 0
+    CurrentCooldown: 0
+  Skill: {fileID: 0}

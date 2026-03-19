@@ -171,11 +171,11 @@ public class PlayerManager : GameModule, IObserver
                 float phdefMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.PHDEF);
                 return phdefFromEquipment * (int)(1.0f + phdefMultiplierFromRite);
             case SecondaryStat.CRIT:
-                int critFromEquipment = eqm?.GetTotalBonus(item => item.CritChance.value) ?? 0;
+                int critFromEquipment = eqm?.GetTotalBonus(item => item.CritChance) ?? 0;
                 int critFromRite = (int)(RunManager.Instance.GetService<RiteManager>().CalculateFlatStatBonus(SecondaryStat.CRIT) * 100f) ;
                 return critFromEquipment + critFromRite;
             case SecondaryStat.EVDE:
-                return (eqm?.GetTotalBonus(item => item.DodgeChance.value) ?? 0) + (RunManager.Instance.GetService<CombatManager>()?.Pcm?.GetSecondaryStatBonus(SecondaryStat.EVDE) ?? 0);
+                return (eqm?.GetTotalBonus(item => item.DodgeChance) ?? 0) + (RunManager.Instance.GetService<CombatManager>()?.Pcm?.GetSecondaryStatBonus(SecondaryStat.EVDE) ?? 0);
             default:
                 throw new ArgumentOutOfRangeException(nameof(secondaryStat), secondaryStat, null);
         }

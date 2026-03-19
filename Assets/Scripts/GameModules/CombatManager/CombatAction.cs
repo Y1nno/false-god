@@ -130,12 +130,53 @@ public abstract class CombatAction
 
         if (ActionType == AttackType.Physical)
         {
-            float multiplier = (user.GetSecondaryStat(SecondaryStat.PHATK) + DiceRoller.Instance.RollD20()) / (float)k_attackCalculationDivisor;
+            float multiplier = 1.0f;
+            if (user is PlayerCombatManager pcm)
+            {
+                EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+                Equipment weapon = eqm?.GetEquippedItem(EquipmentSlot.Weapon);
+                if (weapon != null && weapon.ScalingStat != MainAttribute.None)
+                {
+                    int statValue = weapon.ScalingStat switch
+                    {
+                        MainAttribute.Strength => pcm.GetStat(Stat.STR),
+                        MainAttribute.Dexterity => pcm.GetStat(Stat.DEX),
+                        MainAttribute.Intelligence => pcm.GetStat(Stat.INT),
+                        _ => 0
+                    };
+                    multiplier = Mathf.Ceil((DiceRoller.Instance.RollD20() + statValue) / 5.0f);
+                }
+                else
+                {
+                    multiplier = (user.GetSecondaryStat(SecondaryStat.PHATK) + DiceRoller.Instance.RollD20()) / (float)k_attackCalculationDivisor;
+                }
+            }
+            else
+            {
+                multiplier = (user.GetSecondaryStat(SecondaryStat.PHATK) + DiceRoller.Instance.RollD20()) / (float)k_attackCalculationDivisor;
+            }
             finalDamage = Mathf.RoundToInt(finalDamage * Mathf.Max(1.0f, multiplier));
         }
         else if (ActionType == AttackType.Special)
         {
-            float multiplier = (user.GetSecondaryStat(SecondaryStat.SPATK) + DiceRoller.Instance.RollD20()) / (float)k_attackCalculationDivisor;
+            float multiplier = 1.0f;
+            if (user is PlayerCombatManager pcm)
+            {
+                EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+                Equipment weapon = eqm?.GetEquippedItem(EquipmentSlot.Weapon);
+                if (weapon != null && weapon.ScalingStat == MainAttribute.Intelligence)
+                {
+                    multiplier = Mathf.Ceil((DiceRoller.Instance.RollD20() + pcm.GetStat(Stat.INT)) / 5.0f);
+                }
+                else
+                {
+                    multiplier = (user.GetSecondaryStat(SecondaryStat.SPATK) + DiceRoller.Instance.RollD20()) / (float)k_attackCalculationDivisor;
+                }
+            }
+            else
+            {
+                multiplier = (user.GetSecondaryStat(SecondaryStat.SPATK) + DiceRoller.Instance.RollD20()) / (float)k_attackCalculationDivisor;
+            }
             finalDamage = Mathf.RoundToInt(finalDamage * Mathf.Max(1.0f, multiplier));
         }
         return finalDamage;

@@ -84,12 +84,9 @@ public class InventoryManager : GameModule
 
         if (itemToHandle is Equipment equipment)
         {
-            // Equipment wrapper needs to unwrap and fetch its underlying SO if the Equipper requires it
-            if (equipment.BaseData != null)
-            {
-                RunManager.Instance.GetService<EquipmentManager>()?.EquipItem(equipment.BaseData);
-                RemoveItemFromInventory(equipment); // Successfully passed to EquipmentManager, so remove from unequipped pool
-            }
+            // Pass the runtime Equipment instance directly to preserve its state (durability, modifiers)
+            RunManager.Instance.GetService<EquipmentManager>()?.EquipItem(equipment);
+            RemoveItemFromInventory(equipment);
         }
         else if (itemToHandle is ConsumableInstance consumableInstance)
         {
