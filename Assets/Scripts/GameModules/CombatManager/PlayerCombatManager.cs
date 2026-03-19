@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class PlayerCombatManager : Combatant, IPromptResponder
 {
-    private PlayerManager _pm = RunManager.Instance.GetService<PlayerManager>();
+    private PlayerManager _pm => RunManager.Instance.GetService<PlayerManager>();
 
     private List<CombatAction> _availableActions = new List<CombatAction>();
     private enum DecisionMode { None, ChoosingAction, ChoosingTarget }
@@ -92,6 +92,15 @@ public class PlayerCombatManager : Combatant, IPromptResponder
             return 0;
         }
 
+        if (damage > 0 && attacker != null && attacker is Enemy)
+        {
+            RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
+            if (relicm != null)
+            {
+                damage = Mathf.RoundToInt(damage * relicm.GetEnemyDamageMultiplier());
+            }
+        }
+
         int damageDealt = 0;
         switch (attackType)
         {
@@ -121,6 +130,11 @@ public class PlayerCombatManager : Combatant, IPromptResponder
             }
         }
 
+        if (attacker != null && damageDealt > 0)
+        {
+            attacker.OnDealDamage(damageDealt, this);
+        }
+
         return damageDealt;
     }
 
@@ -135,6 +149,18 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     }
     public override void ChooseAction()
     {
+        if (HasAilment(AilmentType.Frozen) || HasAilment(AilmentType.Stun) || HasAilment(AilmentType.Reloading))
+        {
+            string reason = HasAilment(AilmentType.Frozen) ? "frozen solid" : (HasAilment(AilmentType.Stun) ? "stunned" : "reloading");
+            TextOutputter.Instance.OutputText($"You are {reason} and cannot move!");
+            _availableActions.Clear();
+            _availableActions.Add(ActionFactory.CreateActionByID(000)); // Do Nothing action
+            
+            Notify(EventType.PlayerTurnStart);
+            _currentDecisionMode = DecisionMode.ChoosingAction;
+            Prompt skipPrompt = new Prompt($"You are {reason}!", new List<string> { "Skip Turn" }, this);
+            return;
+        }
         _availableActions.Clear();
         EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
         EquipmentSO moveFirstItem = null;
@@ -233,9 +259,20 @@ public class PlayerCombatManager : Combatant, IPromptResponder
 
             case DecisionMode.ChoosingTarget:
                 _currentDecisionMode = DecisionMode.None;
-                _currentTarget = possibleTargets[decisionIndex];
+                
+                if (decisionIndex >= 0 && decisionIndex < possibleTargets.Count)
+                {
+                    _currentTarget = possibleTargets[decisionIndex];
+
+                    // Handle Charmed status: 50% chance to force target to Self
+                    if (HasAilment(AilmentType.Charmed) && UnityEngine.Random.value <= 0.5f)
+                    {
+                        TextOutputter.Instance.OutputText("You are charmed and target yourself!");
+                        _currentTarget = this;
+                    }
+                }
+
                 possibleTargets.Clear();
-                //Debug.Log($"Selected target: {_currentTarget.GetName()}, setting action and notifying.");
                 Notify(EventType.PlayerActionSet);
                 break;
         }
@@ -251,11 +288,83 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     }
     public override int GetStat(Stat stat)
     {
-        return _pm.GetStat(stat);
+        int baseStat = _pm.GetStat(stat);
+        return baseStat + GetStatBonus(stat);
     }
+
+    public int GetStatBonus(Stat stat)
+    {
+        float bonus = 0;
+        if (_activeEffects == null) return 0;
+        foreach (var effect in _activeEffects)
+        {
+            if ((effect.BaseEffect.Type == ConsumableEffectType.StatChange && effect.BaseEffect.TargetStat == stat) ||
+                effect.BaseEffect.Type == ConsumableEffectType.AllStatsChange)
+            {
+                bonus += effect.ModifiedAmount;
+            }
+        }
+        return Mathf.RoundToInt(bonus);
+    }
+
     public override int GetSecondaryStat(SecondaryStat stat)
     {
-        return _pm.CalculateSecondaryStat(stat);
+        int baseStat = _pm.CalculateSecondaryStat(stat);
+
+        if (HasAilment(AilmentType.Burn) && stat == SecondaryStat.PHATK)
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 0.90f);
+        }
+        else if (HasAilment(AilmentType.Poison) && stat == SecondaryStat.SPDEF)
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 0.95f);
+        }
+
+        if (HasAilment(AilmentType.Frozen))
+        {
+            if (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF)
+            {
+                baseStat = Mathf.RoundToInt(baseStat * 1.20f);
+            }
+        }
+
+        // Apply Debuffs from Ailments
+        if (HasAilment(AilmentType.AtkDebuff) && (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK))
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 0.70f);
+        }
+        if (HasAilment(AilmentType.DefDebuff) && (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF))
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 0.70f);
+        }
+
+        // Apply Auras from active Enemies
+        CombatManager cbm = RunManager.Instance.GetService<CombatManager>();
+        if (cbm != null && cbm.CurrentBattle != null)
+        {
+            foreach (var enemy in cbm.CurrentBattle.GetEnemies())
+            {
+                if (enemy == null || !enemy.IsAlive()) continue;
+
+                if (enemy.GetName() == "Banshee" && (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK))
+                {
+                    baseStat = Mathf.RoundToInt(baseStat * 0.70f); // Haunt: -30% Atk
+                }
+                else if (enemy.GetName() == "Wraith" && (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF))
+                {
+                    baseStat = Mathf.RoundToInt(baseStat * 0.70f); // Spite: -30% Def
+                }
+            }
+        }
+
+        return baseStat + GetSecondaryStatBonus(stat);
+    }
+
+    public int GetSecondaryStatBonus(SecondaryStat stat)
+    {
+        // Currently ConsumableEffectType doesn't distinguish secondary stats specifically in its TargetStat field (which is only 'Stat' enum),
+        // but if you add more specific consumable types later, this is where you'd aggregate those bonuses.
+        return 0;
     }
     public override int GetBonusDamage()
     {
@@ -264,8 +373,8 @@ public class PlayerCombatManager : Combatant, IPromptResponder
 
     public override bool TryUseMana(int amount)
     {
-        // 1. Try normal mana usage first
-        if (base.TryUseMana(amount))
+        // 1. Try normal mana usage first (includes Blessed Cross check)
+        if (_pm.TryUseMana(amount))
         {
             return true;
         }
@@ -283,10 +392,6 @@ public class PlayerCombatManager : Combatant, IPromptResponder
             }
 
             // Consume health for the rest
-            // Check if we have enough health (don't kill self unless intended? usually allow suicide or block)
-            // Let's allow suicide for drama, or check CanAfford if we want safety.
-            // Requirement says "Use HP as Mana", usually implies "Blood Magic".
-
             if (_pm.Health.CurrentValue > deficit)
             {
                 _pm.TakeDamage(deficit);
@@ -321,9 +426,6 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         {
             int deficit = amount - _pm.Mana.CurrentValue;
             // Ensure we have enough health to cover the deficit
-            // Depending on design, we might require > deficit to stay alive, or >= to cast and die.
-            // Let's go with > 0 after cost (strict survival) or >= (allowed to die).
-            // Given "Die()" exists, allowing >= seems consistent.
             return _pm.Health.CurrentValue > deficit;
         }
         return false;

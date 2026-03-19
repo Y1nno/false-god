@@ -23,16 +23,21 @@ public class EnemyEncounter : Encounter, IObserver
 
     public override void ResolveEncounter()
     {
+        _combatManager.InstaKillCurrentBattle();
         _combatManager.DetachObserver(this);
         base.ResolveEncounter();
     }
 
+    private bool _isResolved = false;
     public void OnNotify(object subject, EventType eventType)
     {
+        if (_isResolved || !Application.isPlaying) return;
+
         switch (eventType)
         {
             case EventType.BattleEnd:
                 Debug.Log("EnemyEncounter received BattleEnd event, resolving encounter");
+                _isResolved = true;
                 ResolveEncounter();
                 break;
             default:
