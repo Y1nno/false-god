@@ -1,10 +1,18 @@
+// TRIGGER RECOMPILE: 1773950000
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum EnemyPrefix { None, Frenzied, Armored, Swift, Vampiric, Brutal }
+public enum EnemySuffix { None, ofVenom, ofFrost, ofEmbers, ofDecay, ofRupture }
+
 public class Enemy : Combatant
 {
     public string Name { get; protected set; }
+    public EnemyPrefix Prefix { get; private set; } = EnemyPrefix.None;
+    public EnemySuffix Suffix { get; private set; } = EnemySuffix.None;
+    public bool IsUnique => Prefix != EnemyPrefix.None || Suffix != EnemySuffix.None;
+
     public Resource Health { get; protected set; }
     public Resource Mana { get; protected set; }
     public EnemyStatBox Stats { get; protected set; }
@@ -110,9 +118,32 @@ public class Enemy : Combatant
         AttachObserver(RunManager.Instance.GetService<DropManager>());
     }
 
+    public void BecomeUnique(EnemyPrefix prefix, EnemySuffix suffix)
+    {
+        Prefix = prefix;
+        Suffix = suffix;
+
+        // Apply HP modifiers immediately
+        if (Prefix == EnemyPrefix.Armored)
+        {
+            int hpBonus = Mathf.RoundToInt(Health.MaxValue * 0.20f);
+            Health.IncreaseBaseMax(hpBonus);
+            Health.Increase(hpBonus);
+        }
+        else if (Prefix == EnemyPrefix.Swift)
+        {
+            int hpPenalty = Mathf.RoundToInt(Health.MaxValue * 0.20f);
+            Health.IncreaseBaseMax(-hpPenalty);
+        }
+
+        TextOutputter.Instance.OutputText($"A unique monster appears: {GetName()}!");
+    }
+
     public override string GetName()
     {
-        return Name;
+        string pStr = Prefix != EnemyPrefix.None ? Prefix.ToString() + " " : "";
+        string sStr = Suffix != EnemySuffix.None ? " " + Suffix.ToString().Replace("of", "of ") : "";
+        return $"{pStr}{Name}{sStr}";
     }
     public override Resource GetHealth()
     {
@@ -127,15 +158,28 @@ public class Enemy : Combatant
     public override void Die()
     {
         TextOutputter.Instance.OutputText($"Enemy {Name} has been defeated!");
+        
+        // --- UNIQUE OF EMBERS ON DEATH ---
+        if (Suffix == EnemySuffix.ofEmbers)
+        {
+            CombatManager cm = RunManager.Instance.GetService<CombatManager>();
+            if (cm != null && cm.CurrentBattle != null && UnityEngine.Random.value <= 0.55f)
+            {
+                TextOutputter.Instance.OutputText($"{GetName()} explodes into embers!");
+                cm.CurrentBattle.Pcm.ApplyAilment(AilmentType.Burn, 3);
+            }
+        }
+
         Notify(EventType.EnemyDefeated);
     }
 
     public override void ChooseAction()
     {
-        if (HasAilment(AilmentType.Frozen))
+        if (HasAilment(AilmentType.Frozen) || HasAilment(AilmentType.Stun) || HasAilment(AilmentType.Reloading))
         {
             CurrentAction = ActionFactory.CreateActionByID(000); // Do Nothing
-            TextOutputter.Instance.OutputText($"{Name} is frozen solid and cannot move!");
+            string reason = HasAilment(AilmentType.Frozen) ? "frozen solid" : (HasAilment(AilmentType.Stun) ? "stunned" : "reloading");
+            TextOutputter.Instance.OutputText($"{GetName()} is {reason} and cannot move!");
             return;
         }
 
@@ -167,7 +211,23 @@ public class Enemy : Combatant
 
     public override int GetStat(Stat stat)
     {
-        return Stats.GetStat(stat);
+        int baseStat = Stats.GetStat(stat);
+
+        // --- UNIQUE PREFIX STAT MODIFIERS ---
+        if (Prefix == EnemyPrefix.Frenzied && stat == Stat.SPD)
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 1.20f);
+        }
+        else if (Prefix == EnemyPrefix.Armored && stat == Stat.SPD)
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 0.80f);
+        }
+        else if (Prefix == EnemyPrefix.Swift && stat == Stat.SPD)
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 1.40f);
+        }
+
+        return baseStat;
     }
 
     public override int GetSecondaryStat(SecondaryStat stat)
@@ -201,6 +261,35 @@ public class Enemy : Combatant
             baseStat = Mathf.RoundToInt(baseStat * 1.20f); // +20% Defense
         }
 
+        if (HasAilment(AilmentType.AtkDebuff) && (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK))
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 0.70f); // -30% Attack
+        }
+
+        if (HasAilment(AilmentType.DefDebuff) && (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF))
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 0.70f); // -30% Defense
+        }
+
+        // --- UNIQUE PREFIX MODIFIERS ---
+        if (Prefix == EnemyPrefix.Frenzied)
+        {
+            if (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK) baseStat = Mathf.RoundToInt(baseStat * 1.30f);
+            if (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF) baseStat = Mathf.RoundToInt(baseStat * 0.80f);
+        }
+        else if (Prefix == EnemyPrefix.Armored)
+        {
+            if (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF) baseStat = Mathf.RoundToInt(baseStat * 1.30f);
+        }
+        else if (Prefix == EnemyPrefix.Swift)
+        {
+            if (stat == SecondaryStat.EVDE) baseStat += 15;
+        }
+        else if (Prefix == EnemyPrefix.Brutal)
+        {
+            if (stat == SecondaryStat.CRIT) baseStat += 50;
+        }
+
         return baseStat;
     }
 
@@ -213,18 +302,102 @@ public class Enemy : Combatant
     {
         if (CurrentAction != null)
         {
-            CurrentAction.Execute(this, DecideTarget());
+            // Skeleton Archer Priority
+            if (GetName() == "Skeleton Archer")
+            {
+                CurrentAction.Priority = 1;
+            }
+
+            Combatant target = DecideTarget();
+            if (target != null)
+            {
+                CurrentAction.Execute(this, target);
+                
+                // On-Hit Effects
+                ApplyOnHitEffects(target);
+
+                // Skeleton Archer Reload
+                if (GetName() == "Skeleton Archer")
+                {
+                    ApplyAilment(AilmentType.Reloading, 1);
+                }
+            }
+        }
+    }
+
+    protected virtual void ApplyOnHitEffects(Combatant target)
+    {
+        if (target == null || !target.IsAlive()) return;
+
+        string name = GetName();
+        if (name == "Imp" && UnityEngine.Random.value <= 0.3f) // 30% chance for bleed
+        {
+            target.ApplyAilment(AilmentType.Bleed, 3);
+        }
+        else if (name == "Infected Hound" && UnityEngine.Random.value <= 0.3f)
+        {
+            target.ApplyAilment(AilmentType.Poison, 3);
+        }
+        else if (name == "infernal" && UnityEngine.Random.value <= 0.3f)
+        {
+            target.ApplyAilment(AilmentType.Burn, 3);
+        }
+        else if (name == "Succubus" && UnityEngine.Random.value <= 0.5f)
+        {
+            target.ApplyAilment(AilmentType.Charmed, 2);
+        }
+
+        // --- UNIQUE VAMPIRIC PREFIX ---
+        if (Prefix == EnemyPrefix.Vampiric)
+        {
+            // Vampiric: Heal 25% of damage dealt. 
+            // This is tricky as we don't know the damage here. 
+            // We'll rely on a manual implementation in ExecuteAction or provide a hook.
+            // For now, let's just do a flat 5 HP heal for simplicity if we want it here, 
+            // but the prompt says 25% of damage. I'll handle it in ExecuteAction.
+        }
+
+        // --- UNIQUE SUFFIX EFFECTS ---
+        float roll = UnityEngine.Random.value;
+        if (Suffix == EnemySuffix.ofVenom && roll <= 0.30f) target.ApplyAilment(AilmentType.Poison, 3);
+        else if (Suffix == EnemySuffix.ofFrost && roll <= 0.25f) target.ApplyAilment(AilmentType.Frozen, 1);
+        else if (Suffix == EnemySuffix.ofEmbers && roll <= 0.10f) target.ApplyAilment(AilmentType.Burn, 3);
+        else if (Suffix == EnemySuffix.ofDecay && roll <= 0.25f) target.ApplyAilment(AilmentType.DmgDebuff, 2);
+        else if (Suffix == EnemySuffix.ofRupture && roll <= 0.20f) target.ApplyAilment(AilmentType.Bleed, 3);
+    }
+    
+    // Helper to handle Vampiric heal
+    public void HandleLifeSteal(int damageDealt)
+    {
+        if (Prefix == EnemyPrefix.Vampiric && damageDealt > 0)
+        {
+            int heal = Mathf.RoundToInt(damageDealt * 0.25f);
+            if (heal > 0)
+            {
+                Health.Increase(heal);
+                TextOutputter.Instance.OutputText($"{GetName()} heels {heal} HP from Vampiric drain!");
+            }
         }
     }
 
     public virtual Combatant DecideTarget()
     {
+        if (CurrentAction == null) return null;
+
         switch (CurrentAction.TargetType)
         {
             case TargetingType.Self:
                 return this;
             case TargetingType.SingleEnemy:
+                // Handle Charmed status: 50% chance to target self/allies instead
+                if (HasAilment(AilmentType.Charmed) && UnityEngine.Random.value <= 0.5f)
+                {
+                    TextOutputter.Instance.OutputText($"{GetName()} is charmed and targets itself!");
+                    return this;
+                }
+
                 CombatManager cbm  = RunManager.Instance.GetService<CombatManager>();
+                if (cbm == null || cbm.CurrentBattle == null) return null;
                 return cbm.CurrentBattle.Pcm;
             default:
                 return null;
@@ -244,14 +417,47 @@ public class Enemy : Combatant
             }
         }
 
+        int damageToTake = damage;
+        string name = GetName();
+
+        if (name == "Kobold" && attackType == AttackType.Physical)
+        {
+            int blocked = Mathf.RoundToInt(damage * 0.70f);
+            damageToTake -= blocked;
+            TextOutputter.Instance.OutputText($"{name} blocks {blocked} damage (70% passive)!");
+        }
+
+        int finalTaken = 0;
         switch (attackType)
         {
             case AttackType.Physical:
-                return TakeDamage(hasTrueStrike ? damage : damage - GetSecondaryStat(SecondaryStat.PHDEF));
+                finalTaken = TakeDamage(hasTrueStrike ? damageToTake : damageToTake - GetSecondaryStat(SecondaryStat.PHDEF));
+                break;
             case AttackType.Special:
-                return TakeDamage(hasTrueStrike ? damage : damage - GetSecondaryStat(SecondaryStat.SPDEF));
+                finalTaken = TakeDamage(hasTrueStrike ? damageToTake : damageToTake - GetSecondaryStat(SecondaryStat.SPDEF));
+                break;
             default:
-                return TakeDamage(damage);
+                finalTaken = TakeDamage(damageToTake);
+                break;
         }
+
+        if (name == "Basilisk" && attacker != null && attacker.IsAlive() && finalTaken > 0)
+        {
+            int returnDmg = Mathf.RoundToInt(finalTaken * 0.30f);
+            TextOutputter.Instance.OutputText($"{name} reflects {returnDmg} damage back to {attacker.GetName()}!");
+            attacker.GetAttacked(returnDmg, AttackType.Physical, this);
+        }
+
+        if (attacker != null && finalTaken > 0)
+        {
+            attacker.OnDealDamage(finalTaken, this);
+        }
+
+        return finalTaken;
+    }
+
+    public override void OnDealDamage(int damage, Combatant target)
+    {
+        HandleLifeSteal(damage);
     }
 }

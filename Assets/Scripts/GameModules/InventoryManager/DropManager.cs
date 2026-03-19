@@ -65,10 +65,11 @@ public class DropManager : GameModule, IObserver
 
         // 6. Quest Item (3.5%) // TODO: Boost by 16.5% if Quest Active
         float questThreshold = equipmentThreshold + 3.5f;
-        if (roll <= questThreshold) { RollQuestItem(invm); return; }
+        if (roll <= questThreshold) { RollQuestItem(invm, enemy); return; }
 
-        // 7. Relic (1.5%) // TODO: Boost by 8.5% if Unique Enemy
-        float relicThreshold = questThreshold + 1.5f;
+        // 7. Relic (1.5% Base, 10% if Unique)
+        float relicChance = enemy.IsUnique ? 10.0f : 1.5f;
+        float relicThreshold = questThreshold + relicChance;
         if (roll <= relicThreshold) { RollRelic(invm); return; }
 
         // 8. Key Item (10%)
@@ -148,7 +149,7 @@ public class DropManager : GameModule, IObserver
         {
             float mRoll = Random.value;
             if (mRoll <= 0.2f) itemID = "Broken GemShard";
-            else if (mRoll <= 0.5f) itemID = "Torn paper";
+            else if (mRoll <= 0.5f) itemID = "Torn Paper";
             else if (mRoll <= 0.7f) itemID = "Paper";
             else if (mRoll <= 0.8f) itemID = "Ink";
             // remaining 20% is nothing
@@ -187,9 +188,34 @@ public class DropManager : GameModule, IObserver
         }
     }
 
-    private void RollQuestItem(InventoryManager invm)
+    private void RollQuestItem(InventoryManager invm, Enemy enemy)
     {
-        // TODO: Implement Quest Item drops
+        // Base drop chance is 3.5%
+        // TODO: If quest is online/active, chance should be 20%
+        // The global category roll already handles the 3.5% chance (Category 6).
+        // So any enemy that falls into this category should drop their item.
+
+        string enemyName = enemy.GetName();
+        string itemID = "";
+
+        switch (enemyName)
+        {
+            case "Brute Ogre": itemID = "140"; break;
+            case "Cloaker": itemID = "141"; break;
+            case "Banshee": itemID = "142"; break;
+            case "Kobold": itemID = "143"; break;
+            case "Demon Centaur": itemID = "144"; break;
+            case "Stone Golem": itemID = "145"; break;
+            default:
+                // Fallback for enemies without specific quest items
+                TextOutputter.Instance.OutputText($"{enemyName} dropped nothing special...");
+                return;
+        }
+
+        if (itemID != "")
+        {
+            SpawnAndGive(itemID, invm);
+        }
     }
 
     private void RollRelic(InventoryManager invm)

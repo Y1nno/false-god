@@ -130,6 +130,11 @@ public class PlayerCombatManager : Combatant, IPromptResponder
             }
         }
 
+        if (attacker != null && damageDealt > 0)
+        {
+            attacker.OnDealDamage(damageDealt, this);
+        }
+
         return damageDealt;
     }
 
@@ -144,15 +149,16 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     }
     public override void ChooseAction()
     {
-        if (HasAilment(AilmentType.Frozen))
+        if (HasAilment(AilmentType.Frozen) || HasAilment(AilmentType.Stun) || HasAilment(AilmentType.Reloading))
         {
-            TextOutputter.Instance.OutputText("You are frozen solid and cannot move!");
+            string reason = HasAilment(AilmentType.Frozen) ? "frozen solid" : (HasAilment(AilmentType.Stun) ? "stunned" : "reloading");
+            TextOutputter.Instance.OutputText($"You are {reason} and cannot move!");
             _availableActions.Clear();
             _availableActions.Add(ActionFactory.CreateActionByID(000)); // Do Nothing action
             
             Notify(EventType.PlayerTurnStart);
             _currentDecisionMode = DecisionMode.ChoosingAction;
-            Prompt frozenPrompt = new Prompt("You are frozen!", new List<string> { "Skip Turn" }, this);
+            Prompt skipPrompt = new Prompt($"You are {reason}!", new List<string> { "Skip Turn" }, this);
             return;
         }
         _availableActions.Clear();
@@ -253,9 +259,20 @@ public class PlayerCombatManager : Combatant, IPromptResponder
 
             case DecisionMode.ChoosingTarget:
                 _currentDecisionMode = DecisionMode.None;
-                _currentTarget = possibleTargets[decisionIndex];
+                
+                if (decisionIndex >= 0 && decisionIndex < possibleTargets.Count)
+                {
+                    _currentTarget = possibleTargets[decisionIndex];
+
+                    // Handle Charmed status: 50% chance to force target to Self
+                    if (HasAilment(AilmentType.Charmed) && UnityEngine.Random.value <= 0.5f)
+                    {
+                        TextOutputter.Instance.OutputText("You are charmed and target yourself!");
+                        _currentTarget = this;
+                    }
+                }
+
                 possibleTargets.Clear();
-                //Debug.Log($"Selected target: {_currentTarget.GetName()}, setting action and notifying.");
                 Notify(EventType.PlayerActionSet);
                 break;
         }
@@ -308,6 +325,35 @@ public class PlayerCombatManager : Combatant, IPromptResponder
             if (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF)
             {
                 baseStat = Mathf.RoundToInt(baseStat * 1.20f);
+            }
+        }
+
+        // Apply Debuffs from Ailments
+        if (HasAilment(AilmentType.AtkDebuff) && (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK))
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 0.70f);
+        }
+        if (HasAilment(AilmentType.DefDebuff) && (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF))
+        {
+            baseStat = Mathf.RoundToInt(baseStat * 0.70f);
+        }
+
+        // Apply Auras from active Enemies
+        CombatManager cbm = RunManager.Instance.GetService<CombatManager>();
+        if (cbm != null && cbm.CurrentBattle != null)
+        {
+            foreach (var enemy in cbm.CurrentBattle.GetEnemies())
+            {
+                if (enemy == null || !enemy.IsAlive()) continue;
+
+                if (enemy.GetName() == "Banshee" && (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK))
+                {
+                    baseStat = Mathf.RoundToInt(baseStat * 0.70f); // Haunt: -30% Atk
+                }
+                else if (enemy.GetName() == "Wraith" && (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF))
+                {
+                    baseStat = Mathf.RoundToInt(baseStat * 0.70f); // Spite: -30% Def
+                }
             }
         }
 

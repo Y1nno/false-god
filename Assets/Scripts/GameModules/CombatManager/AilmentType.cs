@@ -5,5 +5,11 @@ public enum AilmentType
     Frozen,
     Bleed,
     Shielded,
-    AtkBonus
+    AtkBonus,
+    Stun,
+    Charmed,
+    AtkDebuff,
+    DefDebuff,
+    DmgDebuff,
+    Reloading
 }

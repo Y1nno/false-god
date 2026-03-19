@@ -29,7 +29,10 @@ public abstract class CombatAction
     public List<Combatant> GetAvailableTargets(Combatant user, TargetingType targetingType)
     {
         List<Combatant> targets = new List<Combatant>();
-        List<Combatant> possibleEnemies = _cbtm.CurrentBattle.GetEnemies();
+        List<Combatant> possibleEnemies = _cbtm.CurrentBattle.GetEnemies()
+            .OrderBy(e => e.GetName())
+            .ThenBy(e => e.GetHashCode())
+            .ToList();
         PlayerCombatManager pcm = _cbtm.CurrentBattle.Pcm;
         bool isUserPlayer = user == pcm;
 
@@ -105,6 +108,12 @@ public abstract class CombatAction
 
         int finalDamage = Mathf.RoundToInt((baseDamage + user.GetBonusDamage() + relicFlatBonus + hunterTrophyBonus) * relicMultiplier);
         
+        // DmgDebuff Ailment (-20% damage)
+        if (user.HasAilment(AilmentType.DmgDebuff))
+        {
+            finalDamage = Mathf.RoundToInt(finalDamage * 0.8f);
+        }
+
         // Aura of the Fallen (Fallen Saint Passive): Reduces enemy damage by 20%
         if (user is PlayerCombatManager)
         {
@@ -121,11 +130,13 @@ public abstract class CombatAction
 
         if (ActionType == AttackType.Physical)
         {
-            finalDamage *= (user.GetSecondaryStat(SecondaryStat.PHATK) + DiceRoller.Instance.RollD20())/k_attackCalculationDivisor;
+            float multiplier = (user.GetSecondaryStat(SecondaryStat.PHATK) + DiceRoller.Instance.RollD20()) / (float)k_attackCalculationDivisor;
+            finalDamage = Mathf.RoundToInt(finalDamage * Mathf.Max(1.0f, multiplier));
         }
         else if (ActionType == AttackType.Special)
         {
-            finalDamage *= (user.GetSecondaryStat(SecondaryStat.SPATK) + DiceRoller.Instance.RollD20())/k_attackCalculationDivisor;
+            float multiplier = (user.GetSecondaryStat(SecondaryStat.SPATK) + DiceRoller.Instance.RollD20()) / (float)k_attackCalculationDivisor;
+            finalDamage = Mathf.RoundToInt(finalDamage * Mathf.Max(1.0f, multiplier));
         }
         return finalDamage;
     }

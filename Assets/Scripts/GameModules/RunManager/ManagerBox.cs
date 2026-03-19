@@ -62,6 +62,14 @@ public class ManagerBox
         SetupObservers();
     }
 
+    public void CleanupAllManagers()
+    {
+        foreach (var manager in _allManagers)
+        {
+            manager.Cleanup();
+        }
+    }
+
     private void SetupObservers()
     {
         foreach (var manager in _allManagers)

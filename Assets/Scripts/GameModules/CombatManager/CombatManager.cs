@@ -1,3 +1,5 @@
+// TRIGGER RECOMPILE: 1773950000
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -60,22 +62,54 @@ public class CombatManager : GameModule, IObserver
 
         // Roll spawn count
         int spawnCount = 1;
-        float roll = Random.Range(0f, 100f);
+        float roll = UnityEngine.Random.Range(0f, 100f);
         if (roll < activeTable.OneEnemyChance) spawnCount = 1;
         else if (roll < activeTable.OneEnemyChance + activeTable.TwoEnemyChance) spawnCount = 2;
         else spawnCount = 3;
 
         for (int i = 0; i < spawnCount; i++)
         {
-            EnemySO rolledEnemy = PickRandomEnemy(activeTable.EnemyPool);
-            int rolledLevel = Random.Range(activeTable.MinLevel, activeTable.MaxLevel + 1);
-            if (rolledEnemy != null) 
+            SpawnPoolConfig selectedPool = PickRandomPool(activeTable.Pools);
+            if (selectedPool != null && selectedPool.Enemies != null && selectedPool.Enemies.Count > 0)
             {
-                enemies.Add(new Enemy(rolledEnemy, rolledLevel));
+                EnemySO rolledEnemy = PickRandomEnemy(selectedPool.Enemies);
+                int rolledLevel = UnityEngine.Random.Range(selectedPool.MinLevel, selectedPool.MaxLevel + 1);
+                if (rolledEnemy != null) 
+                {
+                    Enemy enemy = new Enemy(rolledEnemy, rolledLevel);
+                    
+                    // Roll for Unique status
+                    if (UnityEngine.Random.Range(0f, 100f) <= selectedPool.UniqueChance)
+                    {
+                        // Get random prefix and suffix
+                        EnemyPrefix prefix = (EnemyPrefix)UnityEngine.Random.Range(1, System.Enum.GetValues(typeof(EnemyPrefix)).Length);
+                        EnemySuffix suffix = (EnemySuffix)UnityEngine.Random.Range(1, System.Enum.GetValues(typeof(EnemySuffix)).Length);
+                        enemy.BecomeUnique(prefix, suffix);
+                    }
+                    
+                    enemies.Add(enemy);
+                }
             }
         }
 
         return enemies;
+    }
+
+    private SpawnPoolConfig PickRandomPool(List<SpawnPoolConfig> pools)
+    {
+        if (pools == null || pools.Count == 0) return null;
+
+        float totalChance = 0;
+        foreach (var p in pools) totalChance += p.SpawnChance;
+
+        float r = UnityEngine.Random.Range(0f, totalChance);
+        float currentChance = 0;
+        foreach (var p in pools)
+        {
+            currentChance += p.SpawnChance;
+            if (r <= currentChance) return p;
+        }
+        return pools[0];
     }
 
     private EnemySO PickRandomEnemy(List<EnemySpawnWeight> pool)
@@ -85,7 +119,7 @@ public class CombatManager : GameModule, IObserver
         int totalWeight = 0;
         foreach (var e in pool) totalWeight += e.weight;
         
-        int r = Random.Range(0, totalWeight);
+        int r = UnityEngine.Random.Range(0, totalWeight);
         int currentWeight = 0;
         foreach (var e in pool)
         {
@@ -123,6 +157,8 @@ public class CombatManager : GameModule, IObserver
         }
 
         TextOutputter.Instance.OutputText("Encounter skipped via instant resolution.");
+        CurrentBattle.Cleanup();
+        CurrentBattle = null;
     }
 
     private Boss CreateBoss()
@@ -132,7 +168,7 @@ public class CombatManager : GameModule, IObserver
         int room = dm.RoomAtCurrentFloor;
 
         string bossName = "";
-        if (floor == 4 && room == 10)
+        if (floor == 40 && room == 10)
         {
             bossName = "Fallen Saint";
         }
@@ -155,7 +191,7 @@ public class CombatManager : GameModule, IObserver
                 availableBosses = earlyBossPool;
             }
 
-            bossName = availableBosses[Random.Range(0, availableBosses.Count)];
+            bossName = availableBosses[UnityEngine.Random.Range(0, availableBosses.Count)];
         }
 
         BossSO bossData = Resources.Load<BossSO>($"Bosses/{bossName}");

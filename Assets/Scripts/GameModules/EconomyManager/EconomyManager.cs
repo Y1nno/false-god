@@ -33,6 +33,13 @@ public class EconomyManager : GameModule, IObserver
         return _gold;
     }
 
+    public void LoseGold(int amount)
+    {
+        _gold = Mathf.Max(0, _gold - amount);
+        GoldDelta = -amount;
+        Notify(EventType.GoldSpent);
+    }
+
     public bool CanSpendGold(int amount)
     {
         return _gold >= amount;

@@ -129,8 +129,8 @@ public class EncounterManager : GameModule, IObserver
         int floor = floorData.Floor;
         int room = floorData.Room;
 
-        // Every 10 encounters is a Boss encounter
-        if (room == 10)
+        // Bosses spawn at room 10 of depth 10, 20, 30, 40
+        if (room == 10 && floor % 10 == 0)
         {
             return EncounterType.Boss;
         }

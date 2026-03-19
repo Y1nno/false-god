@@ -9,12 +9,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6f97c5db0fc1c0a4a9f87c17d6b5e85b, type: 3}
-  m_Name: Torn Paper
-  m_EditorClassIdentifier: Assembly-CSharp::MaterialSO
-  ItemID: 118
-  ItemName: Torn paper
+  m_Script: {fileID: 11500000, guid: 5f13dee79fb6d094b8df491dcb0b38de, type: 3}
+  m_Name: LivingStone
+  m_EditorClassIdentifier: 
+  ItemID: 145
+  ItemName: Living Stone
   ItemIcon: {fileID: 0}
-  Description: Combine 2 torn paper to make a Paper
-  SellPrice: 1
-  StackSize: 99
+  Description: Quest item, can be sold for 25g
+  SellPrice: 25

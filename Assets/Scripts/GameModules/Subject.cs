@@ -25,6 +25,12 @@ public class Subject
         }
     }
 
+    // Clear all observers from the subject
+    public void ClearObservers()
+    {
+        observers.Clear();
+    }
+
     // Notify all observers of an event
     public void Notify(EventType eventType)
     {

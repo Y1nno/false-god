@@ -25,5 +25,6 @@ MonoBehaviour:
   BaseXP: 8
   AvailableActionIDs:
   - 1
+  - 204
   GoldValue: 0
   SpecialDescription: "Devour: Instantly deals 50% of player HP if not killed on 3rd turn"

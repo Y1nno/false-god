@@ -38,13 +38,14 @@ public class PlayerAttackAction : CombatAction
         }
 
         int damage = _baseDamage;
+
         TextOutputter.Instance.OutputText($"{user.GetName()} used {ActionName} on {target.GetName()}!");
         damage = CalculateDamageFromBase(damage, user);
         int damageDealt = target.GetAttacked(damage, ActionType, user);
 
         // Relic: Splash Damage
         RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
-        if (relicm != null)
+        if (relicm != null && user is PlayerCombatManager)
         {
             float splashPercent = relicm.GetSplashDamagePercentage();
             if (splashPercent > 0)

@@ -47,16 +47,14 @@ public abstract class Combatant : Subject
     public abstract void Die();
 
     public abstract int GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null);
+    public virtual void OnDealDamage(int damage, Combatant target) { }
     public abstract float GetCritChance();
-    public Combatant()
-    {
-    }
     protected virtual int TakeDamage(int amount)
     {
         if (amount <= 0) return 0;
 
         bool wasAlive = GetHealth().CurrentValue > 0;
-        
+        int originalAmount = amount;
         RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
         if (relicm != null)
         {
@@ -64,7 +62,8 @@ public abstract class Combatant : Subject
         }
 
         GetHealth().Decrease(amount);
-        TextOutputter.Instance.OutputText($"{GetName()} took {amount} damage.");
+        string mitigationLog = originalAmount != amount ? $" (Mitigated {originalAmount - amount} from Relics)" : "";
+        TextOutputter.Instance.OutputText($"{GetName()} took {amount} damage.{mitigationLog}");
 
         if (wasAlive && GetHealth().CurrentValue <= 0)
         {
@@ -151,7 +150,7 @@ public abstract class Combatant : Subject
         if (!IsAlive()) return;
 
         RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
-        if (relicm != null)
+        if (relicm != null && this is PlayerCombatManager)
         {
             int hpLoss = relicm.GetHpLossPerTurn();
             if (hpLoss > 0)

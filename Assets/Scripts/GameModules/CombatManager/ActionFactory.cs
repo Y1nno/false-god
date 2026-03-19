@@ -20,6 +20,12 @@ public class ActionFactory
             case 102: return new DemonicSacrificeAction();
             case 103: return new BloodDrainAction();
             case 104: return new DivineShieldAction();
+            case 201: return new BashAction();
+            case 202: return new StealGoldAction();
+            case 203: return new CurseAction();
+            case 204: return new DevourAction();
+            case 205: return new EscapeAction();
+            case 206: return new CharmAction();
             default: return null;
         }
     }
