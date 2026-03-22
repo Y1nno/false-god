@@ -1189,7 +1189,7 @@ MonoBehaviour:
     - m_Text: INT
       m_Image: {fileID: 0}
       m_Color: {r: 1, g: 1, b: 1, a: 1}
-    - m_Text: LCK
+    - m_Text: SPD
       m_Image: {fileID: 0}
       m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_OnValueChanged:

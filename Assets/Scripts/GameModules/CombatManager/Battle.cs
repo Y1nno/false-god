@@ -139,13 +139,45 @@ public class Battle : Subject, IObserver
 
     public void ResolveCombatantsActions()
     {
-        foreach (Combatant combatant in combatants)
+        // Copy list to avoid issues if combatants die or list changes during execution
+        List<Combatant> currentTurnCombatants = new List<Combatant>(combatants);
+        foreach (Combatant combatant in currentTurnCombatants)
         {
             if (combatant.IsAlive())
             {
                 combatant.ExecuteAction();
+
+                // Check for 2nd action: Speed difference of 50% or more
+                int mySpeed = combatant.GetStat(Stat.SPD);
+                int maxOpponentSpeed = GetMaxOpponentSpeed(combatant);
+
+                if (maxOpponentSpeed > 0 && mySpeed >= maxOpponentSpeed * 1.5f)
+                {
+                    if (combatant.IsAlive())
+                    {
+                        TextOutputter.Instance.OutputText($"{combatant.GetName()} is blindingly fast! (Extra Action)");
+                        combatant.ExecuteAction();
+                    }
+                }
             }
         }
+    }
+
+    private int GetMaxOpponentSpeed(Combatant c)
+    {
+        int maxSpeed = 0;
+        if (c is PlayerCombatManager)
+        {
+            foreach (var enemy in GetEnemies())
+            {
+                maxSpeed = Mathf.Max(maxSpeed, enemy.GetStat(Stat.SPD));
+            }
+        }
+        else if (c is Enemy)
+        {
+            maxSpeed = Pcm.GetStat(Stat.SPD);
+        }
+        return maxSpeed;
     }
 
     public void OnNotify(object subject, EventType eventType)

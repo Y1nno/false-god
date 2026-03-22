@@ -18,13 +18,13 @@ public class Enemy : Combatant
     public EnemyStatBox Stats { get; protected set; }
 
     protected List<CombatAction> _availableActions = new List<CombatAction>();
-    protected int _goldValue = 0;
-    public int GoldValue => _goldValue;
 
     public Enemy(EnemySO data, int level)
     {
         IsBoss = false;
         Name = data.EnemyName;
+        BaseXP = data.BaseXP;
+        Level = level;
         
         float l_factor = level - 1;
         int maxHp = Mathf.RoundToInt(data.BaseHealth * (1 + l_factor * 0.25f));

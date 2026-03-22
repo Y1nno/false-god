@@ -47,6 +47,7 @@ public class RunManager : GameModule
         s_runEnder = new RunEnder();
 
         TextOutputter.Instance.OutputText("New run started.");
+        Notify(EventType.RunStart);
     }
 
     // Ends the current run and returns a summary

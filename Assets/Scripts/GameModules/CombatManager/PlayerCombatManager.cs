@@ -33,6 +33,7 @@ public class PlayerCombatManager : Combatant, IPromptResponder
                 _availableActions.Add(action);
             }
         }
+        Level = RunManager.Instance.GetService<XPManager>()?.level ?? 1;
     }
     public override Resource GetHealth()
     {

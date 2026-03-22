@@ -10,11 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c802f8ed424a1eb4887cf57b2197a082, type: 3}
-  m_Name: BallSpikeDex
+  m_Name: Morning Star Trap
   m_EditorClassIdentifier: 
-  Description: You attempt to acrobatically roll out of the danger zone.
-  Choices:
-  - StatToRoll: 1
-    RelativeDifficulty: 5
-    PassDamage: 0
-    FailDamage: 12
+  TrapName: Morning Star Trap
+  Description: A massive spiked ball swings from the ceiling.
+  BaseOvercomeReq: 6
+  BaseDodgeReq: 12
+  BaseDismantleReq: 12
+  BaseDamage: 6
+  BaseExp: 6
+  SpawnChance: 50

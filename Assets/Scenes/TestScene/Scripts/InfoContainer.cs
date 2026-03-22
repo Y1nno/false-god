@@ -55,7 +55,7 @@ public class InfoContainer : MonoBehaviour
         _content += "STR: " + _pm.GetStat(Stat.STR) + "\n";
         _content += "DEX: " + _pm.GetStat(Stat.DEX) + "\n";
         _content += "INT: " + _pm.GetStat(Stat.INT) + "\n";
-        _content += "LCK: " + _pm.GetStat(Stat.LCK) + "\n";
+        _content += "SPD: " + _pm.GetStat(Stat.SPD) + "\n";
     }
 
     private void AddEconomyInfo()

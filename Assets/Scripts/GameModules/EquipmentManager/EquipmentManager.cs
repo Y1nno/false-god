@@ -75,6 +75,12 @@ public class EquipmentManager : GameModule
         }
     }
 
+    public void RefreshEquipment()
+    {
+        RunManager.Instance.GetService<PlayerManager>()?.RefreshEquipmentStats();
+        Notify(EventType.EquipmentChanged);
+    }
+
     public bool IsHoldingTwoHandedWeapon()
     {
         if (EquippedItems.TryGetValue(EquipmentSlot.Weapon, out Equipment currentWeapon))
@@ -218,7 +224,7 @@ public class EquipmentManager : GameModule
     public int GetTotalDEX() => GetTotalBonus(item => item.DEX) + GetTotalAllStats();
     public int GetTotalINT() => GetTotalBonus(item => item.INT) + GetTotalAllStats();
     public int GetTotalSPD() => GetTotalBonus(item => item.SPD) + GetTotalAllStats();
-    public int GetTotalLCK() => GetTotalAllStats(); // LCK is exclusively handled by AllStats right now
+    // public int GetTotalLCK() => GetTotalAllStats(); // LCK is removed
     public int GetTotalBlockChance() => GetTotalBonus(item => item.BlockChance);
     public int GetTotalBlockAmount() => GetTotalBonus(item => item.BlockAmount);
     
@@ -260,6 +266,7 @@ public class EquipmentManager : GameModule
         return total;
     }
 
+    /*
     public int GetTotalMagicFind()
     {
         float total = 0;
@@ -278,6 +285,7 @@ public class EquipmentManager : GameModule
         }
         return Mathf.RoundToInt(total);
     }
+    */
 
     // --- Durability Degradation ---
     
@@ -289,6 +297,7 @@ public class EquipmentManager : GameModule
             case Rarity.Common: chance = 5; break;
             case Rarity.Uncommon: chance = 3; break;
             case Rarity.Rare: chance = 1; break;
+            case Rarity.Epic: chance = 1; break;
             case Rarity.Legendary: chance = 0; break;
         }
 

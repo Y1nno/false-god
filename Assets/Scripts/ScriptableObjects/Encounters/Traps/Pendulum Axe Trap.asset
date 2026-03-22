@@ -10,11 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c802f8ed424a1eb4887cf57b2197a082, type: 3}
-  m_Name: ScythesLuk
+  m_Name: Pendulum Axe Trap
   m_EditorClassIdentifier: 
-  Description: You close your eyes and try to walk away with your luck.
-  Choices:
-  - StatToRoll: 4
-    RelativeDifficulty: 8
-    PassDamage: 0
-    FailDamage: 18
+  TrapName: Pendulum Axe Trap
+  Description: Razor-sharp axes swing across the hallway.
+  BaseOvercomeReq: 7
+  BaseDodgeReq: 13
+  BaseDismantleReq: 12
+  BaseDamage: 12
+  BaseExp: 7
+  SpawnChance: 15

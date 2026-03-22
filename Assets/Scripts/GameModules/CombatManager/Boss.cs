@@ -4,8 +4,6 @@ using UnityEngine;
 public class Boss : Enemy
 {
     public BossSO BossData { get; private set; }
-    public int Level { get; private set; } = 1;
-
     public Boss(BossSO data, int level = 1) : base(data.BossName, null, data.BaseHP, data.BaseMana, new List<int> { 01, data.SpecialActionID }, data.XP, true)
     {
         BossData = data;

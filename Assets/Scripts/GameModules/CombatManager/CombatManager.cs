@@ -150,10 +150,6 @@ public class CombatManager : GameModule, IObserver
         {
             // Apply massive damage to ensure death
             enemy.TakeConsumableDamage(99999); 
-            
-            // Explicitly notify observers that THIS specific enemy was defeated
-            // This ensures DropManager rolls loot and CombatManager marks it as defeated if it's a boss
-            Notify(enemy, EventType.EnemyDefeated);
         }
 
         TextOutputter.Instance.OutputText("Encounter skipped via instant resolution.");
@@ -165,7 +161,7 @@ public class CombatManager : GameModule, IObserver
     {
         DungeonManager dm = RunManager.Instance.GetService<DungeonManager>();
         int floor = dm.CurrentDungeonFloor;
-        int room = dm.RoomAtCurrentFloor;
+        int room = dm.CurrentEncounterIndex;
 
         string bossName = "";
         if (floor == 40 && room == 10)
@@ -230,7 +226,7 @@ public class CombatManager : GameModule, IObserver
                 {
                     _defeatedBosses.Add(boss.BossData.BossName);
                 }
-                Notify(EventType.EnemyDefeated);
+                Notify(subject, EventType.EnemyDefeated);
                 break;
             default:
                 break;

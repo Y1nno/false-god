@@ -11,6 +11,7 @@ public class Equipment : Item
     
     public List<ModifierInstance> Prefixes { get; private set; } = new List<ModifierInstance>();
     public List<ModifierInstance> Suffixes { get; private set; } = new List<ModifierInstance>();
+    public int UpgradeLevel { get; set; } = 0;
 
     public override string GetName()
     {
@@ -20,6 +21,7 @@ public class Equipment : Item
         string fullName = BaseItemName;
         if (!string.IsNullOrEmpty(prefixStr)) fullName = prefixStr + " " + fullName;
         if (!string.IsNullOrEmpty(suffixStr)) fullName = fullName + " " + suffixStr;
+        if (UpgradeLevel > 0) fullName += " +" + UpgradeLevel;
         
         return fullName;
     }
@@ -142,7 +144,102 @@ public class Equipment : Item
             }
         }
 
-        return Mathf.RoundToInt((baseValue + flat) * (1.0f + percent));
+        float upgradeBonus = GetUpgradeMultiplier();
+        return Mathf.RoundToInt((baseValue + flat) * (1.0f + percent + upgradeBonus));
+    }
+
+    private float GetUpgradeMultiplier()
+    {
+        if (UpgradeLevel <= 0) return 0f;
+
+        // Bonuses from charts supplied by User
+        return Rarity switch
+        {
+            Rarity.Common => UpgradeLevel switch
+            {
+                1 => 0.10f,
+                2 => 0.20f,
+                3 => 0.50f,
+                _ => 0.50f
+            },
+            Rarity.Uncommon => UpgradeLevel switch
+            {
+                1 => 0.10f,
+                2 => 0.20f,
+                3 => 0.40f,
+                4 => 0.65f,
+                5 => 1.05f,
+                _ => 1.05f
+            },
+            Rarity.Rare => UpgradeLevel switch
+            {
+                1 => 0.10f,
+                2 => 0.20f,
+                3 => 0.35f,
+                4 => 0.60f,
+                5 => 0.97f,
+                6 => 1.47f,
+                7 => 2.12f,
+                _ => 2.12f
+            },
+            Rarity.Epic => UpgradeLevel switch
+            {
+                1 => 0.15f,
+                2 => 0.35f,
+                3 => 0.65f,
+                4 => 1.00f,
+                5 => 1.50f,
+                6 => 2.10f,
+                7 => 2.90f,
+                8 => 3.90f,
+                9 => 5.15f,
+                _ => 5.15f
+            },
+            Rarity.Legendary => UpgradeLevel switch
+            {
+                1 => 0.20f,
+                2 => 0.50f,
+                3 => 0.95f,
+                4 => 1.45f,
+                5 => 2.05f,
+                6 => 2.90f,
+                7 => 3.90f,
+                8 => 5.15f,
+                9 => 6.65f,
+                10 => 8.65f,
+                _ => 8.65f
+            },
+            _ => 0f
+        };
+    }
+
+    public int GetUpgradeCost()
+    {
+        int nextLevel = UpgradeLevel + 1;
+        return Rarity switch
+        {
+            Rarity.Common => nextLevel switch
+            {
+                1 => 25, 2 => 30, 3 => 50, _ => 0
+            },
+            Rarity.Uncommon => nextLevel switch
+            {
+                1 => 30, 2 => 35, 3 => 50, 4 => 75, 5 => 100, _ => 0
+            },
+            Rarity.Rare => nextLevel switch
+            {
+                1 => 50, 2 => 85, 3 => 125, 4 => 175, 5 => 200, 6 => 250, 7 => 350, _ => 0
+            },
+            Rarity.Epic => nextLevel switch
+            {
+                1 => 150, 2 => 200, 3 => 250, 4 => 300, 5 => 400, 6 => 550, 7 => 700, 8 => 850, 9 => 1000, _ => 0
+            },
+            Rarity.Legendary => nextLevel switch
+            {
+                1 => 250, 2 => 300, 3 => 350, 4 => 400, 5 => 500, 6 => 700, 7 => 850, 8 => 1000, 9 => 1200, 10 => 1500, _ => 0
+            },
+            _ => 0
+        };
     }
 }
 
@@ -161,7 +258,7 @@ public enum EquipmentTrait
     DoubleStrike,
     ComboStrike,
     TrueStrike,
-    MagicFind,
+    // MagicFind,
     PoisonHit,
     BurnHit,
     FreezeHit,

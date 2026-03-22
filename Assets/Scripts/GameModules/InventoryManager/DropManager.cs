@@ -11,22 +11,32 @@ public class DropManager : GameModule, IObserver
     {
         if (eventType == EventType.EnemyDefeated && subject is Enemy enemy)
         {
-            RollDrops(enemy);
+            RollMonsterDrops(enemy);
         }
     }
 
-    private void RollDrops(Enemy enemy)
+    public void RollChestDrops(int floor)
     {
-        InventoryManager invm = RunManager.Instance.GetService<InventoryManager>();
         EconomyManager economy = RunManager.Instance.GetService<EconomyManager>();
-        DungeonManager dm = RunManager.Instance.GetService<DungeonManager>();
-        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
-        if (invm == null || dm == null) return;
+        if (economy != null) RollGold(floor, economy); // Guaranteed gold for chests
 
+        int count = Random.Range(1, 4); // 1-3 items
+        for (int i = 0; i < count; i++)
+        {
+            RollSingleDrop(floor, true, null);
+        }
+    }
+
+    private void RollMonsterDrops(Enemy enemy)
+    {
+        DungeonManager dm = RunManager.Instance.GetService<DungeonManager>();
+        if (dm == null) return;
+        
         int floor = dm.CurrentDungeonFloor;
 
         if (enemy is Boss boss)
         {
+            InventoryManager invm = RunManager.Instance.GetService<InventoryManager>();
             RollGuaranteedRelic(invm);
             foreach (string dropID in boss.BossData.DropIDs)
             {
@@ -38,52 +48,48 @@ public class DropManager : GameModule, IObserver
                     TextOutputter.Instance.OutputText($"{boss.GetName()} dropped {newItem.GetName()}!");
                 }
             }
-            return; // Bosses have their own fixed drops, skipping global pool for now unless governed otherwise
+            return;
         }
 
         // --- GLOBAL DROP CATEGORY ROLL ---
         float roll = Random.Range(0f, 100f);
-        
-        int totalMF = eqm != null ? eqm.GetTotalMagicFind() : 0;
-        float mfMultiplier = 1.0f + (totalMF / 100.0f);
-
-        // 1. No Drop (50% Base)
-        // Adjust no-drop threshold. If base is 50%, then 50% chance to find something.
-        // With 20 MF, chance to find something becomes 50% * 1.2 = 60%.
-        // No-drop threshold becomes 100 - 60 = 40.
         float baseTotalDropChance = 50f;
-        float adjustedTotalDropChance = Mathf.Min(100f, baseTotalDropChance * mfMultiplier);
-        float noDropThreshold = 100f - adjustedTotalDropChance;
+        float noDropThreshold = 100f - baseTotalDropChance;
 
         if (roll <= noDropThreshold) return;
 
-        // 2. Gold (5%)
-        float goldThreshold = noDropThreshold + (5f * mfMultiplier);
-        if (roll <= goldThreshold) { RollGold(floor, economy); return; }
+        RollSingleDrop(floor, false, enemy);
+    }
 
-        // 3. Consumables (10%)
-        float consumablesThreshold = goldThreshold + (10f * mfMultiplier);
-        if (roll <= consumablesThreshold) { RollConsumables(floor, invm); return; }
+    private void RollSingleDrop(int floor, bool isChest, Enemy enemy = null)
+    {
+        InventoryManager invm = RunManager.Instance.GetService<InventoryManager>();
+        EconomyManager economy = RunManager.Instance.GetService<EconomyManager>();
+        if (invm == null) return;
 
-        // 4. Materials (10%)
-        float materialsThreshold = consumablesThreshold + (10f * mfMultiplier);
-        if (roll <= materialsThreshold) { RollMaterials(enemy, invm); return; }
-
-        // 5. Equipment (10%)
-        float equipmentThreshold = materialsThreshold + (10f * mfMultiplier);
-        if (roll <= equipmentThreshold) { RollEquipment(floor, invm); return; }
-
-        // 6. Quest Item (3.5%)
-        float questThreshold = equipmentThreshold + (3.5f * mfMultiplier);
-        if (roll <= questThreshold) { RollQuestItem(invm, enemy); return; }
-
-        // 7. Relic (1.5% Base, 10% if Unique)
-        float baseRelicChance = enemy.IsUnique ? 10.0f : 1.5f;
-        float relicChance = baseRelicChance * mfMultiplier;
-        float relicThreshold = questThreshold + relicChance;
-        if (roll <= relicThreshold) { RollRelic(invm); return; }
-
-        // 8. Key Item (Remaining)
+        float roll = Random.Range(isChest ? 10.1f : 0f, 100f);
+        
+        // Category Weights. We use the same thresholds as RollDrops but simplified.
+        // Total range is 50 points (from 50 to 100).
+        // 5 Gold, 10 Consumables, 10 Materials, 10 Equipment, 3.5 Quest, 1.5 Relic, rest Key.
+        
+        if (roll <= 10f) { RollGold(floor, economy); return; }           // 5/50 * 100 = 10%
+        if (roll <= 30f) { RollConsumables(floor, invm); return; }       // 10/50 * 100 = 20%
+        if (roll <= 50f) {                                              // 10/50 * 100 = 20%
+            if (isChest) RollConsumables(floor, invm); // Chests don't drop monster-related materials
+            else if (enemy != null) RollMaterials(enemy, invm); 
+            return; 
+        }
+        if (roll <= 70f) { RollEquipment(floor, invm, isChest); return; } // 10/50 * 100 = 20%
+        if (roll <= 77f) {                                              // 3.5/50 = 7%
+            if (isChest) RollEquipment(floor, invm, isChest); // Chests don't drop quest items
+            else if (enemy != null) RollQuestItem(invm, enemy);
+            return;
+        }
+        
+        float relicChance = (enemy != null && enemy.IsUnique) ? 20f : 3f; // 1.5/50 = 3%
+        if (roll <= 77f + relicChance) { RollRelic(invm); return; }
+        
         RollKeyItem(invm);
     }
 
@@ -169,27 +175,48 @@ public class DropManager : GameModule, IObserver
         if (!string.IsNullOrEmpty(itemID)) SpawnAndGive(itemID, invm);
     }
 
-    private void RollEquipment(int floor, InventoryManager invm)
+    private void RollEquipment(int floor, InventoryManager invm, bool isChest = false)
     {
         Rarity targetRarity = Rarity.Common;
         float roll = Random.Range(0f, 100f);
 
-        if (floor <= 10) {
-            targetRarity = roll <= 85f ? Rarity.Common : Rarity.Uncommon;
-        } else if (floor <= 20) {
-            if (roll <= 50f) targetRarity = Rarity.Common;
-            else if (roll <= 85f) targetRarity = Rarity.Uncommon;
-            else targetRarity = Rarity.Rare;
-        } else if (floor <= 30) {
-            if (roll <= 20f) targetRarity = Rarity.Common;
-            else if (roll <= 65f) targetRarity = Rarity.Uncommon;
-            else if (roll <= 95f) targetRarity = Rarity.Rare;
-            else targetRarity = Rarity.Legendary;
-        } else {
-            if (roll <= 10f) targetRarity = Rarity.Common;
-            else if (roll <= 45f) targetRarity = Rarity.Uncommon;
-            else if (roll <= 90f) targetRarity = Rarity.Rare;
-            else targetRarity = Rarity.Legendary;
+        if (isChest)
+        {
+            if (floor <= 10) {
+                targetRarity = roll <= 65f ? Rarity.Common : Rarity.Uncommon;
+            } else if (floor <= 20) {
+                if (roll <= 30f) targetRarity = Rarity.Common;
+                else if (roll <= 75f) targetRarity = Rarity.Uncommon;
+                else targetRarity = Rarity.Rare;
+            } else if (floor <= 30) {
+                if (roll <= 50f) targetRarity = Rarity.Uncommon;
+                else if (roll <= 90f) targetRarity = Rarity.Rare;
+                else targetRarity = Rarity.Legendary;
+            } else {
+                if (roll <= 30f) targetRarity = Rarity.Uncommon;
+                else if (roll <= 75f) targetRarity = Rarity.Rare;
+                else targetRarity = Rarity.Legendary;
+            }
+        }
+        else
+        {
+            if (floor <= 10) {
+                targetRarity = roll <= 85f ? Rarity.Common : Rarity.Uncommon;
+            } else if (floor <= 20) {
+                if (roll <= 50f) targetRarity = Rarity.Common;
+                else if (roll <= 85f) targetRarity = Rarity.Uncommon;
+                else targetRarity = Rarity.Rare;
+            } else if (floor <= 30) {
+                if (roll <= 20f) targetRarity = Rarity.Common;
+                else if (roll <= 65f) targetRarity = Rarity.Uncommon;
+                else if (roll <= 95f) targetRarity = Rarity.Rare;
+                else targetRarity = Rarity.Legendary;
+            } else {
+                if (roll <= 10f) targetRarity = Rarity.Common;
+                else if (roll <= 45f) targetRarity = Rarity.Uncommon;
+                else if (roll <= 90f) targetRarity = Rarity.Rare;
+                else targetRarity = Rarity.Legendary;
+            }
         }
 
         EquipmentSO selectedEq = GetRandomEquipmentByRarity(targetRarity);

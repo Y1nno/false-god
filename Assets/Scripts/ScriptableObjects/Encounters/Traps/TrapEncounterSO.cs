@@ -5,18 +5,20 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "NewTrapEncounter", menuName = "Encounters/Trap Encounter")]
 public class TrapEncounterSO : ScriptableObject
 {
+    public string TrapName;
     [TextArea(3, 10)]
     public string Description;
 
-    public List<TrapChoice> Choices = new List<TrapChoice>();
-}
+    [Header("Base Requirements")]
+    public int BaseOvercomeReq;
+    public int BaseDodgeReq;
+    public int BaseDismantleReq;
 
-[Serializable]
-public class TrapChoice
-{
-    public Stat StatToRoll;
-    [Range(1, 10)]
-    public int RelativeDifficulty;
-    public int PassDamage;
-    public int FailDamage;
+    [Header("Base Rewards/Consequences")]
+    public int BaseDamage;
+    public int BaseExp;
+
+    [Header("Spawn Settings")]
+    [Range(0, 100)]
+    public float SpawnChance;
 }

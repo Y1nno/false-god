@@ -18,6 +18,8 @@ public class InputInterface : MonoBehaviour, IObserver
     public void StartNewRun()
     {
         RunManager.Instance.StartNewRun();
+        RefreshUI();
+        RefreshAllDropdowns();
     }
 
     public void AdvanceDungeonRoom()
@@ -67,13 +69,14 @@ public class InputInterface : MonoBehaviour, IObserver
         if (txtStatInput == null || txtPointsInput == null) return;
         TMP_Dropdown statInputField = txtStatInput.GetComponent<TMP_Dropdown>();
         TMP_InputField pointsInputField = txtPointsInput.GetComponent<TMP_InputField>();
-        if (!Enum.TryParse(statInputField.captionText.text, out Stat stat)) return;
+        if (!Enum.TryParse(statInputField.options[statInputField.value].text, out Stat stat)) return;
         int points = int.Parse(pointsInputField.text);
-        bool success = pm.PlayerStats.SpendStatPoints(stat, points);
+        bool success = pm.UseStatPoints(stat, points);
         if (!success)
         {
             TextOutputter.Instance.OutputText("Not enough stat points to spend.");
         }
+        RefreshUI();
     }
 
     public void MakeEncounterDecision(UnityEngine.GameObject txtInput)

@@ -10,14 +10,14 @@ public class StatBox : Subject, IObserver
         { Stat.DEX, 10 },
         { Stat.SPD, 10 },
         { Stat.INT, 10 },
-        { Stat.LCK, 10 }
+        // { Stat.LCK, 10 }
     };
 
     public int STR = k_DefaultStatValue[Stat.STR];
     public int DEX = k_DefaultStatValue[Stat.DEX];
     public int SPD = k_DefaultStatValue[Stat.SPD];
     public int INT = k_DefaultStatValue[Stat.INT];
-    public int LCK = k_DefaultStatValue[Stat.LCK];
+    // public int LCK = k_DefaultStatValue[Stat.LCK];
 
     public float ConsumableEffectivenessMultiplier { get; set; } = 1.0f;
 
@@ -41,7 +41,7 @@ public class StatBox : Subject, IObserver
             Stat.DEX => DEX,
             Stat.SPD => SPD,
             Stat.INT => INT,
-            Stat.LCK => LCK,
+            // Stat.LCK => LCK,
             _ => throw new ArgumentOutOfRangeException(nameof(stat), stat, null)
         };
     }
@@ -62,13 +62,17 @@ public class StatBox : Subject, IObserver
             case Stat.INT:
                 INT = value;
                 break;
+            /*
             case Stat.LCK:
                 LCK = value;
                 break;
+            */
             default:
                 throw new ArgumentOutOfRangeException(nameof(stat), stat, null);
         }
     }
+
+    public virtual void OnNotify(object subject, EventType eventType) { }
 }
 
 public enum Stat
@@ -77,7 +81,7 @@ public enum Stat
     DEX,
     SPD,
     INT,
-    LCK
+    // LCK
 }
 
 public enum SecondaryStat

@@ -10,11 +10,13 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c802f8ed424a1eb4887cf57b2197a082, type: 3}
-  m_Name: BallSpikeSpeed
+  m_Name: Floor Spike Trap
   m_EditorClassIdentifier: 
-  Description: You sprint forward, trying to outrun the falling spikes.
-  Choices:
-  - StatToRoll: 2
-    RelativeDifficulty: 3
-    PassDamage: 2
-    FailDamage: 14
+  TrapName: Floor Spike Trap
+  Description: Sharp spikes spring from the floor tiles.
+  BaseOvercomeReq: 5
+  BaseDodgeReq: 12
+  BaseDismantleReq: 10
+  BaseDamage: 8
+  BaseExp: 5
+  SpawnChance: 30

@@ -59,6 +59,11 @@ public class TreasureEncounter : Encounter, IObserver
             {
                 TextOutputter.Instance.OutputText($"Used {selectedKey.BaseData.ItemName}. The chest clicks open!");
                 _isLocked = false;
+                
+                // Roll drops
+                DungeonManager dm = RunManager.Instance.GetService<DungeonManager>();
+                DropManager dropm = RunManager.Instance.GetService<DropManager>();
+                if (dm != null && dropm != null) dropm.RollChestDrops(dm.CurrentDungeonFloor);
             }
             else
             {
@@ -109,6 +114,12 @@ public class TreasureEncounter : Encounter, IObserver
         {
             TextOutputter.Instance.OutputText("With a mighty heave, you smash the lock! The chest is open.");
             _isLocked = false;
+
+            // Roll drops
+            DungeonManager dm = RunManager.Instance.GetService<DungeonManager>();
+            DropManager dropm = RunManager.Instance.GetService<DropManager>();
+            if (dm != null && dropm != null) dropm.RollChestDrops(dm.CurrentDungeonFloor);
+
             ResolveEncounter();
         }
         else

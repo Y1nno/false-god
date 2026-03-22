@@ -6,8 +6,12 @@ public abstract class Combatant : Subject
 {
     protected static ActionFactory ActionFactory = new ActionFactory();
     protected Combatant _currentTarget = null;
+    protected int _goldValue;
 
     public bool IsBoss { get; set; } = false;
+    public int GoldValue => _goldValue;
+    public int BaseXP { get; protected set; }
+    public int Level { get; protected set; } = 1;
     public CombatAction CurrentAction = null;
 
     // Tracking active effects like HealOverTime or ManaOverTime

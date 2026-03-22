@@ -6,7 +6,6 @@ public class TrapEncounter : Encounter, IObserver
     private TrapEncounterSO _trapSO;
     private int _floor;
     private int _threshold;
-    private TrapChoice _selectedChoice;
     private bool _waitingForRoll = false;
 
     public TrapEncounter(float difficulty, TrapEncounterSO trapSO, int floor) : base(difficulty)
@@ -26,35 +25,55 @@ public class TrapEncounter : Encounter, IObserver
             return;
         }
 
+        TextOutputter.Instance.OutputText($"You encountered a {_trapSO.TrapName}!");
         TextOutputter.Instance.OutputText(_trapSO.Description);
-        List<string> choiceStrings = new List<string>();
-        foreach (var choice in _trapSO.Choices)
-        {
-            choiceStrings.Add($"Attempt to dodge using {choice.StatToRoll}");
-        }
 
-        Prompt trapPrompt = new Prompt("How will you avoid the trap?", choiceStrings, this);
+        List<string> choiceStrings = new List<string>
+        {
+            "Overcome (Strength)",
+            "Dodge (Dexterity)",
+            "Dismantle (Intelligence)"
+        };
+
+        new Prompt("How will you handle the trap?", choiceStrings, this);
     }
 
     public override void RecieveDecision(int decisionIndex)
     {
-        if (decisionIndex < 0 || decisionIndex >= _trapSO.Choices.Count)
+        PlayerManager pm = RunManager.Instance.GetService<PlayerManager>();
+        Stat statToRoll;
+        int baseThreshold;
+
+        switch (decisionIndex)
         {
-            Debug.LogError("TrapEncounter: Invalid decision index.");
-            ResolveEncounter();
-            return;
+            case 0:
+                statToRoll = Stat.STR;
+                baseThreshold = _trapSO.BaseOvercomeReq;
+                break;
+            case 1:
+                statToRoll = Stat.DEX;
+                baseThreshold = _trapSO.BaseDodgeReq;
+                break;
+            case 2:
+                statToRoll = Stat.INT;
+                baseThreshold = _trapSO.BaseDismantleReq;
+                break;
+            default:
+                Debug.LogError("TrapEncounter: Invalid decision index.");
+                ResolveEncounter();
+                return;
         }
 
-        _selectedChoice = _trapSO.Choices[decisionIndex];
-        _threshold = _selectedChoice.RelativeDifficulty + _floor;
-        
+        _threshold = baseThreshold + ((_floor - 1) * 3);
+        int statValue = pm.GetStat(statToRoll);
+        int modifier = statValue / 2;
+
         _waitingForRoll = true;
-        DiceRoller.Instance.RollForStat(_selectedChoice.StatToRoll, _threshold);
+        DiceRoller.Instance.RollForStatWithModifier(statToRoll, modifier, _threshold);
     }
 
     public void OnNotify(object subject, EventType eventType)
     {
-        
         if (_waitingForRoll && eventType == EventType.DiceRollFinalized)
         {
             _waitingForRoll = false;
@@ -66,16 +85,33 @@ public class TrapEncounter : Encounter, IObserver
     {
         DiceRollResult result = DiceRoller.Instance.LastRollResult;
         PlayerManager pm = RunManager.Instance.GetService<PlayerManager>();
+        XPManager xm = RunManager.Instance.GetService<XPManager>();
+
+        int scaledDamage = _trapSO.BaseDamage + ((_floor - 1) * 10);
+        int scaledExp = _trapSO.BaseExp + ((_floor - 1) * 3);
 
         if (result.IsSuccess)
         {
-            TextOutputter.Instance.OutputText($"You successfully avoided the trap! You take {_selectedChoice.PassDamage} damage.");
-            pm.TakeDamage(_selectedChoice.PassDamage);
+            float damageMultiplier = 0f;
+            if (result.PlayerStat == Stat.STR)
+            {
+                damageMultiplier = 0.2f;
+                TextOutputter.Instance.OutputText($"You braced yourself and powered through! You take reduced damage.");
+            }
+            else
+            {
+                TextOutputter.Instance.OutputText($"You successfully avoided the trap!");
+            }
+
+            int finalDamage = Mathf.RoundToInt(scaledDamage * damageMultiplier);
+            if (finalDamage > 0) pm.TakeDamage(finalDamage);
+            xm.AddXP(scaledExp);
         }
         else
         {
-            TextOutputter.Instance.OutputText($"You failed to avoid the trap! You take {_selectedChoice.FailDamage} damage.");
-            pm.TakeDamage(_selectedChoice.FailDamage);
+            TextOutputter.Instance.OutputText($"You failed to avoid the trap! You take full damage.");
+            pm.TakeDamage(scaledDamage);
+            xm.AddXP(Mathf.RoundToInt(scaledExp * 0.5f));
         }
 
         ResolveEncounter();

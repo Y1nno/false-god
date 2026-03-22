@@ -6,6 +6,7 @@ public struct DiceRollResult
     public Stat PlayerStat;
     public int BaseRoll;
     public int StatModifier;
+    public int CustomModifier;
     public int Total;
     public int SuccessThreshold;
     public bool IsSuccess;
@@ -38,18 +39,21 @@ public class DiceRoller : Subject, IObserver, IPromptResponder
 
     public void RollForStat(Stat statType, int successThreshold, int rollCounter = 0)
     {
+        int modifier = _playerManager.PlayerStats.GetStat(statType);
+        RollForStatWithModifier(statType, modifier, successThreshold, rollCounter);
+    }
 
-        StatBox statBox = _playerManager.PlayerStats;
-
+    public void RollForStatWithModifier(Stat statType, int modifier, int successThreshold, int rollCounter = 0)
+    {
         int baseRoll = UnityEngine.Random.Range(k_minRoll, k_maxRoll + 1);
-        int modifier = statBox.GetStat(statType);
         int total = baseRoll + modifier;
 
         var result = new DiceRollResult
         {
             PlayerStat = statType,
             BaseRoll = baseRoll,
-            StatModifier = modifier,
+            StatModifier = _playerManager.PlayerStats.GetStat(statType),
+            CustomModifier = modifier,
             Total = total,
             SuccessThreshold = successThreshold,
             IsSuccess = total >= successThreshold,
@@ -58,7 +62,7 @@ public class DiceRoller : Subject, IObserver, IPromptResponder
 
         LastRollResult = result;
         HasRollResult = true;
-        TextOutputter.Instance.OutputText($"You have rolled a {statType} check, result: {total}.");
+        TextOutputter.Instance.OutputText($"You have rolled a {statType} check, result: {total} ({baseRoll} + {modifier}).");
 
         if (result.RollNumber <= _playerManager.DiceRerollCount)
         {
@@ -90,7 +94,7 @@ public class DiceRoller : Subject, IObserver, IPromptResponder
             return;
         }
 
-        RollForStat(LastRollResult.PlayerStat, LastRollResult.SuccessThreshold, LastRollResult.RollNumber);
+        RollForStatWithModifier(LastRollResult.PlayerStat, LastRollResult.CustomModifier, LastRollResult.SuccessThreshold, LastRollResult.RollNumber);
     }
 
     public void ProcessPromptResponse(int decisionIndex)

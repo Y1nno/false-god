@@ -95,8 +95,8 @@ public class PlayerManager : GameModule, IObserver
             Stat.STR => eqm.GetTotalSTR(),
             Stat.DEX => eqm.GetTotalDEX(),
             Stat.INT => eqm.GetTotalINT(),
-            Stat.SPD => eqm.GetTotalSPD(),
-            Stat.LCK => eqm.GetTotalLCK(),
+            Stat.SPD => eqm.GetTotalSPD() + Mathf.RoundToInt(GetStat(Stat.DEX) * 0.3f),
+            // Stat.LCK => eqm.GetTotalLCK(),
             _ => 0
         };
 
@@ -136,6 +136,20 @@ public class PlayerManager : GameModule, IObserver
         Mana.SetStatModifier(intMod);
     }
 
+    public bool UseStatPoints(Stat stat, int amount)
+    {
+        bool success = PlayerStats.SpendStatPoints(stat, amount);
+        if (success)
+        {
+            if (stat == Stat.STR || stat == Stat.INT)
+            {
+                RefreshEquipmentStats();
+            }
+            Notify(EventType.EquipmentChanged); // Hack to trigger UI/Stat refreshes
+        }
+        return success;
+    }
+
     public void IncreaseStat(Stat stat, int amount)
     {
         int currentValue = PlayerStats.GetStat(stat);
@@ -173,9 +187,14 @@ public class PlayerManager : GameModule, IObserver
             case SecondaryStat.CRIT:
                 int critFromEquipment = eqm?.GetTotalBonus(item => item.CritChance) ?? 0;
                 int critFromRite = (int)(RunManager.Instance.GetService<RiteManager>().CalculateFlatStatBonus(SecondaryStat.CRIT) * 100f) ;
-                return critFromEquipment + critFromRite;
+                int critFromDex = Mathf.RoundToInt(GetStat(Stat.DEX) * 0.25f);
+                return critFromEquipment + critFromRite + critFromDex;
             case SecondaryStat.EVDE:
-                return (eqm?.GetTotalBonus(item => item.DodgeChance) ?? 0) + (RunManager.Instance.GetService<CombatManager>()?.Pcm?.GetSecondaryStatBonus(SecondaryStat.EVDE) ?? 0);
+                int dodgeFromEquipment = eqm?.GetTotalBonus(item => item.DodgeChance) ?? 0;
+                int dodgeFromCombat = RunManager.Instance.GetService<CombatManager>()?.Pcm?.GetSecondaryStatBonus(SecondaryStat.EVDE) ?? 0;
+                int dodgeFromDex = Mathf.RoundToInt(GetStat(Stat.DEX) * 0.20f);
+                int totalDodge = dodgeFromEquipment + dodgeFromCombat + dodgeFromDex;
+                return Mathf.Min(65, totalDodge); // 65% Dodge Cap
             default:
                 throw new ArgumentOutOfRangeException(nameof(secondaryStat), secondaryStat, null);
         }

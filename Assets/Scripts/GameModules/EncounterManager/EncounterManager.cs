@@ -7,10 +7,14 @@ public class EncounterManager : GameModule, IObserver
     private Encounter _currentEncounter;
     private Encounter _forcedNextEncounter;
 
-    private float _treasureEncounterChance = 0.0f;
-    private float k_treasureEncounterIncrement = 0.015f;
-    private float _trapEncounterChance = 0.0f;
-    private float k_trapEncounterIncrement = 0.025f;
+    private float _treasureChance = 5.0f;
+    private float _trapChance = 10.0f;
+    private float _fountainChance = 5.0f;
+    private float _shrineChance = 5.0f;
+
+    private int _totalEncountersResolved = 0;
+    private bool _religionPending = false;
+    private bool _shopPending = false;
 
     private List<TrapEncounterSO> _availableTrapEncounters;
 
@@ -58,7 +62,24 @@ public class EncounterManager : GameModule, IObserver
             TrapEncounterSO selectedTrap = null;
             if (encounterType == EncounterType.Trap && _availableTrapEncounters != null && _availableTrapEncounters.Count > 0)
             {
-                selectedTrap = _availableTrapEncounters[UnityEngine.Random.Range(0, _availableTrapEncounters.Count)];
+                float totalSpawnChance = 0;
+                foreach (var trap in _availableTrapEncounters)
+                {
+                    totalSpawnChance += trap.SpawnChance;
+                }
+
+                float randomValue = UnityEngine.Random.Range(0, totalSpawnChance);
+                float cumulativeChance = 0;
+
+                foreach (var trap in _availableTrapEncounters)
+                {
+                    cumulativeChance += trap.SpawnChance;
+                    if (randomValue <= cumulativeChance)
+                    {
+                        selectedTrap = trap;
+                        break;
+                    }
+                }
             }
             _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), encounterType, selectedTrap);
         }
@@ -84,7 +105,24 @@ public class EncounterManager : GameModule, IObserver
         TrapEncounterSO selectedTrap = null;
         if (type == EncounterType.Trap && _availableTrapEncounters != null && _availableTrapEncounters.Count > 0)
         {
-            selectedTrap = _availableTrapEncounters[UnityEngine.Random.Range(0, _availableTrapEncounters.Count)];
+            float totalSpawnChance = 0;
+            foreach (var trap in _availableTrapEncounters)
+            {
+                totalSpawnChance += trap.SpawnChance;
+            }
+
+            float randomValue = UnityEngine.Random.Range(0, totalSpawnChance);
+            float cumulativeChance = 0;
+
+            foreach (var trap in _availableTrapEncounters)
+            {
+                cumulativeChance += trap.SpawnChance;
+                if (randomValue <= cumulativeChance)
+                {
+                    selectedTrap = trap;
+                    break;
+                }
+            }
         }
 
         _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), type, selectedTrap);
@@ -127,50 +165,82 @@ public class EncounterManager : GameModule, IObserver
     {
         DungeonFloorData floorData = _dm.GetCurrentDungeonFloorData();
         int floor = floorData.Floor;
-        int room = floorData.Room;
+        int encounterIndex = floorData.Room;
+        int totalEncountersInFloor = floorData.TotalEncountersInRoom;
 
-        // Bosses spawn at room 10 of depth 10, 20, 30, 40
-        if (room == 10 && floor % 10 == 0)
+        // 1. Boss: Last encounter of depth 10, 20, 30...
+        if (encounterIndex == totalEncountersInFloor && floor % 10 == 0)
         {
             return EncounterType.Boss;
         }
-        // The last room on the floor is always a rest encounter
-        else if (room % 11 ==0)
+
+        // 2. Rest: First encounter of floor starting from depth 2+
+        if (encounterIndex == 1 && floor >= 2)
         {
             return EncounterType.Rest;
         }
-        else if (UnityEngine.Random.value <= _trapEncounterChance)
+
+        // --- Milestone Checks (Religion every 20, Shop every 25) ---
+        // Since DetermineEncounterType is called BEFORE resolution, we check (_totalEncountersResolved + 1)
+        int currentTotalIndex = _totalEncountersResolved + 1;
+        if (currentTotalIndex % 20 == 0) _religionPending = true;
+        if (currentTotalIndex % 25 == 0) _shopPending = true;
+
+        // 3. Religion Milestone (Fixed trigger, delayed if Boss/Rest)
+        if (_religionPending)
         {
-            return EncounterType.Trap;
+            return EncounterType.Religious;
         }
-        else if (UnityEngine.Random.value <= _treasureEncounterChance)
+
+        // 4. Shop Milestone (Merchant/Blacksmith 50/50, delayed if Boss/Rest)
+        if (_shopPending)
         {
-            return EncounterType.Treasure;
+            // Note: Merchant/Blacksmith/Fountain logic to be implemented later as per user request
+            return UnityEngine.Random.value <= 0.5f ? EncounterType.Merchant : EncounterType.Blacksmith;
         }
-        else
-        {
-            // TODO: Apply Relic multiplier for Unique Enemy chance here
-            return EncounterType.Enemy;
-        }
+
+        // 5. Escalated Chance Rolls
+        float roll = UnityEngine.Random.Range(0f, 100f);
+        float cumulative = 0;
+
+        // Chest (5% base, +2.5% increment)
+        cumulative += _treasureChance;
+        if (roll <= cumulative) return EncounterType.Treasure;
+
+        // Trap (10% base, +2% increment)
+        cumulative += _trapChance;
+        if (roll <= cumulative) return EncounterType.Trap;
+
+        // Fountain (5% base, +1.5% increment)
+        cumulative += _fountainChance;
+        if (roll <= cumulative) return EncounterType.Fountain;
+
+        // Health Shrine (5% base, +1.5% increment)
+        cumulative += _shrineChance;
+        if (roll <= cumulative) return EncounterType.Religious; // Using Religious as surrogate for Shrine for now
+
+        // 6. Fallback (Enemy)
+        return EncounterType.Enemy;
     }
 
     private void HandleEncounterChances(EncounterType encounterType)
     {
-        switch (encounterType)
-        {
-            case EncounterType.Treasure:
-                _treasureEncounterChance = 0.0f;
-                _trapEncounterChance += k_trapEncounterIncrement;
-                break;
-            case EncounterType.Trap:
-                _trapEncounterChance = 0.0f;
-                _treasureEncounterChance += k_treasureEncounterIncrement;
-                break;
-            default:
-                _treasureEncounterChance += k_treasureEncounterIncrement;
-                _trapEncounterChance += k_trapEncounterIncrement;
-                break;
-        }
+        // Reset current chances if they just spawned
+        if (encounterType == EncounterType.Treasure) _treasureChance = 5.0f;
+        else _treasureChance += 2.5f;
+
+        if (encounterType == EncounterType.Trap) _trapChance = 10.0f;
+        else _trapChance += 2.0f;
+
+        if (encounterType == EncounterType.Fountain) _fountainChance = 5.0f;
+        else _fountainChance += 1.5f;
+
+        if (encounterType == EncounterType.Religious) _shrineChance = 5.0f; // Shrine reset
+        else _shrineChance += 1.5f;
+
+        // Reset milestone pendings if they spawned
+        if (encounterType == EncounterType.Religious) _religionPending = false;
+        if (encounterType == EncounterType.Merchant || encounterType == EncounterType.Blacksmith) _shopPending = false;
     }
 
     public void ProcessEncounterDecision(int decisionIndex)
@@ -186,13 +256,14 @@ public class EncounterManager : GameModule, IObserver
 
     public void OnNotify(object subject, EventType eventType)
     {
-        if (eventType == EventType.DungeonRoomAdvance)
+        if (eventType == EventType.DungeonRoomAdvance || eventType == EventType.DungeonEncounterAdvance)
         {
-            //Debug.Log("EncounterManager received DungeonRoomAdvance notification.");
+            //Debug.Log($"EncounterManager received {eventType}. Creating encounter...");
             CreateEncounter();
         }
         else if (eventType == EventType.EncounterResolve)
         {
+            _totalEncountersResolved++;
             RunManager.Instance.GetService<EquipmentManager>()?.TickCooldowns(CooldownType.Encounters);
 
             // Propagate the event to EncounterManager's observers (like Rites)
@@ -204,6 +275,10 @@ public class EncounterManager : GameModule, IObserver
             {
                 resolvedEncounter.DetachObserver(this);
             }
+        }
+        else if (eventType == EventType.EncounterStart)
+        {
+            Notify(EventType.EncounterStart);
         }
     }
 
@@ -224,5 +299,7 @@ public enum EncounterType
     Blacksmith,
     Merchant,
     Portal,
-    Boss
+    Boss,
+    Fountain,
+    Shrine
 }
