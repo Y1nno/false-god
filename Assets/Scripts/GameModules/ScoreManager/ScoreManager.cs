@@ -13,7 +13,7 @@ public class ScoreManager : GameModule, IObserver
 
     public override void AttachDefaultObservers()
     {
-        // No default observers for now
+        RunManager.Instance.GetService<EncounterManager>()?.AttachObserver(this);
     }
 
     public void AddScore(int points)

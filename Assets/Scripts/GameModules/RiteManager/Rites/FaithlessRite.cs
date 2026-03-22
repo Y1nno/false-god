@@ -71,9 +71,7 @@ public class FaithlessRite : Rite, IObserver
         player.IncreaseStat(Stat.STR, k_StatBonus);
         player.IncreaseStat(Stat.DEX, k_StatBonus);
         player.IncreaseStat(Stat.INT, k_StatBonus);
-        player.IncreaseStat(Stat.LCK, k_StatBonus); // Assuming LCK exists based on JudgementRite
-        // If LCK is not in Stat enum, we might need to check. 
-        // JudgementRite used Stat.LCK (value 3), so it should be fine.
+        // player.IncreaseStat(Stat.LCK, k_StatBonus); // LCK removed
         
         _totalStatsGained += k_StatBonus;
     }
@@ -83,6 +81,6 @@ public class FaithlessRite : Rite, IObserver
         player.DecreaseStat(Stat.STR, _totalStatsGained);
         player.DecreaseStat(Stat.DEX, _totalStatsGained);
         player.DecreaseStat(Stat.INT, _totalStatsGained);
-        player.DecreaseStat(Stat.LCK, _totalStatsGained);
+        // player.DecreaseStat(Stat.LCK, _totalStatsGained);
     }
 }

@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5535e59f42772e648b301d9cf8d77833, type: 3}
+  m_Name: Depth4-5
+  m_EditorClassIdentifier: Assembly-CSharp::DepthEncounterTableSO
+  MinDepth: 4
+  MaxDepth: 5
+  OneEnemyChance: 90
+  TwoEnemyChance: 10
+  ThreeEnemyChance: 0
+  Pools:
+  - SpawnChance: 90
+    MinLevel: 3
+    MaxLevel: 7
+    Enemies:
+    - enemyData: {fileID: 11400000, guid: 57d12f23651b40a9bfe35e4c7304589c, type: 2}
+      weight: 1
+    - enemyData: {fileID: 11400000, guid: 2948809fd2314fefa94051e44c6e0ce9, type: 2}
+      weight: 1
+    - enemyData: {fileID: 11400000, guid: b763b2fb611c49a997738587b8ad1c6c, type: 2}
+      weight: 1
+  - SpawnChance: 10
+    MinLevel: 3
+    MaxLevel: 6
+    Enemies:
+    - enemyData: {fileID: 11400000, guid: 93c09d217d1d4f488205824c5a8885b5, type: 2}
+      weight: 1
+    - enemyData: {fileID: 11400000, guid: 952a7dbe938d4285b34d4ba8aeb8eee1, type: 2}
+      weight: 1
+    - enemyData: {fileID: 11400000, guid: e5f91198741a46c4b18eb37c4f6942c2, type: 2}
+      weight: 1

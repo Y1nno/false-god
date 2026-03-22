@@ -4,19 +4,9 @@ public class XPManager : GameModule, IObserver
 {
     public int level { get; private set; } = 1;
     public int currentXP { get; private set; } = 0;
-    public int xpThresholdForLevelUp { get; private set; } = 10;
-
-
-    #region XP Calculation Constants
-    private readonly int XPThresholdBase = 10;
-    private readonly float XPThresholdMultiplier = 1f;
-    private readonly float XPThresholdExponent = 1f;
-    private readonly int XPThresholdFlatIncrease = 20;
-    #endregion
+    public int xpThresholdForLevelUp { get; private set; } = 13;
 
     #region XP Award Constants
-    private readonly int k_XPForEncounterResolve = 1;
-    private readonly int k_XPForEnemyDefeat = 1;
     private readonly int k_XPForQuestComplete = 5;
     #endregion
 
@@ -26,6 +16,9 @@ public class XPManager : GameModule, IObserver
     {
         _statBox = RunManager.Instance.GetService<PlayerManager>().PlayerStats;
         AttachObserver(_statBox);
+        
+        RunManager.Instance.GetService<EncounterManager>()?.AttachObserver(this);
+        RunManager.Instance.GetService<CombatManager>()?.AttachObserver(this);
     }
 
     // API Methods
@@ -52,7 +45,8 @@ public class XPManager : GameModule, IObserver
 
     private int CalculateXPToNextLevel()
     {
-        return Mathf.FloorToInt(xpThresholdForLevelUp + XPThresholdFlatIncrease + (XPThresholdBase * Mathf.Pow(level, XPThresholdExponent) * XPThresholdMultiplier));
+        // Formula: XPn = XPn-1 + 10 + (Level^2 * 3)
+        return xpThresholdForLevelUp + 10 + (level * level * 3);
     }
 
     #endregion
@@ -61,11 +55,12 @@ public class XPManager : GameModule, IObserver
     {
         switch (eventType)
         {
-            case EventType.EncounterResolve:
-                AddXP(k_XPForEncounterResolve);
-                break;
             case EventType.EnemyDefeated:
-                AddXP(k_XPForEnemyDefeat);
+                if (subject is Enemy enemy)
+                {
+                    int xpAward = Mathf.RoundToInt(enemy.BaseXP + enemy.Level * 0.25f);
+                    AddXP(xpAward);
+                }
                 break;
             case EventType.QuestComplete:
                 AddXP(k_XPForQuestComplete);

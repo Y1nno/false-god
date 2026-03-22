@@ -6,11 +6,38 @@ public abstract class Combatant : Subject
 {
     protected static ActionFactory ActionFactory = new ActionFactory();
     protected Combatant _currentTarget = null;
+    protected int _goldValue;
 
+    public bool IsBoss { get; set; } = false;
+    public int GoldValue => _goldValue;
+    public int BaseXP { get; protected set; }
+    public int Level { get; protected set; } = 1;
     public CombatAction CurrentAction = null;
 
     // Tracking active effects like HealOverTime or ManaOverTime
     protected List<ActiveOverTimeEffect> _activeEffects = new List<ActiveOverTimeEffect>();
+
+    public void ClearEncounterEffects()
+    {
+        if (_activeEffects.Count == 0) return;
+
+        for (int i = _activeEffects.Count - 1; i >= 0; i--)
+        {
+            var effect = _activeEffects[i];
+            if (effect.BaseEffect.DurationType == EffectDurationType.Encounter)
+            {
+                effect.DecrementDuration();
+                if (effect.RoundsRemaining <= 0)
+                {
+                    _activeEffects.RemoveAt(i);
+                    TextOutputter.Instance.OutputText($"{GetName()}'s encounter effect ({effect.BaseEffect.Type}) has expired.");
+                }
+            }
+        }
+    }
+
+    // Tracking active ailments (Burn, Poison, Frozen, Bleed, etc)
+    public List<Ailment> ActiveAilments = new List<Ailment>();
 
     public abstract void ChooseAction();
     public abstract void ExecuteAction();
@@ -24,17 +51,23 @@ public abstract class Combatant : Subject
     public abstract void Die();
 
     public abstract int GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null);
+    public virtual void OnDealDamage(int damage, Combatant target) { }
     public abstract float GetCritChance();
-    public Combatant()
-    {
-    }
     protected virtual int TakeDamage(int amount)
     {
         if (amount <= 0) return 0;
 
         bool wasAlive = GetHealth().CurrentValue > 0;
+        int originalAmount = amount;
+        RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
+        if (relicm != null)
+        {
+            amount = Mathf.Max(0, amount - relicm.GetFlatDamageReduction());
+        }
+
         GetHealth().Decrease(amount);
-        TextOutputter.Instance.OutputText($"{GetName()} took {amount} damage.");
+        string mitigationLog = originalAmount != amount ? $" (Mitigated {originalAmount - amount} from Relics)" : "";
+        TextOutputter.Instance.OutputText($"{GetName()} took {amount} damage.{mitigationLog}");
 
         if (wasAlive && GetHealth().CurrentValue <= 0)
         {
@@ -82,13 +115,60 @@ public abstract class Combatant : Subject
         TextOutputter.Instance.OutputText($"{GetName()} gained an over-time effect ({effect.BaseEffect.Type}) for {effect.RoundsRemaining} turns.");
     }
 
+    public void ApplyAilment(AilmentType type, int duration)
+    {
+        // Check if we already have this ailment.
+        Ailment existing = ActiveAilments.Find(a => a.Type == type);
+        if (existing != null)
+        {
+            if (duration > existing.RoundsRemaining)
+            {
+                existing.RoundsRemaining = duration;
+                existing.InitialDuration = duration;
+            }
+            TextOutputter.Instance.OutputText($"{GetName()}'s {type} ailment was refreshed.");
+        }
+        else
+        {
+            ActiveAilments.Add(new Ailment(type, duration));
+            TextOutputter.Instance.OutputText($"{GetName()} is now afflicted with {type} for {duration} rounds!");
+        }
+    }
+
+    public void RemoveAilment(AilmentType type)
+    {
+        int removedCount = ActiveAilments.RemoveAll(a => a.Type == type);
+        if (removedCount > 0)
+        {
+            TextOutputter.Instance.OutputText($"{GetName()} is no longer afflicted with {type}.");
+        }
+    }
+
+    public bool HasAilment(AilmentType type)
+    {
+        return ActiveAilments.Exists(a => a.Type == type);
+    }
+
     public virtual void OnRoundEnd()
     {
-        if (_activeEffects.Count == 0 || !IsAlive()) return;
+        if (!IsAlive()) return;
 
-        for (int i = _activeEffects.Count - 1; i >= 0; i--)
+        RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
+        if (relicm != null && this is PlayerCombatManager)
         {
-            ActiveOverTimeEffect effect = _activeEffects[i];
+            int hpLoss = relicm.GetHpLossPerTurn();
+            if (hpLoss > 0)
+            {
+                TextOutputter.Instance.OutputText($"{GetName()} loses {hpLoss} HP from the Idol of Endless Hunger.");
+                TakeDamage(hpLoss);
+            }
+        }
+
+        if (_activeEffects.Count > 0)
+        {
+            for (int i = _activeEffects.Count - 1; i >= 0; i--)
+            {
+                ActiveOverTimeEffect effect = _activeEffects[i];
 
             // Apply effect
             if (effect.BaseEffect.Type == ConsumableEffectType.HealOverTime)
@@ -104,11 +184,61 @@ public abstract class Combatant : Subject
                 TextOutputter.Instance.OutputText($"{GetName()} regenerates {manaAmount} Mana from {effect.BaseEffect.Type}.");
             }
 
-            // Decrement and remove if finished
+        // Decrement and remove if finished
+        if (effect.BaseEffect.DurationType == EffectDurationType.Turns)
+        {
             effect.DecrementDuration();
             if (effect.RoundsRemaining <= 0)
             {
                 _activeEffects.RemoveAt(i);
+            }
+        }
+            }
+        }
+
+        // Process ailments
+        if (ActiveAilments.Count > 0 && IsAlive())
+        {
+            for (int i = ActiveAilments.Count - 1; i >= 0; i--)
+            {
+                Ailment ailment = ActiveAilments[i];
+                int damage = 0;
+
+                switch (ailment.Type)
+                {
+                    case AilmentType.Burn:
+                        damage = Mathf.RoundToInt(GetHealth().MaxValue * 0.02f);
+                        break;
+                    case AilmentType.Poison:
+                        damage = Mathf.RoundToInt(GetHealth().MaxValue * 0.05f);
+                        break;
+                    case AilmentType.Bleed:
+                        // Bleed increases over time: 2% base + 1% per turn active. Max 8%.
+                        int turnsActive = ailment.InitialDuration - ailment.RoundsRemaining;
+                        float percentDamage = 0.02f + (0.01f * turnsActive);
+                        if (percentDamage > 0.08f) percentDamage = 0.08f;
+                        damage = Mathf.RoundToInt(GetHealth().MaxValue * percentDamage);
+                        break;
+                    case AilmentType.Frozen:
+                        
+                        break;
+                }
+
+                if (damage > 0)
+                {
+                    TextOutputter.Instance.OutputText($"{GetName()} took {damage} damage from {ailment.Type}.");
+                    TakeDamage(damage);
+                }
+
+                // If combatant died from DoT, exit early
+                if (!IsAlive()) return;
+
+                ailment.DecrementDuration();
+                if (ailment.RoundsRemaining <= 0)
+                {
+                    TextOutputter.Instance.OutputText($"{GetName()} recovered from {ailment.Type}.");
+                    ActiveAilments.RemoveAt(i);
+                }
             }
         }
     }
