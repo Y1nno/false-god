@@ -21,6 +21,9 @@ public class InventoryManager : GameModule
 
         InputInterface ii = GameObject.FindAnyObjectByType<InputInterface>();
         if (ii != null) AttachObserver(ii);
+
+        SpellbookUI sui = GameObject.FindAnyObjectByType<SpellbookUI>();
+        if (sui != null) AttachObserver(sui);
     }
 
     public bool HasRelic(string relicName)

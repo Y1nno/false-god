@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,15 +8,14 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     private PlayerManager _pm => RunManager.Instance.GetService<PlayerManager>();
 
     private List<CombatAction> _availableActions = new List<CombatAction>();
-    private enum DecisionMode { None, ChoosingAction, ChoosingTarget }
+    private enum DecisionMode { None, ChoosingAction, ChoosingTarget, ChoosingSpell }
     private DecisionMode _currentDecisionMode = DecisionMode.None;
-
+    
     private readonly List<int> k_StartingActionIDs = new List<int>
     {
         0, // Do Nothing
         1, // Basic Attack
         2, // Basic Block
-        3, // Fireball
         999, // Switch Weapon
     };
 
@@ -33,6 +33,7 @@ public class PlayerCombatManager : Combatant, IPromptResponder
                 _availableActions.Add(action);
             }
         }
+
         Level = RunManager.Instance.GetService<XPManager>()?.level ?? 1;
     }
     public override Resource GetHealth()
@@ -177,6 +178,12 @@ public class PlayerCombatManager : Combatant, IPromptResponder
             }
         }
 
+        SpellManager sm = RunManager.Instance.GetService<SpellManager>();
+        if (sm != null && sm.LearnedSpells.Count > 0)
+        {
+            _availableActions.Add(new SpellGroupAction()); 
+        }
+
         Notify(EventType.PlayerTurnStart);
         _currentDecisionMode = DecisionMode.ChoosingAction;
         List<string> actionNames = GetAvailableActionNames();
@@ -218,6 +225,15 @@ public class PlayerCombatManager : Combatant, IPromptResponder
                 //Debug.Log($"Player selected action index: {decisionIndex}");
                 CombatAction selectedAction = _availableActions[decisionIndex];
 
+                if (selectedAction.ActionID == 888) // Use Spell group
+                {
+                    _currentDecisionMode = DecisionMode.ChoosingSpell;
+                    SpellManager sm = RunManager.Instance.GetService<SpellManager>();
+                    List<string> spellNames = sm.LearnedSpells.Select(s => $"{s.actionName} ({s.cost} MP)").ToList();
+                    Prompt spellPrompt = new Prompt("Select a spell:", spellNames, this);
+                    return;
+                }
+
                 if (selectedAction.ActionID == 1) // Basic Attack
                 {
                     EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
@@ -256,6 +272,38 @@ public class PlayerCombatManager : Combatant, IPromptResponder
                     targetStrings.Add($"{target.GetName()} (HP: {target.GetHealth().CurrentValue}/{target.GetHealth().MaxValue})");
                 }
                 Prompt prompt = new Prompt("Choose your target:", targetStrings, this);
+                break;
+
+            case DecisionMode.ChoosingSpell:
+                SpellManager smMsg = RunManager.Instance.GetService<SpellManager>();
+                SpellSO selectedSpell = smMsg.LearnedSpells[decisionIndex];
+                
+                // Check mana cost
+                if (!CanAffordMana(selectedSpell.cost))
+                {
+                    TextOutputter.Instance.OutputText("Not enough mana!");
+                    ChooseAction(); // Restart choosing phase
+                    return;
+                }
+
+                CurrentAction = new SpellAction(selectedSpell);
+                TextOutputter.Instance.OutputText($"Player selected spell: {selectedSpell.actionName}");
+
+                if (CurrentAction.NeedsTarget() == false)
+                {
+                    _currentDecisionMode = DecisionMode.None;
+                    Notify(EventType.PlayerActionSet);
+                    return;
+                }
+
+                _currentDecisionMode = DecisionMode.ChoosingTarget;
+                possibleTargets = CurrentAction.GetAvailableTargets(this, CurrentAction.TargetType);
+                List<string> targetStringsSpell = new List<string>();
+                foreach (Combatant target in possibleTargets)
+                {
+                    targetStringsSpell.Add($"{target.GetName()} (HP: {target.GetHealth().CurrentValue}/{target.GetHealth().MaxValue})");
+                }
+                Prompt promptSpell = new Prompt("Choose your target:", targetStringsSpell, this);
                 break;
 
             case DecisionMode.ChoosingTarget:

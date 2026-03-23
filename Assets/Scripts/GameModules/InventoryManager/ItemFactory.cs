@@ -36,6 +36,10 @@ public static class ItemFactory
         {
             return new RelicInstance(relicSO);
         }
+        else if (so is SpellScrollSO scrollSO)
+        {
+            return new SpellScrollInstance(scrollSO);
+        }
 
         return null;
     }

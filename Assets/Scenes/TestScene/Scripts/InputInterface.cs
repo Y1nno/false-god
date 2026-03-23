@@ -8,7 +8,7 @@ public class InputInterface : MonoBehaviour, IObserver
 {
     public void OnNotify(object subject, EventType eventType)
     {
-        if (eventType == EventType.ItemAcquired)
+        if (eventType == EventType.ItemAcquired || eventType == EventType.ItemRemoved)
         {
             RefreshAllDropdowns();
         }
@@ -323,6 +323,7 @@ public class InputInterface : MonoBehaviour, IObserver
         {
             if (item is Equipment eq) return eq.GetName() == selectedItemName;
             if (item is ConsumableInstance con) return con.BaseData.ItemName == selectedItemName;
+            if (item is SpellScrollInstance scroll) return scroll.GetName() == selectedItemName;
             return false;
         });
 
@@ -394,6 +395,10 @@ public class InputInterface : MonoBehaviour, IObserver
                  {
                      string nameWithTier = $"{baseName} (Tier {con.Tier})";
                      if (!consumableOptions.Contains(nameWithTier)) consumableOptions.Add(nameWithTier);
+                 }
+                 else if (item is SpellScrollInstance scroll)
+                 {
+                     if (!consumableOptions.Contains(baseName)) consumableOptions.Add(baseName);
                  }
                  else if (item is Equipment eq)
                  {

@@ -16,6 +16,7 @@ MonoBehaviour:
   ItemName: Simple Staff
   ItemIcon: {fileID: 0}
   Description: 
+  SellPrice: 0
   Slot: 5
   Rarity: 0
   IsTwoHanded: 1
@@ -34,8 +35,8 @@ MonoBehaviour:
     max: 1
   SpecialAttack:
     value: 0
-    min: 0
-    max: 0
+    min: 3
+    max: 5
   STR:
     value: 0
     min: 0
@@ -68,5 +69,7 @@ MonoBehaviour:
     value: 0
     min: 0
     max: 0
+  MaxDurability: 100
+  CurrentDurability: 100
   Traits: []
   Skill: {fileID: 11400000, guid: b6d603e668c7576479afb51a0b48a925, type: 2}

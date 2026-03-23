@@ -24,7 +24,6 @@ public class RunManager : GameModule
 
     private RunManager()
     {
-        TextOutputter.Instance.OutputText("RunManager initialized.");
     }
 
     public override void AttachDefaultObservers()
@@ -46,7 +45,7 @@ public class RunManager : GameModule
         s_mb.InitializeAllManagers();
         s_runEnder = new RunEnder();
 
-        TextOutputter.Instance.OutputText("New run started.");
+        TextOutputter.Instance?.OutputText("New run started.");
         Notify(EventType.RunStart);
     }
 
@@ -59,7 +58,7 @@ public class RunManager : GameModule
             s_mb.CleanupAllManagers();
             s_mb = null;
         }
-        TextOutputter.Instance.OutputText("Run ended.");
+        TextOutputter.Instance?.OutputText("Run ended.");
         return rs;
     }
 

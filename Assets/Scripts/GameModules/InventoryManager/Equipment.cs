@@ -122,6 +122,14 @@ public class Equipment : Item
         return CurrentDurability <= 0;
     }
 
+    /// <summary>
+    /// Restores current durability to its maximum value.
+    /// </summary>
+    public void Repair()
+    {
+        CurrentDurability = MaxDurability;
+    }
+
     private int CalculateStat(EquipmentStat stat, int baseValue)
     {
         int flat = 0;

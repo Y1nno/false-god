@@ -16,6 +16,7 @@ MonoBehaviour:
   ItemName: Infernum Spire
   ItemIcon: {fileID: 0}
   Description: 
+  SellPrice: 0
   Slot: 5
   Rarity: 2
   IsTwoHanded: 1
@@ -23,7 +24,7 @@ MonoBehaviour:
   PhysicalDefense:
     value: 0
     min: 0
-    max: 0
+    max: 7
   SpecialDefense:
     value: 0
     min: 0
@@ -34,8 +35,8 @@ MonoBehaviour:
     max: 7
   SpecialAttack:
     value: 0
-    min: 0
-    max: 0
+    min: 14
+    max: 17
   STR:
     value: 0
     min: 1
@@ -54,8 +55,8 @@ MonoBehaviour:
     max: 0
   CritChance:
     value: 0
-    min: 0
-    max: 0
+    min: -1
+    max: -1
   BlockChance:
     value: 0
     min: 0
@@ -68,5 +69,7 @@ MonoBehaviour:
     value: 0
     min: 0
     max: 0
+  MaxDurability: 100
+  CurrentDurability: 100
   Traits: []
   Skill: {fileID: 0}
