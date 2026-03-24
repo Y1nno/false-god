@@ -1,0 +1,260 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 373945480999a6c4da1233c3ee178a5f, type: 3}
+  m_Name: ModifierPool
+  m_EditorClassIdentifier: Assembly-CSharp::ModifierPoolSO
+  WeaponPrefixes:
+  - Name: Brutal
+    EffectType: 0
+    TargetStat: 0
+    MinValue: 5
+    MaxValue: 10
+    Trait: 0
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Savage
+    EffectType: 0
+    TargetStat: 0
+    MinValue: 10
+    MaxValue: 15
+    Trait: 0
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Keen
+    EffectType: 0
+    TargetStat: 8
+    MinValue: 5
+    MaxValue: 10
+    Trait: 0
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Jagged
+    EffectType: 0
+    TargetStat: 7
+    MinValue: 8
+    MaxValue: 20
+    Trait: 0
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Vampiric
+    EffectType: 2
+    TargetStat: 0
+    MinValue: 0
+    MaxValue: 0
+    Trait: 6
+    CooldownType: 0
+    CooldownDuration: 0
+  WeaponSuffixes:
+  - Name: Venom
+    EffectType: 2
+    TargetStat: 0
+    MinValue: 5
+    MaxValue: 15
+    Trait: 14
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Embers
+    EffectType: 2
+    TargetStat: 0
+    MinValue: 5
+    MaxValue: 15
+    Trait: 15
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Frost
+    EffectType: 2
+    TargetStat: 0
+    MinValue: 5
+    MaxValue: 15
+    Trait: 16
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Decay
+    EffectType: 2
+    TargetStat: 0
+    MinValue: 5
+    MaxValue: 15
+    Trait: 17
+    CooldownType: 0
+    CooldownDuration: 0
+  ArmorPrefixes:
+  - Name: Reinforced
+    EffectType: 0
+    TargetStat: 2
+    MinValue: 3
+    MaxValue: 6
+    Trait: 0
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Fortified
+    EffectType: 0
+    TargetStat: 12
+    MinValue: 10
+    MaxValue: 15
+    Trait: 0
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Agile
+    EffectType: 0
+    TargetStat: 7
+    MinValue: 2
+    MaxValue: 5
+    Trait: 0
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Mystic
+    EffectType: 0
+    TargetStat: 3
+    MinValue: 4
+    MaxValue: 8
+    Trait: 0
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Runic
+    EffectType: 0
+    TargetStat: 13
+    MinValue: 10
+    MaxValue: 20
+    Trait: 0
+    CooldownType: 0
+    CooldownDuration: 0
+  ArmorSuffixes:
+  - Name: Vitality
+    EffectType: 2
+    TargetStat: 0
+    MinValue: 2
+    MaxValue: 5
+    Trait: 18
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Protection
+    EffectType: 0
+    TargetStat: 2
+    MinValue: 3
+    MaxValue: 5
+    Trait: 0
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Thorns
+    EffectType: 2
+    TargetStat: 0
+    MinValue: 12
+    MaxValue: 12
+    Trait: 20
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Shadows
+    EffectType: 0
+    TargetStat: 11
+    MinValue: 6
+    MaxValue: 15
+    Trait: 0
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Cleansing
+    EffectType: 2
+    TargetStat: 0
+    MinValue: 10
+    MaxValue: 20
+    Trait: 21
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Resilience
+    EffectType: 2
+    TargetStat: 0
+    MinValue: 50
+    MaxValue: 50
+    Trait: 22
+    CooldownType: 0
+    CooldownDuration: 0
+  CatalystPrefixes:
+  - Name: Arcane
+    EffectType: 0
+    TargetStat: 1
+    MinValue: 4
+    MaxValue: 8
+    Trait: 0
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Charged
+    EffectType: 2
+    TargetStat: 0
+    MinValue: 0
+    MaxValue: 0
+    Trait: 3
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Mystic
+    EffectType: 0
+    TargetStat: 6
+    MinValue: 4
+    MaxValue: 10
+    Trait: 0
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Runed
+    EffectType: 2
+    TargetStat: 0
+    MinValue: 0
+    MaxValue: 0
+    Trait: 10
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Refined
+    EffectType: 1
+    TargetStat: 1
+    MinValue: 20
+    MaxValue: 45
+    Trait: 0
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Cursed
+    EffectType: 2
+    TargetStat: 0
+    MinValue: 0
+    MaxValue: 0
+    Trait: 6
+    CooldownType: 0
+    CooldownDuration: 0
+  CatalystSuffixes:
+  - Name: Insight
+    EffectType: 2
+    TargetStat: 0
+    MinValue: 0
+    MaxValue: 0
+    Trait: 6
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Weakening
+    EffectType: 2
+    TargetStat: 0
+    MinValue: 10
+    MaxValue: 30
+    Trait: 17
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Vampirism
+    EffectType: 2
+    TargetStat: 0
+    MinValue: 0
+    MaxValue: 0
+    Trait: 6
+    CooldownType: 0
+    CooldownDuration: 0
+  - Name: Focus
+    EffectType: 0
+    TargetStat: 8
+    MinValue: 10
+    MaxValue: 25
+    Trait: 0
+    CooldownType: 0
+    CooldownDuration: 0

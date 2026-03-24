@@ -10,15 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fdad69720ae6f5248b7600463fade9a9, type: 3}
-  m_Name: Golem Fist
+  m_Name: Ring of Discovery
   m_EditorClassIdentifier: Assembly-CSharp::EquipmentSO
-  ItemID: 96
-  ItemName: Golem Fist
+  ItemID: 146
+  ItemName: Ring of Discovery
   ItemIcon: {fileID: 0}
-  Description: 
-  Slot: 5
+  Description: A rare ring that significantly boosts the chance of finding items.
+  Slot: 7
   Rarity: 2
-  IsTwoHanded: 0
   PhysicalDefense:
     value: 0
     min: 0
@@ -29,26 +28,26 @@ MonoBehaviour:
     max: 0
   PhysicalAttack:
     value: 0
-    min: 7
-    max: 10
+    min: 0
+    max: 0
   SpecialAttack:
     value: 0
     min: 0
     max: 0
   STR:
-    value: 0
-    min: 2
-    max: 3
+    value: 1
+    min: 1
+    max: 1
   DEX:
-    value: 0
-    min: 4
-    max: 5
+    value: 1
+    min: 1
+    max: 1
   INT:
-    value: 0
-    min: 0
-    max: 0
+    value: 1
+    min: 1
+    max: 1
   SPD:
-    value: 0
+    value: 1
     min: 1
     max: 1
   CritChance:
@@ -68,8 +67,8 @@ MonoBehaviour:
     min: 0
     max: 0
   Traits:
-  - Trait: 11
-    Value: 0
+  - Trait: 13
+    Value: 20
     CooldownType: 0
     CooldownDuration: 0
     CurrentCooldown: 0

@@ -14,7 +14,7 @@ public class JudgementRite : Rite, IObserver
     public float CritChance => _accCrit;
     private Dictionary<Stat, int> _accStats = new Dictionary<Stat, int>
     {
-        { Stat.STR, 0 }, { Stat.DEX, 0 }, { Stat.INT, 0 }, { Stat.LCK, 0 }
+        { Stat.STR, 0 }, { Stat.DEX, 0 }, { Stat.INT, 0 }
     };
 
     public override string Description
@@ -118,7 +118,8 @@ public class JudgementRite : Rite, IObserver
                 TextOutputter.Instance.OutputText("Judgement: Your vitality overflows! (+10 Max HP)");
                 break;
             case 2: // +2 Random Stat
-                Stat randomStat = (Stat)Random.Range(0, 3); // STR=0, INT=1, DEX=2
+                Stat[] stats = { Stat.STR, Stat.DEX, Stat.INT };
+                Stat randomStat = stats[Random.Range(0, stats.Length)];
                 int currentStat = pm.PlayerStats.GetStat(randomStat);
                 pm.PlayerStats.SetStat(randomStat, currentStat + 2);
                 _accStats[randomStat] += 2;

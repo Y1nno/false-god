@@ -33,6 +33,13 @@ public class EconomyManager : GameModule, IObserver
         return _gold;
     }
 
+    public void LoseGold(int amount)
+    {
+        _gold = Mathf.Max(0, _gold - amount);
+        GoldDelta = -amount;
+        Notify(EventType.GoldSpent);
+    }
+
     public bool CanSpendGold(int amount)
     {
         return _gold >= amount;
@@ -57,7 +64,14 @@ public class EconomyManager : GameModule, IObserver
                         MidasRite midasRite = (MidasRite)rm.GetRite(RiteType.Midas);
                         gold = midasRite.ApplyMidasEffect(gold);
                     }
-                    TextOutputter.Instance.OutputText($"Gained {gold} gold.");
+
+                    RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
+                    if (relicm != null)
+                    {
+                        gold = Mathf.RoundToInt(gold * relicm.GetGoldMultiplier());
+                    }
+
+                    AddGold(gold);
                 }
                 break;
         }

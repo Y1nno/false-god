@@ -26,16 +26,16 @@ public class EquipmentContainer : MonoBehaviour, IObserver
     {
         if (_eqm == null)
         {
-             _content += "No Equipment Manager connected.\n";
-             return;
+            _content += "No Equipment Manager connected.\n";
+            return;
         }
 
         // We want to list all possible slots and show what's in them
         foreach (EquipmentSlot slot in System.Enum.GetValues(typeof(EquipmentSlot)))
         {
-            if (_eqm.EquippedItems.TryGetValue(slot, out EquipmentSO equippedItem))
+            if (_eqm.EquippedItems.TryGetValue(slot, out Equipment equippedItem))
             {
-                _content += $"{slot}: {equippedItem.ItemName} {GetItemStatsString(equippedItem)}\n";
+                _content += $"{slot}: {equippedItem.GetName()} {GetItemStatsString(equippedItem)}\n";
             }
             else
             {
@@ -44,20 +44,18 @@ public class EquipmentContainer : MonoBehaviour, IObserver
         }
     }
 
-    private string GetItemStatsString(EquipmentSO item)
+    private string GetItemStatsString(Equipment item)
     {
         string stats = "(";
         bool hasStats = false;
 
-        void AppendStat(string name, BoundedInt stat)
+        void AppendStat(string name, int displayVal)
         {
-            // If value is set, it overrides. Otherwise it uses max (and min)
-            int displayVal = stat.value != 0 ? stat.value : stat.max;
             if (displayVal != 0)
             {
                 if (hasStats) stats += ", ";
                 
-                string sign = displayVal > 0 ? "+" : ""; // Negative numbers already have a minus sign from ToString()
+                string sign = displayVal > 0 ? "+" : ""; 
                 stats += $"{sign}{displayVal} {name}";
                 hasStats = true;
             }
@@ -75,6 +73,8 @@ public class EquipmentContainer : MonoBehaviour, IObserver
         AppendStat("BLK%", item.BlockChance);
         AppendStat("BLK DMG", item.BlockAmount);
         AppendStat("DODGE%", item.DodgeChance);
+        AppendStat("HP", item.MaxHP);
+        AppendStat("MP", item.MaxMana);
 
         if (hasStats) stats += ", ";
         stats += $"DUR: {item.CurrentDurability}/{item.MaxDurability}";
@@ -84,60 +84,63 @@ public class EquipmentContainer : MonoBehaviour, IObserver
         {
             foreach (var trait in item.Traits)
             {
-                if (trait.Trait == EquipmentTrait.MoveFirst)
+                if (hasStats) stats += ", ";
+                
+                switch (trait.Trait)
                 {
-                    if (hasStats) stats += ", ";
-                    stats += $"CD: {trait.CurrentCooldown}";
-                    hasStats = true;
+                    case EquipmentTrait.MoveFirst:
+                        stats += $"CD: {trait.CurrentCooldown}";
+                        break;
+                    case EquipmentTrait.SoulSteal:
+                        stats += "SoulSteal";
+                        break;
+                    case EquipmentTrait.AllStats:
+                        stats += $"+{trait.Value} All Stats";
+                        break;
+                    case EquipmentTrait.SpellReflect:
+                        stats += $"{trait.Value}% Reflect Spell";
+                        break;
+                    case EquipmentTrait.MaxHP:
+                        stats += $"+{trait.Value}% Max HP";
+                        break;
+                    case EquipmentTrait.DoubleStrike:
+                        stats += $"{trait.Value}% Double Strike";
+                        break;
+                    case EquipmentTrait.TrueStrike:
+                        stats += "TrueStrike";
+                        break;
+                    case EquipmentTrait.ComboStrike:
+                        stats += "Combo Strike";
+                        break;
+                    case EquipmentTrait.CounterChance:
+                        stats += $"{trait.Value}% Counter Attack";
+                        break;
+                    case EquipmentTrait.PoisonHit:
+                        stats += $"{trait.Value}% Poison";
+                        break;
+                    case EquipmentTrait.BurnHit:
+                        stats += $"{trait.Value}% Burn";
+                        break;
+                    case EquipmentTrait.FreezeHit:
+                        stats += $"{trait.Value}% Freeze";
+                        break;
+                    case EquipmentTrait.WeakenHit:
+                        stats += $"{trait.Value}% Weaken";
+                        break;
+                    case EquipmentTrait.HealthRegen:
+                        stats += $"+{trait.Value} Regen";
+                        break;
+                    case EquipmentTrait.ManaRegen:
+                        stats += $"+{trait.Value} Mana Regen";
+                        break;
+                    case EquipmentTrait.DamageReflect:
+                        stats += $"{trait.Value}% Reflect";
+                        break;
+                    default:
+                        stats += trait.Trait.ToString();
+                        break;
                 }
-                else if (trait.Trait == EquipmentTrait.SoulSteal)
-                {
-                    if (hasStats) stats += ", ";
-                    stats += "SoulSteal";
-                    hasStats = true;
-                }
-                else if (trait.Trait == EquipmentTrait.AllStats)
-                {
-                    if (hasStats) stats += ", ";
-                    stats += $"+{trait.Value} All Stats";
-                    hasStats = true;
-                }
-                else if (trait.Trait == EquipmentTrait.SpellReflect)
-                {
-                    if (hasStats) stats += ", ";
-                    stats += $"{trait.Value}% Reflect Spell";
-                    hasStats = true;
-                }
-                else if (trait.Trait == EquipmentTrait.MaxHP)
-                {
-                    if (hasStats) stats += ", ";
-                    stats += $"+{trait.Value}% Max HP";
-                    hasStats = true;
-                }
-                else if (trait.Trait == EquipmentTrait.DoubleStrike)
-                {
-                    if (hasStats) stats += ", ";
-                    stats += $"{trait.Value}% Double Strike";
-                    hasStats = true;
-                }
-                else if (trait.Trait == EquipmentTrait.TrueStrike)
-                {
-                    if (hasStats) stats += ", ";
-                    stats += "TrueStrike";
-                    hasStats = true;
-                }
-                else if (trait.Trait == EquipmentTrait.ComboStrike)
-                {
-                    if (hasStats) stats += ", ";
-                    stats += "Combo Strike";
-                    hasStats = true;
-                }
-                else if (trait.Trait == EquipmentTrait.CounterChance)
-                {
-                    if (hasStats) stats += ", ";
-                    stats += $"{trait.Value}% Counter Attack";
-                    hasStats = true;
-                }
+                hasStats = true;
             }
         }
 

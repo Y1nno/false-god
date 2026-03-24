@@ -12,7 +12,7 @@ public class PlayerStatBox : StatBox
         
     }
 
-    public void OnNotify(object subject, EventType eventType)
+    public override void OnNotify(object subject, EventType eventType)
     {
         switch (eventType)
         {
@@ -24,11 +24,18 @@ public class PlayerStatBox : StatBox
     private void AddStatPoints(int points)
     {
         AvailableStatPoints += points;
+        TextOutputter.Instance.OutputText("You gained " + points + " stat points!");
         Notify(EventType.StatPointsAdded);
     }
 
     public bool SpendStatPoints(Stat stat, int points)
     {
+        if (stat == Stat.SPD)
+        {
+            TextOutputter.Instance.OutputText("Speed cannot be increased manually. It scales from Dexterity and Items.");
+            return false;
+        }
+
         if (points <= AvailableStatPoints)
         {
             int currentStatValue = GetStat(stat);
