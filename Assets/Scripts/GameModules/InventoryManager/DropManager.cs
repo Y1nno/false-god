@@ -83,7 +83,23 @@ public class DropManager : GameModule, IObserver
         
         // Quest Item handling: 3.5% (20% if quest active)
         float questChance = 3.5f; 
-        // TODO: check for active quest and set questChance = 20f
+        
+        ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+        if (enemy != null && rm != null && rm.CurrentReligion != null)
+        {
+             // Check if the current enemy drops the item required for the active religion quest
+             string enemyName = enemy.GetName();
+             string requiredItemID = rm.CurrentReligion.RequiredItemID;
+             if (rm.CurrentReligion.CurrentQuestStatus == QuestStatus.GatheringItem)
+             {
+                 // Small helper to match enemy to item ID without duplicating switch logic
+                 if (IsMonsterRelevantToQuest(enemyName, requiredItemID))
+                 {
+                     questChance = 20.0f;
+                 }
+             }
+        }
+
         if (roll <= 45f + questChance) { 
             if (isChest) RollEquipment(floor, invm, isChest);
             else if (enemy != null) RollQuestItem(invm, enemy);
@@ -282,6 +298,7 @@ public class DropManager : GameModule, IObserver
             case "Kobold": itemID = "143"; break;
             case "Demon Centaur": itemID = "144"; break;
             case "Stone Golem": itemID = "145"; break;
+            case "Heretic": itemID = "159"; break;
             default:
                 // Fallback for enemies without specific quest items
                 TextOutputter.Instance.OutputText($"{enemyName} dropped nothing special...");
@@ -376,6 +393,59 @@ public class DropManager : GameModule, IObserver
         else
         {
              TextOutputter.Instance.OutputText("You already possessed all available relics!");
+        }
+    }
+
+    private bool IsMonsterRelevantToQuest(string enemyName, string itemID)
+    {
+        switch (enemyName)
+        {
+            case "Brute Ogre": return itemID == "140";
+            case "Cloaker": return itemID == "141";
+            case "Banshee": return itemID == "142";
+            case "Kobold": return itemID == "143";
+            case "Demon Centaur": return itemID == "144";
+            case "Stone Golem": return itemID == "145";
+            case "Heretic": return itemID == "159";
+            default: return false;
+        }
+    }
+
+    public void GrantRandomReward(Rarity rarity, EquipmentSlot? slot = null)
+    {
+        List<EquipmentSO> matching = new List<EquipmentSO>();
+        InventoryManager invm = RunManager.Instance.GetService<InventoryManager>();
+#if UNITY_EDITOR
+        string[] guids = UnityEditor.AssetDatabase.FindAssets("t:EquipmentSO");
+        foreach (string guid in guids)
+        {
+            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+            EquipmentSO so = UnityEditor.AssetDatabase.LoadAssetAtPath<EquipmentSO>(path);
+            if (so != null && so.Rarity == rarity)
+            {
+                if (slot == null || so.Slot == slot.Value)
+                    matching.Add(so);
+            }
+        }
+#else
+        EquipmentSO[] allEquips = Resources.LoadAll<EquipmentSO>("");
+        foreach (var eq in allEquips)
+        {
+            if (eq.Rarity == rarity)
+            {
+                if (slot == null || eq.Slot == slot.Value)
+                    matching.Add(eq);
+            }
+        }
+#endif
+        if (matching.Count > 0)
+        {
+            EquipmentSO selected = matching[Random.Range(0, matching.Count)];
+            SpawnAndGive(selected.ItemID != "" ? selected.ItemID : selected.name, invm);
+        }
+        else
+        {
+            TextOutputter.Instance.OutputText($"No {rarity} item found for slot {slot}.");
         }
     }
 }

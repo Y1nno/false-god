@@ -36,11 +36,9 @@ public class EncounterFactory
             case EncounterType.Boss:
                 return new BossEncounter(difficulty);
             case EncounterType.Fountain:
-                // TODO: Fountain logic (fill bottle/drink) - currently placeholder
-                return new RestEncounter(difficulty); 
+                return new FountainEncounter(difficulty); 
             case EncounterType.Shrine:
-                // TODO: Health Shrine logic - currently placeholder
-                return new RestEncounter(difficulty);
+                return new ShrineEncounter(difficulty);
             default:
                 throw new ArgumentOutOfRangeException("Invalid encounter type.");
         }

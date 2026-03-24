@@ -220,4 +220,5 @@ public enum AttackType
 {
     Physical,
     Special,
+    True,
 }

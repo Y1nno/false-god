@@ -71,6 +71,13 @@ public class PlayerManager : GameModule, IObserver
     public void Heal(int amount)
     {
         if (amount <= 0) return;
+        
+        ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+        if (rm?.CurrentReligion is OrderOfTheDawnbearers && rm.CurrentReligion.CurrentFaithLevel >= 1)
+        {
+            amount = Mathf.RoundToInt(amount * 1.10f); // 10% Heal Amp
+        }
+
         Health.Increase(amount);
     }
 
@@ -171,7 +178,14 @@ public class PlayerManager : GameModule, IObserver
             case SecondaryStat.SPATK:
                 int spatkFromEquipment = eqm?.GetTotalSpecialAttack() ?? 0;
                 float spatkMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.SPATK);
-                return spatkFromEquipment * (int)(1.0f + spatkMultiplierFromRite);
+                
+                ReligionManager rmSp = RunManager.Instance.GetService<ReligionManager>();
+                if (rmSp?.CurrentReligion is ChildrenOfThePaleMoon && Health.Percentage >= 0.8f && rmSp.CurrentReligion.CurrentFaithLevel >= 3)
+                {
+                    spatkMultiplierFromRite += 0.2f;
+                }
+
+                return (int)(spatkFromEquipment * (1.0f + spatkMultiplierFromRite));
             case SecondaryStat.SPDEF:
                 int spdefFromEquipment = eqm?.GetTotalSpecialDefense() ?? 0;
                 float spdefMultiplierFromRite = RunManager.Instance.GetService<RiteManager>().CalculateStatMultiplierFromRites(SecondaryStat.SPDEF);
@@ -188,12 +202,29 @@ public class PlayerManager : GameModule, IObserver
                 int critFromEquipment = eqm?.GetTotalBonus(item => item.CritChance) ?? 0;
                 int critFromRite = (int)(RunManager.Instance.GetService<RiteManager>().CalculateFlatStatBonus(SecondaryStat.CRIT) * 100f) ;
                 int critFromDex = Mathf.RoundToInt(GetStat(Stat.DEX) * 0.25f);
-                return critFromEquipment + critFromRite + critFromDex;
+                
+                int critFromReligion = 0;
+                ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+                CombatManager cm = RunManager.Instance.GetService<CombatManager>();
+                if (rm?.CurrentReligion is VeilOfUmbrath && cm?.CurrentBattle?.TurnCount == 1 && rm.CurrentReligion.CurrentFaithLevel >= 3)
+                {
+                    critFromReligion = 40;
+                }
+                return critFromEquipment + critFromRite + critFromDex + critFromReligion;
             case SecondaryStat.EVDE:
                 int dodgeFromEquipment = eqm?.GetTotalBonus(item => item.DodgeChance) ?? 0;
                 int dodgeFromCombat = RunManager.Instance.GetService<CombatManager>()?.Pcm?.GetSecondaryStatBonus(SecondaryStat.EVDE) ?? 0;
                 int dodgeFromDex = Mathf.RoundToInt(GetStat(Stat.DEX) * 0.20f);
-                int totalDodge = dodgeFromEquipment + dodgeFromCombat + dodgeFromDex;
+                
+                int dodgeFromReligion = 0;
+                ReligionManager rmDodge = RunManager.Instance.GetService<ReligionManager>();
+                CombatManager cmDodge = RunManager.Instance.GetService<CombatManager>();
+                if (rmDodge?.CurrentReligion is VeilOfUmbrath && cmDodge?.CurrentBattle?.TurnCount == 1 && rmDodge.CurrentReligion.CurrentFaithLevel >= 1)
+                {
+                    dodgeFromReligion = 30;
+                }
+
+                int totalDodge = dodgeFromEquipment + dodgeFromCombat + dodgeFromDex + dodgeFromReligion;
                 return Mathf.Min(65, totalDodge); // 65% Dodge Cap
             default:
                 throw new ArgumentOutOfRangeException(nameof(secondaryStat), secondaryStat, null);

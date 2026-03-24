@@ -26,6 +26,7 @@ public class CombatManager : GameModule, IObserver
             Debug.LogWarning("CombatManager: No current battle to start.");
             return;
         }
+        Pcm.OnBattleStart();
         CurrentBattle.StartBattle();
     }
 
@@ -219,6 +220,16 @@ public class CombatManager : GameModule, IObserver
                 break;
             case EventType.EncounterResolve:
                 Pcm.ClearEncounterEffects();
+                
+                // Pale Moon Level 1: 10% Mana Recovery
+                ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+                if (rm?.CurrentReligion is ChildrenOfThePaleMoon && rm.CurrentReligion.CurrentFaithLevel >= 1)
+                {
+                    int recovery = Mathf.RoundToInt(Pcm.GetMana().MaxValue * 0.10f);
+                    Pcm.GetMana().Increase(recovery);
+                    TextOutputter.Instance.OutputText($"Pale Moon's Graces: Recovered {recovery} Mana.");
+                }
+
                 Notify(EventType.EncounterResolve);
                 break;
             case EventType.EnemyDefeated:
@@ -226,6 +237,18 @@ public class CombatManager : GameModule, IObserver
                 {
                     _defeatedBosses.Add(boss.BossData.BossName);
                 }
+
+                // Whispering Flame Lvl 4: Fervor (Kill enemy in 4 turns)
+                if (CurrentBattle != null && CurrentBattle.TurnCount <= 4)
+                {
+                    ReligionManager religM = RunManager.Instance.GetService<ReligionManager>();
+                    if (religM?.CurrentReligion is WhisperingFlame && religM.CurrentReligion.CurrentFaithLevel >= 4)
+                    {
+                        Pcm.GrantFervorStack();
+                    }
+                }
+
+                RunManager.Instance.GetService<ReligionManager>()?.CurrentReligion?.OnEnemyDefeated(subject as Enemy);
                 Notify(subject, EventType.EnemyDefeated);
                 break;
             default:

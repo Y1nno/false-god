@@ -117,6 +117,17 @@ public abstract class Combatant : Subject
 
     public void ApplyAilment(AilmentType type, int duration)
     {
+        // Whispering Flame Lvl 1: Burn Immunity
+        if (type == AilmentType.Burn)
+        {
+            ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+            if (rm?.CurrentReligion is WhisperingFlame && rm.CurrentReligion.CurrentFaithLevel >= 1 && this is PlayerCombatManager)
+            {
+                TextOutputter.Instance.OutputText("Burn Immunity: The flame cannot hurt a child of the Coven.");
+                return;
+            }
+        }
+
         // Check if we already have this ailment.
         Ailment existing = ActiveAilments.Find(a => a.Type == type);
         if (existing != null)

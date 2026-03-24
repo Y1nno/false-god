@@ -291,6 +291,13 @@ public class EquipmentManager : GameModule
     
     private bool RollDurabilityDegradeChance(Equipment item)
     {
+        // Forge-Tongue Brotherhood Lvl 4: Forge Blessing (No weapon durability loss)
+        ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+        if (rm?.CurrentReligion is ForgeTongueBrotherhood && rm.CurrentReligion.CurrentFaithLevel >= 4)
+        {
+            if (item.Slot == EquipmentSlot.Weapon) return false;
+        }
+
         int chance = 0;
         switch (item.Rarity)
         {

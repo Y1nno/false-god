@@ -22,6 +22,8 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     private List<int> _decisionsAvailable = new List<int>();
 
     List<Combatant> possibleTargets = new List<Combatant>();
+    private int _fervorStacks = 0;
+    private int _whisperingFlameCooldown = 0;
 
     public PlayerCombatManager()
     {
@@ -35,6 +37,16 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         }
 
         Level = RunManager.Instance.GetService<XPManager>()?.level ?? 1;
+        _fervorStacks = 0;
+    }
+
+    public void GrantFervorStack()
+    {
+        if (_fervorStacks < 5)
+        {
+            _fervorStacks++;
+            TextOutputter.Instance.OutputText($"Fervor! ATK increased by {(_fervorStacks * 2)}% (Stack {_fervorStacks}/5).");
+        }
     }
     public override Resource GetHealth()
     {
@@ -138,6 +150,90 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         }
 
         return damageDealt;
+    }
+
+    public void OnBattleStart()
+    {
+        ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+        
+        // Serpent's Coil Lvl 3: 35% Poison random enemy
+        if (rm?.CurrentReligion is SerpentsCoil && rm.CurrentReligion.CurrentFaithLevel >= 3)
+        {
+            if (UnityEngine.Random.Range(0f, 100f) < 35f)
+            {
+                Battle b = RunManager.Instance.GetService<CombatManager>()?.CurrentBattle;
+                List<Combatant> enemies = b?.GetEnemies();
+                if (enemies != null && enemies.Count > 0)
+                {
+                    Combatant target = enemies[UnityEngine.Random.Range(0, enemies.Count)];
+                    target.ApplyAilment(AilmentType.Poison, 3);
+                    TextOutputter.Instance.OutputText("Serpent's Coil: A hidden viper strikes the enemy with poison!");
+                }
+            }
+        }
+
+        // Whispering Flame Lvl 3: Start-of-battle Burn (15%)
+        if (rm?.CurrentReligion is WhisperingFlame && rm.CurrentReligion.CurrentFaithLevel >= 3)
+        {
+            if (_whisperingFlameCooldown <= 0)
+            {
+                if (UnityEngine.Random.Range(0f, 100f) < 15f)
+                {
+                    Battle b = RunManager.Instance.GetService<CombatManager>()?.CurrentBattle;
+                    List<Combatant> enemies = b?.GetEnemies();
+                    if (enemies != null && enemies.Count > 0)
+                    {
+                        Combatant target = enemies[UnityEngine.Random.Range(0, enemies.Count)];
+                        target.ApplyAilment(AilmentType.Burn, 3);
+                        TextOutputter.Instance.OutputText("Whispering Flame: A searing gaze ignites the enemy!");
+                        _whisperingFlameCooldown = 1; // 1 Encounter cooldown
+                    }
+                }
+            }
+            else
+            {
+                _whisperingFlameCooldown--;
+            }
+        }
+        _hasUsedFirstAttack = false;
+        _fervorStacks = 0; // Reset fervor at start of fight
+    }
+
+    private bool _hasUsedFirstAttack = false;
+
+    public override void OnDealDamage(int amount, Combatant target)
+    {
+        base.OnDealDamage(amount, target);
+        
+        // Dawnbearers Level 3: +15% damage on first physical attack
+        ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+        if (rm?.CurrentReligion is OrderOfTheDawnbearers && rm.CurrentReligion.CurrentFaithLevel >= 3 && !_hasUsedFirstAttack)
+        {
+            _hasUsedFirstAttack = true;
+            int bonus = Mathf.RoundToInt(amount * 0.15f);
+            if (bonus > 0)
+            {
+                target.GetAttacked(bonus, AttackType.True, this);
+                TextOutputter.Instance.OutputText($"Dawnbearer's Vengeance: +{bonus} bonus damage on first strike!");
+            }
+        }
+    }
+
+    public override void OnRoundEnd()
+    {
+        base.OnRoundEnd();
+
+        // Serpents Coil Level 4: Shed Skin (20% heal ailment)
+        ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+        if (rm?.CurrentReligion is SerpentsCoil && rm.CurrentReligion.CurrentFaithLevel >= 4)
+        {
+            if (ActiveAilments.Count > 0 && UnityEngine.Random.value <= 0.20f)
+            {
+                Ailment ailment = ActiveAilments[UnityEngine.Random.Range(0, ActiveAilments.Count)];
+                RemoveAilment(ailment.Type);
+                TextOutputter.Instance.OutputText($"Shed Skin: The serpent sheds its skin, clearing {ailment.Type}!");
+            }
+        }
     }
 
     public override float GetCritChance()
@@ -411,9 +507,13 @@ public class PlayerCombatManager : Combatant, IPromptResponder
 
     public int GetSecondaryStatBonus(SecondaryStat stat)
     {
-        // Currently ConsumableEffectType doesn't distinguish secondary stats specifically in its TargetStat field (which is only 'Stat' enum),
-        // but if you add more specific consumable types later, this is where you'd aggregate those bonuses.
-        return 0;
+        int bonus = 0;
+        if ((stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK) && _fervorStacks > 0)
+        {
+            int baseVal = _pm.CalculateSecondaryStat(stat);
+            bonus += Mathf.RoundToInt(baseVal * (_fervorStacks * 0.02f));
+        }
+        return bonus;
     }
     public override int GetBonusDamage()
     {

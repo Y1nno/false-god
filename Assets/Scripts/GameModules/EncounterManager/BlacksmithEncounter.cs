@@ -136,30 +136,42 @@ public class BlacksmithEncounter : Encounter
         EconomyManager em = RunManager.Instance.GetService<EconomyManager>();
         InventoryManager inv = RunManager.Instance.GetService<InventoryManager>();
         int cost = item.GetUpgradeCost();
-
-        if (em == null || !em.CanSpendGold(cost))
-        {
-            TextOutputter.Instance.OutputText("'You don't have enough gold for this upgrade.'");
-            ShowSmithMenu();
-            return;
-        }
-
-        // Check for Gemshard if level >= 5
         MaterialInstance gemshard = null;
-        if (item.UpgradeLevel >= 5)
+
+        // Check for Forge-Tongue Free Upgrade (Lvl 3)
+        ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+        bool isFreeUpgrade = (rm?.CurrentReligion is ForgeTongueBrotherhood && rm.CurrentReligion.CurrentFaithLevel >= 3 && item.UpgradeLevel < 5);
+
+        if (isFreeUpgrade)
         {
-            gemshard = inv?.UnEquippedItems.Find(i => i is MaterialInstance m && m.GetName() == "Gem Shard") as MaterialInstance;
-            if (gemshard == null)
+            cost = 0;
+            TextOutputter.Instance.OutputText("The Forge-Tongue Brotherhood blesses this upgrade. It is free of charge.");
+        }
+        else
+        {
+            if (em == null || !em.CanSpendGold(cost))
             {
-                TextOutputter.Instance.OutputText("'You need a Gemshard to upgrade this item further.'");
+                TextOutputter.Instance.OutputText("'You don't have enough gold for this upgrade.'");
                 ShowSmithMenu();
                 return;
+            }
+
+            // Check for Gemshard if level >= 5
+            if (item.UpgradeLevel >= 5)
+            {
+                gemshard = inv?.UnEquippedItems.Find(i => i is MaterialInstance m && m.GetName() == "Gem Shard") as MaterialInstance;
+                if (gemshard == null)
+                {
+                    TextOutputter.Instance.OutputText("'You need a Gemshard to upgrade this item further.'");
+                    ShowSmithMenu();
+                    return;
+                }
             }
         }
 
         // Deduct resources
-        em.SpendGold(cost);
-        if (gemshard != null)
+        if (cost > 0) em.SpendGold(cost);
+        if (gemshard != null && !isFreeUpgrade) // Free upgrade doesn't use gemshard but it's only for < 5 anyway
         {
             if (gemshard.Quantity > 1) gemshard.Quantity--;
             else inv.RemoveItemFromInventory(gemshard);
@@ -177,6 +189,12 @@ public class BlacksmithEncounter : Encounter
 
     private int GetRepairCost(Rarity rarity)
     {
+        ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+        if (rm?.CurrentReligion is ForgeTongueBrotherhood && rm.CurrentReligion.CurrentFaithLevel >= 1)
+        {
+            return 0;
+        }
+
         return rarity switch
         {
             Rarity.Common => 5,
@@ -258,18 +276,41 @@ public class BlacksmithEncounter : Encounter
     private Rarity RollShopRarity(int floor)
     {
         float roll = Random.Range(0f, 100f);
+        ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+        bool boosted = (rm?.CurrentReligion is ForgeTongueBrotherhood && rm.CurrentReligion.CurrentFaithLevel >= 4);
+
         if (floor <= 10) 
         {
+            if (boosted)
+            {
+                if (roll <= 60f) return Rarity.Common;
+                if (roll <= 90f) return Rarity.Uncommon;
+                return Rarity.Rare;
+            }
             return roll <= 90f ? Rarity.Common : Rarity.Uncommon;
         } 
         else if (floor <= 20) 
         {
+            if (boosted)
+            {
+                if (roll <= 30f) return Rarity.Common;
+                if (roll <= 70f) return Rarity.Uncommon;
+                if (roll <= 95f) return Rarity.Rare;
+                return Rarity.Legendary;
+            }
             if (roll <= 65f) return Rarity.Common;
             if (roll <= 90f) return Rarity.Uncommon;
             return Rarity.Rare;
         } 
         else if (floor <= 30) 
         {
+            if (boosted)
+            {
+                if (roll <= 15f) return Rarity.Common;
+                if (roll <= 50f) return Rarity.Uncommon;
+                if (roll <= 85f) return Rarity.Rare;
+                return Rarity.Legendary;
+            }
             if (roll <= 40f) return Rarity.Common;
             if (roll <= 80f) return Rarity.Uncommon;
             if (roll <= 95f) return Rarity.Rare;
@@ -277,6 +318,13 @@ public class BlacksmithEncounter : Encounter
         } 
         else 
         {
+            if (boosted)
+            {
+                if (roll <= 5f) return Rarity.Common;
+                if (roll <= 25f) return Rarity.Uncommon;
+                if (roll <= 75f) return Rarity.Rare;
+                return Rarity.Legendary;
+            }
             if (roll <= 25f) return Rarity.Common;
             if (roll <= 65f) return Rarity.Uncommon;
             if (roll <= 90f) return Rarity.Rare;

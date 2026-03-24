@@ -6,6 +6,7 @@ public class Resource
     public int MaxValue { get; private set; }
     public int StatModifier { get; private set; }
     public float PercentageModifier { get; private set; }
+    public float Percentage => MaxValue > 0 ? (float)CurrentValue / MaxValue : 0;
 
     private int _baseMax;
 

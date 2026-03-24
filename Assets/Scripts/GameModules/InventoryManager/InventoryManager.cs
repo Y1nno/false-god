@@ -37,6 +37,33 @@ public class InventoryManager : GameModule
         return rm != null && rm.HasRelic(relicName);
     }
 
+    public bool HasItem(string itemID)
+    {
+        return UnEquippedItems.Any(i => 
+        {
+            if (i is MaterialInstance m && m.BaseData != null) return m.BaseData.ItemID == itemID;
+            if (i is Equipment e && e.BaseData != null) return e.BaseData.ItemID == itemID;
+            if (i is ConsumableInstance c && c.BaseData != null) return c.BaseData.ItemID == itemID;
+            return false;
+        });
+    }
+
+    public void RemoveItemByID(string itemID)
+    {
+        Item item = UnEquippedItems.Find(i => 
+        {
+            if (i is MaterialInstance m && m.BaseData != null) return m.BaseData.ItemID == itemID;
+            if (i is Equipment e && e.BaseData != null) return e.BaseData.ItemID == itemID;
+            if (i is ConsumableInstance c && c.BaseData != null) return c.BaseData.ItemID == itemID;
+            return false;
+        });
+
+        if (item != null)
+        {
+            RemoveItemFromInventory(item);
+        }
+    }
+
     #region Inventory Logic
 
     public void AddItemToInventory(Item item)

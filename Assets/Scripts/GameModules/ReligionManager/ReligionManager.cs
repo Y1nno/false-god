@@ -7,18 +7,26 @@ public class ReligionManager : GameModule
     private QuestFactory _questFactory = new QuestFactory();
     private readonly List<Religion> _religionsPool = new List<Religion>()
     {
-        new ExampleReligion1(),
-        new ExampleReligion2(),
-        new ExampleReligion3(),
+        new VeilOfUmbrath(),
+        new ChildrenOfThePaleMoon(),
+        new OrderOfTheDawnbearers(),
+        new SerpentsCoil(),
+        new WhisperingFlame(),
+        new ForgeTongueBrotherhood(),
     };
 
     public List<Quest> ActiveReligionQuests { get; private set; } = new List<Quest>();
 
     private const int MaxReligionsWhenChoosing = 3;
 
-    public override void AttachDefaultObservers()
+    public override void AttachDefaultObservers() { }
+
+    public bool HasQuestItemForCurrentReligion()
     {
-        // none for now
+        if (CurrentReligion == null || string.IsNullOrEmpty(CurrentReligion.RequiredItemID)) return false;
+        
+        InventoryManager inv = RunManager.Instance.GetService<InventoryManager>();
+        return inv != null && inv.HasItem(CurrentReligion.RequiredItemID);
     }
 
     public void JoinReligion(Religion newReligion)

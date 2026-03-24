@@ -38,8 +38,30 @@ public class TrapEncounter : Encounter, IObserver
         new Prompt("How will you handle the trap?", choiceStrings, this);
     }
 
+    private Stat _lastStatToRoll;
+    private int _lastModifier;
+    private bool _hasRerolled = false;
+    private bool _waitingForRerollDecision = false;
+
     public override void RecieveDecision(int decisionIndex)
     {
+        if (_waitingForRerollDecision)
+        {
+            _waitingForRerollDecision = false;
+            if (decisionIndex == 0) // Yes
+            {
+                TextOutputter.Instance.OutputText("Serpent's Coil: You invoke the reroll!");
+                _waitingForRoll = true;
+                DiceRoller.Instance.RollForStatWithModifier(_lastStatToRoll, _lastModifier, _threshold);
+            }
+            else // No
+            {
+                TextOutputter.Instance.OutputText("You decline the reroll.");
+                HandleRollResult();
+            }
+            return;
+        }
+
         PlayerManager pm = RunManager.Instance.GetService<PlayerManager>();
         Stat statToRoll;
         int baseThreshold;
@@ -68,6 +90,9 @@ public class TrapEncounter : Encounter, IObserver
         int statValue = pm.GetStat(statToRoll);
         int modifier = statValue / 2;
 
+        _lastStatToRoll = statToRoll;
+        _lastModifier = modifier;
+
         _waitingForRoll = true;
         DiceRoller.Instance.RollForStatWithModifier(statToRoll, modifier, _threshold);
     }
@@ -86,6 +111,15 @@ public class TrapEncounter : Encounter, IObserver
         DiceRollResult result = DiceRoller.Instance.LastRollResult;
         PlayerManager pm = RunManager.Instance.GetService<PlayerManager>();
         XPManager xm = RunManager.Instance.GetService<XPManager>();
+
+        ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+        if (!result.IsSuccess && !_hasRerolled && rm?.CurrentReligion is SerpentsCoil && rm.CurrentReligion.CurrentFaithLevel >= 4)
+        {
+            _hasRerolled = true;
+            _waitingForRerollDecision = true;
+            new Prompt("You failed the trap check! Use Serpent's Coil reroll?", new List<string> { "Yes", "No" }, this);
+            return;
+        }
 
         int scaledDamage = _trapSO.BaseDamage + ((_floor - 1) * 10);
         int scaledExp = _trapSO.BaseExp + ((_floor - 1) * 3);

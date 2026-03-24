@@ -15,6 +15,7 @@ public class EncounterManager : GameModule, IObserver
     private int _totalEncountersResolved = 0;
     private bool _religionPending = false;
     private bool _shopPending = false;
+    private int _encountersSinceLastEscalation = 0;
 
     private List<TrapEncounterSO> _availableTrapEncounters;
 
@@ -186,6 +187,9 @@ public class EncounterManager : GameModule, IObserver
         if (currentTotalIndex % 20 == 0) _religionPending = true;
         if (currentTotalIndex % 25 == 0) _shopPending = true;
 
+        ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+        if (rm != null && rm.HasQuestItemForCurrentReligion()) _religionPending = true;
+
         // 3. Religion Milestone (Fixed trigger, delayed if Boss/Rest)
         if (_religionPending)
         {
@@ -217,7 +221,7 @@ public class EncounterManager : GameModule, IObserver
 
         // Health Shrine (5% base, +1.5% increment)
         cumulative += _shrineChance;
-        if (roll <= cumulative) return EncounterType.Religious; // Using Religious as surrogate for Shrine for now
+        if (roll <= cumulative) return EncounterType.Shrine;
 
         // 6. Fallback (Enemy)
         return EncounterType.Enemy;
@@ -225,18 +229,21 @@ public class EncounterManager : GameModule, IObserver
 
     private void HandleEncounterChances(EncounterType encounterType)
     {
-        // Reset current chances if they just spawned
+        _encountersSinceLastEscalation++;
+        bool shouldEscalate = _encountersSinceLastEscalation % 2 == 0;
+
+        // Reset current chances if they just spawned, or escalate every other encounter
         if (encounterType == EncounterType.Treasure) _treasureChance = 5.0f;
-        else _treasureChance += 2.5f;
+        else if (shouldEscalate) _treasureChance += 2.5f;
 
         if (encounterType == EncounterType.Trap) _trapChance = 10.0f;
-        else _trapChance += 2.0f;
+        else if (shouldEscalate) _trapChance += 2.0f;
 
         if (encounterType == EncounterType.Fountain) _fountainChance = 5.0f;
-        else _fountainChance += 1.5f;
+        else if (shouldEscalate) _fountainChance += 1.5f;
 
-        if (encounterType == EncounterType.Religious) _shrineChance = 5.0f; // Shrine reset
-        else _shrineChance += 1.5f;
+        if (encounterType == EncounterType.Shrine) _shrineChance = 5.0f;
+        else if (shouldEscalate) _shrineChance += 1.5f;
 
         // Reset milestone pendings if they spawned
         if (encounterType == EncounterType.Religious) _religionPending = false;
