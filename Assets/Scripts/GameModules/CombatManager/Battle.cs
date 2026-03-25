@@ -24,6 +24,11 @@ public class Battle : Subject, IObserver
         }
     }
 
+    public void RestoreTurnCount(int turn)
+    {
+        TurnCount = turn;
+    }
+
     public void StartBattle()
     {
         TextOutputter.Instance.OutputText("A battle has started!");

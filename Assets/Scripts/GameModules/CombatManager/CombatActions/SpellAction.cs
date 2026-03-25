@@ -58,21 +58,26 @@ public class SpellAction : CombatAction
 
     private void ApplyEffect(Combatant user, Combatant target, int damageDealt)
     {
-        if (Random.Range(0, 100) >= _data.EffectChance) return;
+        // Chance is now handled inside TryApplyAilment (for most effects)
+        // Lifesteal and Cleanse still need manual check.
+        if (_data.Effect == SpellEffect.Lifesteal || _data.Effect == SpellEffect.Cleanse)
+        {
+             if (Random.Range(0, 100) >= _data.EffectChance) return;
+        }
 
         switch (_data.Effect)
         {
             case SpellEffect.Burn:
-                target.ApplyAilment(AilmentType.Burn, _data.Duration);
+                target.TryApplyAilment(AilmentType.Burn, 1, _data.EffectChance);
                 break;
             case SpellEffect.Poison:
-                target.ApplyAilment(AilmentType.Poison, _data.Duration);
+                target.TryApplyAilment(AilmentType.Poison, 1, _data.EffectChance);
                 break;
             case SpellEffect.Freeze:
-                target.ApplyAilment(AilmentType.Frozen, _data.Duration);
+                target.TryApplyAilment(AilmentType.Frozen, 1, _data.EffectChance);
                 break;
             case SpellEffect.Weaken:
-                target.ApplyAilment(AilmentType.AtkDebuff, _data.Duration); // Weaken = AtkDebuff
+                target.TryApplyAilment(AilmentType.Weaken, 1, _data.EffectChance);
                 break;
             case SpellEffect.Lifesteal:
                 int heal = Mathf.RoundToInt(damageDealt * _data.HealingPercent);

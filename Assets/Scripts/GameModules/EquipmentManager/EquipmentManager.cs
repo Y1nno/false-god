@@ -15,6 +15,66 @@ public class EquipmentManager : GameModule
         return item;
     }
 
+    public void RestoreState(List<SerializableItem> items)
+    {
+        EquippedItems.Clear();
+        foreach (var sItem in items)
+        {
+            if (sItem.ItemType != "Equipment") continue;
+
+            Equipment eq = ReconstructEquipment(sItem);
+            if (eq != null)
+            {
+                EquippedItems[sItem.EquippedSlot] = eq;
+            }
+        }
+        RefreshEquipment();
+    }
+
+    public Equipment ReconstructEquipment(SerializableItem sEq)
+    {
+        // Search Resources for EquipmentSO with matching ItemID in Items subfolder
+        EquipmentSO[] allSOs = Resources.LoadAll<EquipmentSO>("Items");
+        EquipmentSO baseData = System.Array.Find(allSOs, so => so.ItemID == sEq.ItemID);
+        
+        if (baseData == null)
+        {
+            Debug.LogError($"SaveManager: Could not find EquipmentSO with ID {sEq.ItemID} to reconstruct item.");
+            return null;
+        }
+
+        Equipment eq = new Equipment(baseData);
+        eq.UpgradeLevel = sEq.UpgradeLevel;
+        eq.DegradeEquipment(eq.MaxDurability - sEq.Durability); // Set durability
+        eq.Prefixes.Clear();
+        eq.Prefixes.AddRange(sEq.Prefixes);
+        eq.Suffixes.Clear();
+        eq.Suffixes.AddRange(sEq.Suffixes);
+        
+        eq._basePhysicalDefense = sEq.BasePhysDef;
+        eq._baseSpecialDefense = sEq.BaseSpecDef;
+        eq._basePhysicalAttack = sEq.BasePhysAtk;
+        eq._baseSpecialAttack = sEq.BaseSpecAtk;
+        eq._baseSTR = sEq.BaseSTR;
+        eq._baseDEX = sEq.BaseDEX;
+        eq._baseINT = sEq.BaseINT;
+        eq._baseSPD = sEq.BaseSPD;
+        eq._baseCritChance = sEq.BaseCrit;
+        eq._baseBlockChance = sEq.BaseBlock;
+        eq._baseBlockAmount = sEq.BaseBlockAmt;
+        eq._baseDodgeChance = sEq.BaseDodge;
+
+        // Rebuild Traits list from modifiers if they were trait-based
+        foreach (var mod in eq.Prefixes) {
+            if (mod.EffectType == ModifierEffectType.Trait) eq.Traits.Add(new TraitWithValue(mod.Trait, mod.Value) { CooldownType = mod.CooldownType, CooldownDuration = mod.CooldownDuration });
+        }
+        foreach (var mod in eq.Suffixes) {
+            if (mod.EffectType == ModifierEffectType.Trait) eq.Traits.Add(new TraitWithValue(mod.Trait, mod.Value) { CooldownType = mod.CooldownType, CooldownDuration = mod.CooldownDuration });
+        }
+
+        return eq;
+    }
+
     public override void AttachDefaultObservers()
     {
         // Add default observers here if needed later (e.g., listening for combat start)
@@ -23,23 +83,29 @@ public class EquipmentManager : GameModule
     public void EquipItem(Equipment newItem)
     {
         if (newItem == null) return;
+        EquipItemToSlot(newItem, newItem.Slot);
+    }
+
+    public void EquipItemToSlot(Equipment newItem, EquipmentSlot targetSlot)
+    {
+        if (newItem == null) return;
 
         // 1. Check if something is already in this slot
-        if (EquippedItems.TryGetValue(newItem.Slot, out Equipment currentlyEquipped))
+        if (EquippedItems.TryGetValue(targetSlot, out Equipment currentlyEquipped))
         {
             // 2. If yes, unequip it and put it BACK into the InventoryManager's pool
-            UnequipItem(newItem.Slot);
+            UnequipItem(targetSlot);
         }
 
         // 2.5 Two-Handed Weapon / OffHand conflict resolution
-        if (newItem.IsTwoHanded)
+        if (newItem.IsTwoHanded && targetSlot == EquipmentSlot.Weapon)
         {
             if (EquippedItems.ContainsKey(EquipmentSlot.OffHand))
             {
                 UnequipItem(EquipmentSlot.OffHand);
             }
         }
-        else if (newItem.Slot == EquipmentSlot.OffHand)
+        else if (targetSlot == EquipmentSlot.OffHand)
         {
             if (EquippedItems.TryGetValue(EquipmentSlot.Weapon, out Equipment currentWeapon))
             {
@@ -50,10 +116,10 @@ public class EquipmentManager : GameModule
             }
         }
 
-        // 3. Equip the new item
-        EquippedItems[newItem.Slot] = newItem;
+        // 3. Equip the new item to the TARGET slot, overriding its internal Slot property if needed
+        EquippedItems[targetSlot] = newItem;
 
-        TextOutputter.Instance.OutputText($"Equipped {newItem.GetName()} to {newItem.Slot}.");
+        TextOutputter.Instance.OutputText($"Equipped {newItem.GetName()} to {targetSlot}.");
 
         // 5. Tell the PlayerManager to recalculate stats
         RunManager.Instance.GetService<PlayerManager>()?.RefreshEquipmentStats();
@@ -264,6 +330,76 @@ public class EquipmentManager : GameModule
             }
         }
         return total;
+    }
+
+    public int GetTotalSplashDamagePercentage()
+    {
+        int total = 0;
+        foreach (var item in EquippedItems.Values)
+        {
+            if (item.Traits != null)
+            {
+                foreach (var trait in item.Traits)
+                {
+                    if (trait.Trait == EquipmentTrait.SplashDamage)
+                    {
+                        total += trait.Value;
+                    }
+                }
+            }
+        }
+        return total;
+    }
+
+    public int GetTotalBonusBlock()
+    {
+        int total = 0;
+        foreach (var item in EquippedItems.Values)
+        {
+            if (item.Traits != null)
+            {
+                foreach (var trait in item.Traits)
+                {
+                    if (trait.Trait == EquipmentTrait.BonusBlock)
+                    {
+                        total += trait.Value;
+                    }
+                }
+            }
+        }
+        return total;
+    }
+
+    public float GetTotalShieldingMultiplier()
+    {
+        float total = 0;
+        foreach (var item in EquippedItems.Values)
+        {
+            if (item.Traits != null)
+            {
+                foreach (var trait in item.Traits)
+                {
+                    if (trait.Trait == EquipmentTrait.Shielding)
+                    {
+                        total += trait.Value / 100.0f;
+                    }
+                }
+            }
+        }
+        return 1.0f + total;
+    }
+
+    public int GetBaseBlockAmount(Rarity rarity)
+    {
+        return rarity switch
+        {
+            Rarity.Common => 2,
+            Rarity.Uncommon => 4,
+            Rarity.Rare => 6,
+            Rarity.Epic => 10,
+            Rarity.Legendary => 10,
+            _ => 0
+        };
     }
 
     /*

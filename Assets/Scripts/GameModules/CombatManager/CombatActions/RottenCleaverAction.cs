@@ -24,13 +24,9 @@ public class RottenCleaverAction : CombatAction
         target.GetAttacked(damage, ActionType, user);
 
         // 30% chance to deal poison or bleed
-        float roll = Random.value;
-        if (roll <= 0.3f)
-        {
-            if (Random.value < 0.5f)
-                target.ApplyAilment(AilmentType.Poison, 3);
-            else
-                target.ApplyAilment(AilmentType.Bleed, 3);
-        }
+        if (Random.value < 0.5f)
+            target.TryApplyAilment(AilmentType.Poison, 1, 30f);
+        else
+            target.TryApplyAilment(AilmentType.Bleed, 1, 30f);
     }
 }

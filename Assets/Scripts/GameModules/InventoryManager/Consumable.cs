@@ -141,7 +141,7 @@ public class ActiveOverTimeEffect
 {
     public ConsumableEffect BaseEffect { get; private set; }
     public float ModifiedAmount { get; private set; }
-    public int RoundsRemaining { get; private set; }
+    public int RoundsRemaining { get; set; }
 
     public ActiveOverTimeEffect(ConsumableEffect baseEffect, float modifiedAmount)
     {

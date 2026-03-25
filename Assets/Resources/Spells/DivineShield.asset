@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f7d8e9a0b1c2d3e4f5a6b7c8d9e0f1a2, type: 3}
+  m_Name: DivineShield
+  m_EditorClassIdentifier: 
+  actionName: Divine Shield
+  description: Calls upon divine protection.
+  power: 0
+  cost: 5
+  Rarity: 2
+  Effect: 8
+  EffectChance: 100
+  Duration: 4
+  Type: 1
+  Targeting: 0
+  MinHits: 1
+  MaxHits: 1
+  TargetStat: 5
+  StatChangePercent: 30
+  HealingPercent: 0

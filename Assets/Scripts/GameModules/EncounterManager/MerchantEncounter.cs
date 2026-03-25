@@ -26,6 +26,26 @@ public class MerchantEncounter : Encounter
 
     public MerchantEncounter(float difficulty) : base(difficulty) { }
 
+    public List<SerializableShopItem> GetSerializedInventory()
+    {
+        var list = new List<SerializableShopItem>();
+        foreach (var item in _inventory)
+        {
+            list.Add(new SerializableShopItem { ID = item.ID, DisplayName = item.DisplayName, Price = item.Price, Rarity = Rarity.Common, Sold = false });
+        }
+        return list;
+    }
+
+    public void RestoreState(List<SerializableShopItem> savedStock)
+    {
+        if (savedStock == null || savedStock.Count == 0) return;
+        _inventory.Clear();
+        foreach (var s in savedStock)
+        {
+            _inventory.Add(new ShopItem(s.ID, s.DisplayName, s.Price));
+        }
+    }
+
     public override void StartEncounter()
     {
         base.StartEncounter();

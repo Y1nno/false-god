@@ -97,6 +97,13 @@ public class RiteManager : GameModule
         return _unlockedRiteIDs.Contains(riteID);
     }
 
+    public List<string> GetUnlockedRiteIDs() => new List<string>(_unlockedRiteIDs);
+    
+    public void SetUnlockedRiteIDs(List<string> ids)
+    {
+        _unlockedRiteIDs = new HashSet<string>(ids);
+    }
+
     public void EquipRite(Rite newRite)
     {
         if (!IsRiteUnlocked(newRite.RiteID))
@@ -183,7 +190,7 @@ public class RiteManager : GameModule
 
     public int CalculateRitePointsFromScore()
     {
-        return BaseRitePoints + (int) RunManager.Instance.GetService<ScoreManager>().CurrentScore / 500;
+        return BaseRitePoints + (int) RunManager.Instance.GetService<ScoreManager>().TotalScore / 500;
     }
 
     public bool CanEquip(string riteID)

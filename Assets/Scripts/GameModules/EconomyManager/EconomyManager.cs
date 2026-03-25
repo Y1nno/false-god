@@ -15,22 +15,25 @@ public class EconomyManager : GameModule, IObserver
     public int AddGold(int amount)
     {
         _gold += amount;
-        GoldDelta = amount;
-        TextOutputter.Instance.OutputText($"Gained {amount} gold.");
+        GoldDelta = amount; // Keep GoldDelta assignment
+        TextOutputter.Instance.OutputText($"Gained {amount} gold. Total: {_gold}"); // Updated text
         Notify(EventType.GoldAdded);
+        RunManager.Instance.GetService<SaveManager>()?.SaveRun(); // Added SaveRun call
         return _gold;
     }
 
-    public int SpendGold(int amount)
+    public bool SpendGold(int amount) // Changed return type to bool
     {
         if (CanSpendGold(amount))
         {
             _gold -= amount;
             GoldDelta = -amount;
-            TextOutputter.Instance.OutputText($"Spent {amount} gold.");
+            TextOutputter.Instance.OutputText($"Spent {amount} gold. Remaining: {_gold}"); // Updated text
             Notify(EventType.GoldSpent);
+            RunManager.Instance.GetService<SaveManager>()?.SaveRun(); // Added SaveRun call
+            return true; // Added return true
         }
-        return _gold;
+        return false; // Added return false
     }
 
     public void LoseGold(int amount)
@@ -38,6 +41,7 @@ public class EconomyManager : GameModule, IObserver
         _gold = Mathf.Max(0, _gold - amount);
         GoldDelta = -amount;
         Notify(EventType.GoldSpent);
+        RunManager.Instance.GetService<SaveManager>()?.SaveRun(); // Added SaveRun call
     }
 
     public bool CanSpendGold(int amount)
@@ -48,6 +52,12 @@ public class EconomyManager : GameModule, IObserver
     public int GetCurrentGold()
     {
         return _gold;
+    }
+
+    public void RestoreState(int gold)
+    {
+        _gold = gold;
+        Notify(EventType.GoldAdded); // Trigger UI refresh
     }
 
     public void OnNotify(object subject, EventType eventType)

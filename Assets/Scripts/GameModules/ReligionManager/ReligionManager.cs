@@ -60,6 +60,18 @@ public class ReligionManager : GameModule
         ActiveReligionQuests.Add(newQuest);
     }
 
+    public void RestoreState(string religionID, int faithLevel, string questStatus)
+    {
+        if (string.IsNullOrEmpty(religionID)) return;
+        
+        Religion found = _religionsPool.Find(r => r.ReligionID == religionID);
+        if (found != null)
+        {
+            CurrentReligion = found;
+            CurrentReligion.RestoreState(faithLevel, questStatus);
+        }
+    }
+
     public Quest CreateReligionQuest(int questId = 0, int difficultyLevel = 0)
     {
         return _questFactory.CreateQuest(questId, difficultyLevel);

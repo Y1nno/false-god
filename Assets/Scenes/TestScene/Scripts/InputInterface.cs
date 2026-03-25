@@ -17,7 +17,8 @@ public class InputInterface : MonoBehaviour, IObserver
     public Prompt activePrompt = null;
     public void StartNewRun()
     {
-        RunManager.Instance.StartNewRun();
+        // Try to continue if a save exists, otherwise start fresh
+        RunManager.Instance.StartNewRun(forceNew: false);
         RefreshUI();
         RefreshAllDropdowns();
     }

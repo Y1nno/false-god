@@ -4,10 +4,11 @@ using System.Linq;
 
 //TODO: Add inventory size limit and logic for refusing requests to add to inventory. 
 
-public class InventoryManager : GameModule
+public class InventoryManager : GameModule, IPromptResponder
 {
-    private EquipmentManager _eq = new EquipmentManager();
+    private EquipmentManager _eq => RunManager.Instance.GetService<EquipmentManager>();
     private Inventory _inv = new Inventory();
+    private Equipment _itemPendingEquip;
 
     #region Public API
 
@@ -24,6 +25,56 @@ public class InventoryManager : GameModule
 
         SpellbookUI sui = GameObject.FindAnyObjectByType<SpellbookUI>();
         if (sui != null) AttachObserver(sui);
+    }
+
+    public void RestoreState(List<SerializableItem> items)
+    {
+        UnEquippedItems.Clear();
+        EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+        
+        foreach (var sItem in items)
+        {
+            Item item = null;
+            if (sItem.ItemType == "Equipment")
+            {
+                item = eqm?.ReconstructEquipment(sItem);
+            }
+            else if (sItem.ItemType == "Consumable")
+            {
+                Consumable[] all = Resources.LoadAll<Consumable>("Items");
+                Consumable baseData = System.Array.Find(all, so => so.ItemID == sItem.ItemID);
+                if (baseData != null) item = new ConsumableInstance(baseData, sItem.Tier);
+            }
+            else if (sItem.ItemType == "Material")
+            {
+                MaterialSO[] all = Resources.LoadAll<MaterialSO>("Items");
+                MaterialSO baseData = System.Array.Find(all, so => so.ItemID == sItem.ItemID);
+                if (baseData != null) item = new MaterialInstance(baseData, sItem.Quantity);
+            }
+            else if (sItem.ItemType == "Key")
+            {
+                KeySO[] all = Resources.LoadAll<KeySO>("Items");
+                KeySO baseData = System.Array.Find(all, so => so.ItemID == sItem.ItemID);
+                if (baseData != null) 
+                {
+                    KeyInstance key = new KeyInstance(baseData, sItem.Quantity);
+                    key.RemainingUses = sItem.RemainingUses;
+                    item = key;
+                }
+            }
+            else if (sItem.ItemType == "Relic")
+            {
+                RelicSO[] all = Resources.LoadAll<RelicSO>("Items");
+                RelicSO baseData = System.Array.Find(all, so => so.ItemID == sItem.ItemID);
+                if (baseData != null) item = new RelicInstance(baseData);
+            }
+
+            if (item != null)
+            {
+                UnEquippedItems.Add(item);
+            }
+        }
+        Notify(EventType.ItemAcquired);
     }
 
     public bool HasRelic(string relicName)
@@ -77,16 +128,43 @@ public class InventoryManager : GameModule
             return;
         }
 
-        // Consolidation Logic: Merge MaterialInstances if they are identical
+        // Consolidation Logic: Merge MaterialInstances if they are identical and under stack limit
         if (item is MaterialInstance newMat)
         {
-            MaterialInstance existing = UnEquippedItems.Find(i => i is MaterialInstance m && m.BaseData == newMat.BaseData) as MaterialInstance;
+            MaterialInstance existing = UnEquippedItems.Find(i => i is MaterialInstance m && m.BaseData == newMat.BaseData && m.Quantity < m.BaseData.MaxStackSize) as MaterialInstance;
             if (existing != null)
             {
-                existing.Quantity += newMat.Quantity;
-                TextOutputter.Instance.OutputText($"Added {newMat.GetName()} x{newMat.Quantity} to Inventory (Total: {existing.Quantity}).");
-                Notify(EventType.ItemAcquired);
-                return;
+                int canAdd = existing.BaseData.MaxStackSize - existing.Quantity;
+                int toAdd = Mathf.Min(canAdd, newMat.Quantity);
+                existing.Quantity += toAdd;
+                newMat.Quantity -= toAdd;
+
+                if (newMat.Quantity <= 0)
+                {
+                    TextOutputter.Instance.OutputText($"Added {newMat.GetName()} to Inventory stack.");
+                    Notify(EventType.ItemAcquired);
+                    return;
+                }
+            }
+        }
+
+        // Consolidation Logic: Merge KeyInstances if they are identical and under stack limit
+        if (item is KeyInstance newKey)
+        {
+            KeyInstance existing = UnEquippedItems.Find(i => i is KeyInstance k && k.BaseData == newKey.BaseData && k.Quantity < k.BaseData.MaxStackSize) as KeyInstance;
+            if (existing != null)
+            {
+                int canAdd = existing.BaseData.MaxStackSize - existing.Quantity;
+                int toAdd = Mathf.Min(canAdd, newKey.Quantity);
+                existing.Quantity += toAdd;
+                newKey.Quantity -= toAdd;
+
+                if (newKey.Quantity <= 0)
+                {
+                    TextOutputter.Instance.OutputText($"Added {newKey.GetName()} to Inventory stack.");
+                    Notify(EventType.ItemAcquired);
+                    return;
+                }
             }
         }
 
@@ -96,6 +174,7 @@ public class InventoryManager : GameModule
                           
         TextOutputter.Instance.OutputText($"Added {itemName} to Inventory.");
         Notify(EventType.ItemAcquired);
+        RunManager.Instance.GetService<SaveManager>()?.SaveRun();
     }
 
     public void RemoveItemFromInventory(Item item)
@@ -104,6 +183,7 @@ public class InventoryManager : GameModule
         {
             UnEquippedItems.Remove(item);
             Notify(EventType.ItemRemoved);
+            RunManager.Instance.GetService<SaveManager>()?.SaveRun();
         }
     }
 
@@ -114,9 +194,40 @@ public class InventoryManager : GameModule
 
         if (itemToHandle is Equipment equipment)
         {
-            // Pass the runtime Equipment instance directly to preserve its state (durability, modifiers)
-            RunManager.Instance.GetService<EquipmentManager>()?.EquipItem(equipment);
-            RemoveItemFromInventory(equipment);
+            // Handle Accessory Smart Slotting
+            if (equipment.Slot == EquipmentSlot.Accessory1 || equipment.Slot == EquipmentSlot.Accessory2)
+            {
+                Equipment eq1 = _eq.GetEquippedItem(EquipmentSlot.Accessory1);
+                Equipment eq2 = _eq.GetEquippedItem(EquipmentSlot.Accessory2);
+
+                if (eq1 == null)
+                {
+                    _eq.EquipItemToSlot(equipment, EquipmentSlot.Accessory1);
+                    RemoveItemFromInventory(equipment);
+                }
+                else if (eq2 == null)
+                {
+                    _eq.EquipItemToSlot(equipment, EquipmentSlot.Accessory2);
+                    RemoveItemFromInventory(equipment);
+                }
+                else
+                {
+                    // Both slots full, ask user
+                    _itemPendingEquip = equipment;
+                    List<string> options = new List<string> { 
+                        $"Replace {eq1.GetName()} (Slot 1)", 
+                        $"Replace {eq2.GetName()} (Slot 2)",
+                        "Cancel" 
+                    };
+                    new Prompt("Which accessory slot would you like to use?", options, this);
+                }
+            }
+            else
+            {
+                // Normal Equipment
+                _eq.EquipItem(equipment);
+                RemoveItemFromInventory(equipment);
+            }
         }
         else if (itemToHandle is ConsumableInstance consumableInstance)
         {
@@ -135,6 +246,27 @@ public class InventoryManager : GameModule
     }
 
     #endregion
+    #endregion
+
+    #region IPromptResponder
+    public void ProcessPromptResponse(int decisionIndex)
+    {
+        if (_itemPendingEquip == null) return;
+
+        if (decisionIndex == 0) // Slot 1
+        {
+            _eq.EquipItemToSlot(_itemPendingEquip, EquipmentSlot.Accessory1);
+            RemoveItemFromInventory(_itemPendingEquip);
+        }
+        else if (decisionIndex == 1) // Slot 2
+        {
+            _eq.EquipItemToSlot(_itemPendingEquip, EquipmentSlot.Accessory2);
+            RemoveItemFromInventory(_itemPendingEquip);
+        }
+        // else 2 is Cancel, do nothing
+
+        _itemPendingEquip = null;
+    }
     #endregion
 }
 

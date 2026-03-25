@@ -18,12 +18,10 @@ public class BashAction : CombatAction
         
         int damage = 6;
         damage = CalculateDamageFromBase(damage, user);
+        TextOutputter.Instance.OutputText($"{user.GetName()}'s attack roll: {damage}.");
         target.GetAttacked(damage, ActionType, user);
 
-        if (Random.value <= 0.5f)
-        {
-            target.ApplyAilment(AilmentType.Stun, 1);
-        }
+        target.TryApplyAilment(AilmentType.Stun, 1, 50f);
     }
 }
 
@@ -105,6 +103,7 @@ public class DevourAction : CombatAction
         if (target == null) return;
         TextOutputter.Instance.OutputText($"{user.GetName()} DEVOURS {target.GetName()}!");
         int damage = Mathf.RoundToInt(target.GetHealth().MaxValue * 0.5f);
+        TextOutputter.Instance.OutputText($"{user.GetName()}'s devour damage: {damage}.");
         target.GetAttacked(damage, AttackType.Physical, user);
         _turnsWaiting = 0;
     }
@@ -140,13 +139,6 @@ public class CharmAction : CombatAction
         if (target == null) return;
         TextOutputter.Instance.OutputText($"{user.GetName()} cast {ActionName} on {target.GetName()}!");
 
-        if (Random.value <= 0.5f)
-        {
-            target.ApplyAilment(AilmentType.Charmed, 2);
-        }
-        else
-        {
-            TextOutputter.Instance.OutputText($"{target.GetName()} resisted the charm!");
-        }
+        target.TryApplyAilment(AilmentType.Charmed, 1, 50f);
     }
 }

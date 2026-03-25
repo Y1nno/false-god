@@ -13,6 +13,7 @@ public abstract class Combatant : Subject
     public int BaseXP { get; protected set; }
     public int Level { get; protected set; } = 1;
     public CombatAction CurrentAction = null;
+    public int CurrentBlock { get; set; } = 0;
 
     // Tracking active effects like HealOverTime or ManaOverTime
     protected List<ActiveOverTimeEffect> _activeEffects = new List<ActiveOverTimeEffect>();
@@ -65,9 +66,25 @@ public abstract class Combatant : Subject
             amount = Mathf.Max(0, amount - relicm.GetFlatDamageReduction());
         }
 
-        GetHealth().Decrease(amount);
+        // Apply Block/Shield
+        int damageRemaining = amount;
+        int blockMitigated = 0;
+        if (CurrentBlock > 0)
+        {
+            blockMitigated = Mathf.Min(CurrentBlock, damageRemaining);
+            CurrentBlock -= blockMitigated;
+            damageRemaining -= blockMitigated;
+            TextOutputter.Instance.OutputText($"{GetName()}'s block absorbed {blockMitigated} damage! ({CurrentBlock} Block remaining)");
+        }
+
+        if (damageRemaining <= 0) 
+        {
+            return amount - originalAmount; // All damage blocked
+        }
+
+        GetHealth().Decrease(damageRemaining);
         string mitigationLog = originalAmount != amount ? $" (Mitigated {originalAmount - amount} from Relics)" : "";
-        TextOutputter.Instance.OutputText($"{GetName()} took {amount} damage.{mitigationLog}");
+        TextOutputter.Instance.OutputText($"{GetName()} took {damageRemaining} damage from the attack.{mitigationLog}");
 
         if (wasAlive && GetHealth().CurrentValue <= 0)
         {
@@ -100,6 +117,17 @@ public abstract class Combatant : Subject
     public void Heal(int amount)
     {
         if (amount <= 0) return;
+        
+        // Bleed Logic: Reduce healing based on stacks
+        Ailment bleed = ActiveAilments.Find(a => a.Type == AilmentType.Bleed);
+        if (bleed != null)
+        {
+            float reduction = AilmentScaling.GetStatModifier(AilmentType.Bleed, bleed.Stacks);
+            int reducedAmount = Mathf.RoundToInt(amount * (1f - reduction));
+            TextOutputter.Instance.OutputText($"{GetName()}'s healing was reduced by {Mathf.RoundToInt(reduction * 100)}% due to Bleed!");
+            amount = reducedAmount;
+        }
+
         GetHealth().Increase(amount);
     }
 
@@ -115,43 +143,99 @@ public abstract class Combatant : Subject
         TextOutputter.Instance.OutputText($"{GetName()} gained an over-time effect ({effect.BaseEffect.Type}) for {effect.RoundsRemaining} turns.");
     }
 
-    public void ApplyAilment(AilmentType type, int duration)
+    public void ApplyAilment(AilmentType type, int _unusedValue = 0)
+    {
+        TryApplyAilment(type, 1, 100f);
+    }
+
+    public void TryApplyAilment(AilmentType type, int stacksToAdd = 1, float baseChance = 100f)
     {
         // Whispering Flame Lvl 1: Burn Immunity
-        if (type == AilmentType.Burn)
+        if (type == AilmentType.Burn && this is PlayerCombatManager)
         {
             ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
-            if (rm?.CurrentReligion is WhisperingFlame && rm.CurrentReligion.CurrentFaithLevel >= 1 && this is PlayerCombatManager)
+            if (rm?.CurrentReligion is WhisperingFlame && rm.CurrentReligion.CurrentFaithLevel >= 1)
             {
                 TextOutputter.Instance.OutputText("Burn Immunity: The flame cannot hurt a child of the Coven.");
                 return;
             }
         }
 
-        // Check if we already have this ailment.
         Ailment existing = ActiveAilments.Find(a => a.Type == type);
+        int currentStacks = existing?.Stacks ?? 0;
+
+        // Chance of afflicting ailments reduce 20% per stack
+        float finalChance = baseChance * (1f - (0.2f * currentStacks));
+        if (UnityEngine.Random.Range(0f, 100f) > finalChance)
+        {
+            if (currentStacks > 0) TextOutputter.Instance.OutputText($"{GetName()} resisted the {type} stack (Chance: {Mathf.RoundToInt(finalChance)}%).");
+            return;
+        }
+
         if (existing != null)
         {
-            if (duration > existing.RoundsRemaining)
-            {
-                existing.RoundsRemaining = duration;
-                existing.InitialDuration = duration;
-            }
-            TextOutputter.Instance.OutputText($"{GetName()}'s {type} ailment was refreshed.");
+            existing.Stacks = Mathf.Min(5, existing.Stacks + stacksToAdd);
+            int newDuration = AilmentScaling.GetDuration(type, existing.Stacks);
+            existing.RoundsRemaining = newDuration;
+            existing.InitialDuration = newDuration;
+            TextOutputter.Instance.OutputText($"{GetName()}'s {type} increased to {existing.Stacks} stacks! (Duration: {newDuration} rounds)");
         }
         else
         {
-            ActiveAilments.Add(new Ailment(type, duration));
+            int duration = AilmentScaling.GetDuration(type, stacksToAdd);
+            ActiveAilments.Add(new Ailment(type, duration, stacksToAdd));
             TextOutputter.Instance.OutputText($"{GetName()} is now afflicted with {type} for {duration} rounds!");
         }
     }
 
     public void RemoveAilment(AilmentType type)
     {
-        int removedCount = ActiveAilments.RemoveAll(a => a.Type == type);
-        if (removedCount > 0)
+        ActiveAilments.RemoveAll(a => a.Type == type);
+    }
+
+    public List<SerializableActiveEffect> GetActiveEffects()
+    {
+        var list = new List<SerializableActiveEffect>();
+        if (_activeEffects == null) return list;
+        foreach (var effect in _activeEffects)
         {
-            TextOutputter.Instance.OutputText($"{GetName()} is no longer afflicted with {type}.");
+            list.Add(new SerializableActiveEffect
+            {
+                EffectType = effect.BaseEffect.Type.ToString(),
+                ModifiedAmount = effect.ModifiedAmount,
+                RoundsRemaining = effect.RoundsRemaining,
+                TargetStat = effect.BaseEffect.TargetStat.ToString(),
+                DurationType = effect.BaseEffect.DurationType.ToString()
+            });
+        }
+        return list;
+    }
+
+    public void RestoreActiveEffects(List<SerializableActiveEffect> savedEffects)
+    {
+        if (savedEffects == null) return;
+        _activeEffects.Clear();
+        foreach (var s in savedEffects)
+        {
+            if (Enum.TryParse(s.EffectType, out ConsumableEffectType type) &&
+                Enum.TryParse(s.TargetStat, out Stat tStat) &&
+                Enum.TryParse(s.DurationType, out EffectDurationType dType))
+            {
+                var baseEffect = new ConsumableEffect { Type = type, TargetStat = tStat, DurationType = dType };
+                _activeEffects.Add(new ActiveOverTimeEffect(baseEffect, s.ModifiedAmount) { RoundsRemaining = s.RoundsRemaining });
+            }
+        }
+    }
+
+    public void RestoreAilments(List<SerializableAilment> savedAilments)
+    {
+        ActiveAilments.Clear();
+        foreach (var s in savedAilments)
+        {
+            if (Enum.TryParse(s.AilmentType, out AilmentType type))
+            {
+                ActiveAilments.Add(new Ailment(type, s.Duration, s.Stacks));
+            }
         }
     }
 
@@ -218,20 +302,16 @@ public abstract class Combatant : Subject
                 switch (ailment.Type)
                 {
                     case AilmentType.Burn:
-                        damage = Mathf.RoundToInt(GetHealth().MaxValue * 0.02f);
+                        damage = Mathf.RoundToInt(GetHealth().MaxValue * AilmentScaling.GetDamagePercent(AilmentType.Burn, ailment.Stacks));
                         break;
                     case AilmentType.Poison:
-                        damage = Mathf.RoundToInt(GetHealth().MaxValue * 0.05f);
+                        damage = Mathf.RoundToInt(GetHealth().MaxValue * AilmentScaling.GetDamagePercent(AilmentType.Poison, ailment.Stacks));
                         break;
                     case AilmentType.Bleed:
-                        // Bleed increases over time: 2% base + 1% per turn active. Max 8%.
-                        int turnsActive = ailment.InitialDuration - ailment.RoundsRemaining;
-                        float percentDamage = 0.02f + (0.01f * turnsActive);
-                        if (percentDamage > 0.08f) percentDamage = 0.08f;
-                        damage = Mathf.RoundToInt(GetHealth().MaxValue * percentDamage);
+                        damage = Mathf.RoundToInt(GetHealth().MaxValue * AilmentScaling.GetDamagePercent(AilmentType.Bleed, ailment.Stacks));
                         break;
                     case AilmentType.Frozen:
-                        
+                        // Frozen only prevents move, handled in ChooseAction
                         break;
                 }
 

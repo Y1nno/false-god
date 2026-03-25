@@ -29,6 +29,12 @@ public class PlayerManager : GameModule, IObserver
         Mana.RestoreToFull();
     }
 
+    public void RestoreState(int health, int mana)
+    {
+        Health.SetCurrent(health);
+        Mana.SetCurrent(mana);
+    }
+
     //API methods
 
     #region Health and Mana Management
@@ -129,6 +135,7 @@ public class PlayerManager : GameModule, IObserver
         int relicHPBonus = relicm != null ? relicm.GetMaxHPBonus() : 0;
 
         int strMod = Mathf.RoundToInt((GetStat(Stat.STR) * k_HealthPerStrength)) + relicHPBonus;
+        // Debug.Log($"Refreshing Equipment Stats: Player STR={PlayerStats.STR}, Total STR={GetStat(Stat.STR)}, Modifier={strMod}");
         Health.SetStatModifier(strMod);
 
         EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
@@ -245,9 +252,11 @@ public class PlayerManager : GameModule, IObserver
     }
     #endregion
 
-    private void Die()
+    public void Die()
     {
         // Notify observers about player death
+        TextOutputter.Instance.OutputText("<color=red>YOU DIED.</color>");
+        RunManager.Instance.GetService<SaveManager>()?.ClearRunSave();
         Notify(EventType.PlayerDeath);
     }
 

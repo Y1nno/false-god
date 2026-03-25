@@ -14,4 +14,9 @@ public class KeySO : ItemSO
     public KeyType Type;
     public float SuccessChance = 1.0f;
     public int MaxUses = 1;
+
+    public KeySO()
+    {
+        MaxStackSize = 5;
+    }
 }

@@ -14073,6 +14073,7 @@ GameObject:
   - component: {fileID: 1337644649}
   - component: {fileID: 1337644651}
   - component: {fileID: 1337644652}
+  - component: {fileID: 1337644653}
   m_Layer: 0
   m_Name: InputInterface
   m_TagString: Untagged
@@ -14131,6 +14132,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6596f27f6614ffb498ba00ae8026a878, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::AilmentDebugMenu
+--- !u!114 &1337644653
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1337644648}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3617d822237cc3041b00b5a989013775, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AilmentSystemTest
 --- !u!1 &1342073478
 GameObject:
   m_ObjectHideFlags: 0

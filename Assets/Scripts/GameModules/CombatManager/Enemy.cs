@@ -9,6 +9,7 @@ public enum EnemySuffix { None, ofVenom, ofFrost, ofEmbers, ofDecay, ofRupture }
 public class Enemy : Combatant
 {
     public string Name { get; protected set; }
+    public EnemySO EnemyData { get; private set; }
     public EnemyPrefix Prefix { get; private set; } = EnemyPrefix.None;
     public EnemySuffix Suffix { get; private set; } = EnemySuffix.None;
     public bool IsUnique => Prefix != EnemyPrefix.None || Suffix != EnemySuffix.None;
@@ -21,6 +22,7 @@ public class Enemy : Combatant
 
     public Enemy(EnemySO data, int level)
     {
+        EnemyData = data;
         IsBoss = false;
         Name = data.EnemyName;
         BaseXP = data.BaseXP;
@@ -234,41 +236,51 @@ public class Enemy : Combatant
     {
         int baseStat = Stats.GetSecondaryStat(stat);
 
-        if (HasAilment(AilmentType.Burn) && stat == SecondaryStat.PHATK)
+        // Apply Ailment Modifiers
+        foreach (var ailment in ActiveAilments)
         {
-            baseStat = Mathf.RoundToInt(baseStat * 0.90f); // Reduces attack damage by 10%
-        }
-        else if (HasAilment(AilmentType.Poison) && stat == SecondaryStat.SPDEF)
-        {
-            baseStat = Mathf.RoundToInt(baseStat * 0.95f); // Reduces Sp.Def by 5%
-        }
+            float mod = AilmentScaling.GetStatModifier(ailment.Type, ailment.Stacks);
+            if (mod == 0) continue;
 
-        if (HasAilment(AilmentType.Frozen))
-        {
-            if (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF)
+            bool applies = false;
+            switch (ailment.Type)
             {
-                baseStat = Mathf.RoundToInt(baseStat * 1.20f); // +20% Def and Sp.Def
+                case AilmentType.Burn:
+                    applies = (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK);
+                    break;
+                case AilmentType.Poison:
+                    applies = (stat == SecondaryStat.SPDEF);
+                    break;
+                case AilmentType.Frozen:
+                    applies = (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF);
+                    break;
+                case AilmentType.Weaken:
+                    applies = (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF);
+                    break;
+                case AilmentType.AtkDebuff:
+                    applies = (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK);
+                    break;
+                case AilmentType.DefDebuff:
+                    applies = (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF);
+                    break;
+                case AilmentType.AtkBonus:
+                    if (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK)
+                    {
+                        baseStat = Mathf.RoundToInt(baseStat * 1.40f);
+                    }
+                    break;
+                case AilmentType.Shielded:
+                    if (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF)
+                    {
+                        baseStat = Mathf.RoundToInt(baseStat * 1.20f);
+                    }
+                    break;
             }
-        }
 
-        if (HasAilment(AilmentType.AtkBonus) && (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK))
-        {
-            baseStat = Mathf.RoundToInt(baseStat * 1.40f); // +40% Attack
-        }
-
-        if (HasAilment(AilmentType.Shielded) && (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF))
-        {
-            baseStat = Mathf.RoundToInt(baseStat * 1.20f); // +20% Defense
-        }
-
-        if (HasAilment(AilmentType.AtkDebuff) && (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK))
-        {
-            baseStat = Mathf.RoundToInt(baseStat * 0.70f); // -30% Attack
-        }
-
-        if (HasAilment(AilmentType.DefDebuff) && (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF))
-        {
-            baseStat = Mathf.RoundToInt(baseStat * 0.70f); // -30% Defense
+            if (applies)
+            {
+                baseStat = Mathf.RoundToInt(baseStat * (1f - mod));
+            }
         }
 
         // --- UNIQUE PREFIX MODIFIERS ---
@@ -330,40 +342,35 @@ public class Enemy : Combatant
         if (target == null || !target.IsAlive()) return;
 
         string name = GetName();
-        if (name == "Imp" && UnityEngine.Random.value <= 0.3f) // 30% chance for bleed
+        if (name == "Imp")
         {
-            target.ApplyAilment(AilmentType.Bleed, 3);
+            target.TryApplyAilment(AilmentType.Bleed, 1, 30f);
         }
-        else if (name == "Infected Hound" && UnityEngine.Random.value <= 0.3f)
+        else if (name == "Infected Hound")
         {
-            target.ApplyAilment(AilmentType.Poison, 3);
+            target.TryApplyAilment(AilmentType.Poison, 1, 30f);
         }
-        else if (name == "infernal" && UnityEngine.Random.value <= 0.3f)
+        else if (name == "infernal")
         {
-            target.ApplyAilment(AilmentType.Burn, 3);
+            target.TryApplyAilment(AilmentType.Burn, 1, 30f);
         }
-        else if (name == "Succubus" && UnityEngine.Random.value <= 0.5f)
+        else if (name == "Succubus")
         {
-            target.ApplyAilment(AilmentType.Charmed, 2);
+            target.TryApplyAilment(AilmentType.Charmed, 1, 50f);
         }
 
         // --- UNIQUE VAMPIRIC PREFIX ---
         if (Prefix == EnemyPrefix.Vampiric)
         {
-            // Vampiric: Heal 25% of damage dealt. 
-            // This is tricky as we don't know the damage here. 
-            // We'll rely on a manual implementation in ExecuteAction or provide a hook.
-            // For now, let's just do a flat 5 HP heal for simplicity if we want it here, 
-            // but the prompt says 25% of damage. I'll handle it in ExecuteAction.
+            // Handled via HandleLifeSteal hook in ExecuteAction
         }
 
         // --- UNIQUE SUFFIX EFFECTS ---
-        float roll = UnityEngine.Random.value;
-        if (Suffix == EnemySuffix.ofVenom && roll <= 0.30f) target.ApplyAilment(AilmentType.Poison, 3);
-        else if (Suffix == EnemySuffix.ofFrost && roll <= 0.25f) target.ApplyAilment(AilmentType.Frozen, 1);
-        else if (Suffix == EnemySuffix.ofEmbers && roll <= 0.10f) target.ApplyAilment(AilmentType.Burn, 3);
-        else if (Suffix == EnemySuffix.ofDecay && roll <= 0.25f) target.ApplyAilment(AilmentType.DmgDebuff, 2);
-        else if (Suffix == EnemySuffix.ofRupture && roll <= 0.20f) target.ApplyAilment(AilmentType.Bleed, 3);
+        if (Suffix == EnemySuffix.ofVenom) target.TryApplyAilment(AilmentType.Poison, 1, 30f);
+        else if (Suffix == EnemySuffix.ofFrost) target.TryApplyAilment(AilmentType.Frozen, 1, 25f);
+        else if (Suffix == EnemySuffix.ofEmbers) target.TryApplyAilment(AilmentType.Burn, 1, 10f);
+        else if (Suffix == EnemySuffix.ofDecay) target.TryApplyAilment(AilmentType.DmgDebuff, 1, 25f);
+        else if (Suffix == EnemySuffix.ofRupture) target.TryApplyAilment(AilmentType.Bleed, 1, 20f);
     }
     
     // Helper to handle Vampiric heal
@@ -428,13 +435,18 @@ public class Enemy : Combatant
         }
 
         int finalTaken = 0;
+        int defense = 0;
         switch (attackType)
         {
             case AttackType.Physical:
-                finalTaken = TakeDamage(hasTrueStrike ? damageToTake : damageToTake - GetSecondaryStat(SecondaryStat.PHDEF));
+                defense = hasTrueStrike ? 0 : GetSecondaryStat(SecondaryStat.PHDEF);
+                if (defense > 0) TextOutputter.Instance.OutputText($"{name}'s defense reduced damage by {defense}.");
+                finalTaken = TakeDamage(damageToTake - defense);
                 break;
             case AttackType.Special:
-                finalTaken = TakeDamage(hasTrueStrike ? damageToTake : damageToTake - GetSecondaryStat(SecondaryStat.SPDEF));
+                defense = hasTrueStrike ? 0 : GetSecondaryStat(SecondaryStat.SPDEF);
+                if (defense > 0) TextOutputter.Instance.OutputText($"{name}'s special defense reduced damage by {defense}.");
+                finalTaken = TakeDamage(damageToTake - defense);
                 break;
             default:
                 finalTaken = TakeDamage(damageToTake);

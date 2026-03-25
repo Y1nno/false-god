@@ -21,6 +21,15 @@ public class PlayerStatBox : StatBox
                 break;
         }
     }
+
+    public void RestoreState(int str, int dex, int @int, int spd, int points)
+    {
+        SetStat(Stat.STR, str);
+        SetStat(Stat.DEX, dex);
+        SetStat(Stat.INT, @int);
+        SetStat(Stat.SPD, spd);
+        AvailableStatPoints = points;
+    }
     public void AddStatPoints(int points)
     {
         AvailableStatPoints += points;

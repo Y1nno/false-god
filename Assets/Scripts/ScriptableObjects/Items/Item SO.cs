@@ -10,4 +10,5 @@ public class ItemSO : ScriptableObject
     public Sprite ItemIcon;
     public string Description;
     public int SellPrice;
+    public int MaxStackSize = 1;
 }

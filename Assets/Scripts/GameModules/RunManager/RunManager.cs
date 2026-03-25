@@ -34,8 +34,8 @@ public class RunManager : GameModule
 
     // API Methods
 
-    // Starts a new run by initializing all managers
-    public void StartNewRun()
+    // Starts a new run by initializing all managers. If a save exists, it can optionally load it.
+    public void StartNewRun(bool forceNew = true)
     {
         if (s_mb != null)
         {
@@ -45,8 +45,26 @@ public class RunManager : GameModule
         s_mb.InitializeAllManagers();
         s_runEnder = new RunEnder();
 
-        TextOutputter.Instance?.OutputText("New run started.");
+        bool loaded = false;
+        SaveManager sm = GetService<SaveManager>();
+        if (!forceNew && sm != null && sm.HasRunSave())
+        {
+            sm.LoadRun();
+            TextOutputter.Instance?.OutputText("Continuing previous run.");
+            loaded = true;
+        }
+        else
+        {
+            TextOutputter.Instance?.OutputText("New run started.");
+        }
+
         Notify(EventType.RunStart);
+
+        // If not loaded, trigger the first encounter manually
+        if (!loaded)
+        {
+            GetService<DungeonManager>()?.Notify(EventType.DungeonRoomAdvance);
+        }
     }
 
     // Ends the current run and returns a summary

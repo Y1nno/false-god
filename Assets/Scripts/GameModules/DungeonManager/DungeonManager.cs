@@ -8,6 +8,7 @@ public class DungeonManager : GameModule, IObserver
     public int CurrentEncounterIndex { get; private set; } = 1;
     public int EncountersInCurrentFloor { get; private set; } = 1;
     public RoomSize CurrentRoomSize { get; private set; }
+    public int HighestFloorReached { get; private set; } = 1;
 
     private EncounterManager _em = null;
 
@@ -19,9 +20,6 @@ public class DungeonManager : GameModule, IObserver
         _em.AttachObserver(this); // Listen for resolution to advance room
         AttachObserver(_em);      // Let EM listen to room advances
         InitializeFloor();
-        
-        // Notify observers (like EncounterManager) to create the first encounter of the run
-        Notify(EventType.DungeonRoomAdvance);
     }
 
     private void InitializeFloor()
@@ -29,6 +27,20 @@ public class DungeonManager : GameModule, IObserver
         CurrentRoomSize = RollRoomSize(CurrentDungeonFloor);
         EncountersInCurrentFloor = GetEncountersForSize(CurrentRoomSize);
         CurrentEncounterIndex = 1;
+    }
+
+    public void RestoreState(int floor, int encounterIndex, RoomSize size, int totalEncounters)
+    {
+        CurrentDungeonFloor = floor;
+        CurrentRoomSize = size;
+        EncountersInCurrentFloor = totalEncounters;
+        CurrentEncounterIndex = encounterIndex;
+        if (floor > HighestFloorReached) HighestFloorReached = floor;
+    }
+
+    public void RestoreMetaState(int highestFloor)
+    {
+        HighestFloorReached = highestFloor;
     }
 
     // Advance to the next encounter or floor
@@ -66,6 +78,7 @@ public class DungeonManager : GameModule, IObserver
             return;
         }
         CurrentDungeonFloor++;
+        if (CurrentDungeonFloor > HighestFloorReached) HighestFloorReached = CurrentDungeonFloor;
         InitializeFloor();
         
         TextOutputter.Instance.OutputText($"--- Advanced to Floor {CurrentDungeonFloor} ---");

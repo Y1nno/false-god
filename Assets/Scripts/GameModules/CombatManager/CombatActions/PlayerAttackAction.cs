@@ -50,32 +50,32 @@ public class PlayerAttackAction : CombatAction
 
         TextOutputter.Instance.OutputText($"{user.GetName()} used {ActionName} on {target.GetName()}!");
         damage = CalculateDamageFromBase(damage, user);
+        TextOutputter.Instance.OutputText($"Attack Roll: {damage} (Weapon + Stats + Modifiers).");
         int damageDealt = target.GetAttacked(damage, ActionType, user);
 
-        // Relic: Splash Damage
-        RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
-        if (relicm != null && user is PlayerCombatManager)
+        // Splash Damage (Relic + Weapon Trait)
+        float relicSplashPercent = RunManager.Instance.GetService<RelicManager>()?.GetSplashDamagePercentage() ?? 0f;
+        float traitSplashPercent = (eqm?.GetTotalSplashDamagePercentage() ?? 0) / 100f;
+        float totalSplashPercent = relicSplashPercent + traitSplashPercent;
+
+        if (totalSplashPercent > 0 && user is PlayerCombatManager)
         {
-            float splashPercent = relicm.GetSplashDamagePercentage();
-            if (splashPercent > 0)
+            int splashDamage = Mathf.RoundToInt(damageDealt * totalSplashPercent);
+            if (splashDamage > 0)
             {
-                int splashDamage = Mathf.RoundToInt(damageDealt * splashPercent);
-                if (splashDamage > 0)
+                CombatManager cm = RunManager.Instance.GetService<CombatManager>();
+                if (cm != null && cm.CurrentBattle != null)
                 {
-                    CombatManager cm = RunManager.Instance.GetService<CombatManager>();
-                    if (cm != null && cm.CurrentBattle != null)
+                    var otherEnemies = cm.CurrentBattle.GetEnemies()
+                        .Where(e => e != target && e.IsAlive())
+                        .ToList();
+                    
+                    if (otherEnemies.Count > 0)
                     {
-                        var otherEnemies = cm.CurrentBattle.GetEnemies()
-                            .Where(e => e != target && e.IsAlive())
-                            .ToList();
-                        
-                        if (otherEnemies.Count > 0)
+                        TextOutputter.Instance.OutputText($"Splash damage dealt {splashDamage} to other enemies!");
+                        foreach (var enemy in otherEnemies)
                         {
-                            TextOutputter.Instance.OutputText($"Splash damage dealt {splashDamage} to other enemies!");
-                            foreach (var enemy in otherEnemies)
-                            {
-                                enemy.GetAttacked(splashDamage, ActionType, user);
-                            }
+                            enemy.GetAttacked(splashDamage, ActionType, user);
                         }
                     }
                 }

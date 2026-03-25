@@ -27,15 +27,6 @@ public class PlayerCombatManager : Combatant, IPromptResponder
 
     public PlayerCombatManager()
     {
-        foreach (int actionID in k_StartingActionIDs)
-        {
-            CombatAction action = ActionFactory.CreateActionByID(actionID);
-            if (action != null)
-            {
-                _availableActions.Add(action);
-            }
-        }
-
         Level = RunManager.Instance.GetService<XPManager>()?.level ?? 1;
         _fervorStacks = 0;
     }
@@ -59,8 +50,19 @@ public class PlayerCombatManager : Combatant, IPromptResponder
 
     protected override int TakeDamage(int amount)
     {
-        // Redirect damage to PlayerManager to ensure global events (like Lazarus Rite) trigger
-        return _pm.TakeDamage(amount);
+        // Use base TakeDamage to handle block/relics and update health
+        int finalDamageDealt = base.TakeDamage(amount);
+
+        // Notify global observers if player is near death
+        if (_pm.Health.CurrentValue <= 0)
+        {
+            _pm.Notify(EventType.PlayerAboutToDie);
+            if (_pm.Health.CurrentValue <= 0)
+            {
+                _pm.Die();
+            }
+        }
+        return finalDamageDealt;
     }
 
     public override int GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null)
@@ -116,13 +118,18 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         }
 
         int damageDealt = 0;
+        int defense = 0;
         switch (attackType)
         {
             case AttackType.Physical:
-                damageDealt = TakeDamage(damage - _pm.CalculateSecondaryStat(SecondaryStat.PHDEF));
+                defense = _pm.CalculateSecondaryStat(SecondaryStat.PHDEF);
+                TextOutputter.Instance.OutputText($"Defense reduced damage by {defense}.");
+                damageDealt = TakeDamage(damage - defense);
                 break;
             case AttackType.Special:
-                damageDealt = TakeDamage(damage - _pm.CalculateSecondaryStat(SecondaryStat.SPDEF));
+                defense = _pm.CalculateSecondaryStat(SecondaryStat.SPDEF);
+                TextOutputter.Instance.OutputText($"Special Defense reduced damage by {defense}.");
+                damageDealt = TakeDamage(damage - defense);
                 break;
             default:
                 damageDealt = TakeDamage(damage);
@@ -259,6 +266,7 @@ public class PlayerCombatManager : Combatant, IPromptResponder
             Prompt skipPrompt = new Prompt($"You are {reason}!", new List<string> { "Skip Turn" }, this);
             return;
         }
+        CurrentBlock = 0; // Reset Block at start of player turn
         _availableActions.Clear();
         EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
         Equipment moveFirstItem = null;
@@ -268,7 +276,7 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         foreach (int actionID in k_StartingActionIDs)
         {
             CombatAction action = ActionFactory.CreateActionByID(actionID);
-            if (action != null)
+            if (action != null && action.CanUse(this))
             {
                 _availableActions.Add(action);
             }
@@ -456,31 +464,43 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     {
         int baseStat = _pm.CalculateSecondaryStat(stat);
 
-        if (HasAilment(AilmentType.Burn) && stat == SecondaryStat.PHATK)
+        // Apply Ailment Modifiers
+        foreach (var ailment in ActiveAilments)
         {
-            baseStat = Mathf.RoundToInt(baseStat * 0.90f);
-        }
-        else if (HasAilment(AilmentType.Poison) && stat == SecondaryStat.SPDEF)
-        {
-            baseStat = Mathf.RoundToInt(baseStat * 0.95f);
-        }
+            float mod = AilmentScaling.GetStatModifier(ailment.Type, ailment.Stacks);
+            if (mod == 0) continue;
 
-        if (HasAilment(AilmentType.Frozen))
-        {
-            if (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF)
+            bool applies = false;
+            switch (ailment.Type)
             {
-                baseStat = Mathf.RoundToInt(baseStat * 1.20f);
+                case AilmentType.Burn:
+                    applies = (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK);
+                    break;
+                case AilmentType.Poison:
+                    applies = (stat == SecondaryStat.SPDEF);
+                    break;
+                case AilmentType.Frozen:
+                    applies = (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF);
+                    // Frozen gives a BOOST (negative reduction), so AilmentScaling should handle the sign
+                    break;
+                case AilmentType.Bleed:
+                    // Bleed handles healing, not base secondary stats in this version of the table
+                    break;
+                case AilmentType.Weaken:
+                    applies = (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF);
+                    break;
+                case AilmentType.AtkDebuff:
+                    applies = (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK);
+                    break;
+                case AilmentType.DefDebuff:
+                    applies = (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF);
+                    break;
             }
-        }
 
-        // Apply Debuffs from Ailments
-        if (HasAilment(AilmentType.AtkDebuff) && (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK))
-        {
-            baseStat = Mathf.RoundToInt(baseStat * 0.70f);
-        }
-        if (HasAilment(AilmentType.DefDebuff) && (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF))
-        {
-            baseStat = Mathf.RoundToInt(baseStat * 0.70f);
+            if (applies)
+            {
+                baseStat = Mathf.RoundToInt(baseStat * (1f - mod));
+            }
         }
 
         // Apply Auras from active Enemies
@@ -580,3 +600,4 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         return false;
     }
 }
+

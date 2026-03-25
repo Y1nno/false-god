@@ -13,10 +13,10 @@ public class StatBox : Subject, IObserver
         // { Stat.LCK, 10 }
     };
 
-    public int STR = k_DefaultStatValue[Stat.STR];
-    public int DEX = k_DefaultStatValue[Stat.DEX];
-    public int SPD = k_DefaultStatValue[Stat.SPD];
-    public int INT = k_DefaultStatValue[Stat.INT];
+    public int STR = 10;
+    public int DEX = 10;
+    public int SPD = 10;
+    public int INT = 10;
     // public int LCK = k_DefaultStatValue[Stat.LCK];
 
     public float ConsumableEffectivenessMultiplier { get; set; } = 1.0f;

@@ -32,20 +32,20 @@ public class Equipment : Item
     public Rarity Rarity { get; private set; }
     public new bool IsTwoHanded { get; private set; }
 
-    private int _basePhysicalDefense;
-    private int _baseSpecialDefense;
-    private int _baseSpecialAttack;
-    private int _basePhysicalAttack;
-    private int _baseSTR;
-    private int _baseDEX;
-    private int _baseINT;
-    private int _baseSPD;
-    private int _baseCritChance;
-    private int _baseBlockChance;
-    private int _baseBlockAmount;
-    private int _baseDodgeChance;
-    private int _baseMaxHP;
-    private int _baseMaxMana;
+    public int _basePhysicalDefense;
+    public int _baseSpecialDefense;
+    public int _baseSpecialAttack;
+    public int _basePhysicalAttack;
+    public int _baseSTR;
+    public int _baseDEX;
+    public int _baseINT;
+    public int _baseSPD;
+    public int _baseCritChance;
+    public int _baseBlockChance;
+    public int _baseBlockAmount;
+    public int _baseDodgeChance;
+    public int _baseMaxHP;
+    public int _baseMaxMana;
 
     public int PhysicalDefense => CalculateStat(EquipmentStat.PhysicalDefense, _basePhysicalDefense);
     public int SpecialDefense => CalculateStat(EquipmentStat.SpecialDefense, _baseSpecialDefense);
@@ -275,5 +275,8 @@ public enum EquipmentTrait
     ManaRegen,
     DamageReflect,
     AilmentResist,
-    AilmentDurationReduction
+    AilmentDurationReduction,
+    SplashDamage,
+    BonusBlock,
+    Shielding
 }

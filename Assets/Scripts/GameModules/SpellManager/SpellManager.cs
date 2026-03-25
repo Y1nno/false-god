@@ -9,6 +9,20 @@ public class SpellManager : GameModule
 
     public List<SpellSO> LearnedSpells => _learnedSpells;
 
+    public void RestoreState(List<string> spellIDs)
+    {
+        _learnedSpells.Clear();
+        foreach (var id in spellIDs)
+        {
+            // Try different name patterns (Spaced vs Non-Spaced)
+            SpellSO spell = Resources.Load<SpellSO>($"Spells/{id}");
+            if (spell == null) spell = Resources.Load<SpellSO>($"Spells/{id.Replace(" ", "")}");
+            
+            if (spell != null) _learnedSpells.Add(spell);
+        }
+        Notify(EventType.EquipmentChanged);
+    }
+
     public override void AttachDefaultObservers() { }
 
     public bool LearnSpell(SpellSO spell)

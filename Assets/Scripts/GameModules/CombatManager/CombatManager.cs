@@ -8,6 +8,8 @@ public class CombatManager : GameModule, IObserver
     public Battle CurrentBattle {get; private set;}
     public PlayerCombatManager Pcm { get; private set; } = new PlayerCombatManager();
 
+    private List<Combatant> _restoredEnemies;
+
     public override void AttachDefaultObservers()
     {
         RunManager.Instance.GetService<EncounterManager>()?.AttachObserver(this);
@@ -15,9 +17,45 @@ public class CombatManager : GameModule, IObserver
 
     public void CreateNewBattle(float difficulty)
     {
-        CurrentBattle = new Battle(EnemiesByDifficulty(difficulty), Pcm);
+        List<Combatant> enemies = _restoredEnemies ?? EnemiesByDifficulty(difficulty);
+        _restoredEnemies = null;
+
+        CurrentBattle = new Battle(enemies, Pcm);
+        if (_restoredTurn > 1) CurrentBattle.RestoreTurnCount(_restoredTurn);
+        _restoredTurn = 1;
         CurrentBattle.AttachObserver(this);
     }
+
+    public void PrepareRestoredBattle(RunSaveData data)
+    {
+        _restoredEnemies = new List<Combatant>();
+        for (int i = 0; i < data.CurrentEnemyIDs.Count; i++)
+        {
+            string id = data.CurrentEnemyIDs[i];
+            ScriptableObject so = Resources.Load<EnemySO>($"Enemies/{id}");
+            if (so == null) so = Resources.Load<BossSO>($"Bosses/{id}");
+
+            if (so != null)
+            {
+                Enemy enemy = null;
+                if (so is BossSO bso) enemy = new Boss(bso, data.CurrentEnemyLevels[i]);
+                else if (so is EnemySO eso) enemy = new Enemy(eso, data.CurrentEnemyLevels[i]);
+
+                if (enemy != null && data.EnemyAilments != null && i < data.EnemyAilments.Count)
+                {
+                    enemy.RestoreAilments(data.EnemyAilments[i]);
+                }
+                if (enemy != null) _restoredEnemies.Add(enemy);
+            }
+        }
+
+        Pcm.RestoreAilments(data.PlayerAilments);
+        
+        // We will set the turn count once the Battle is created in CreateNewBattle
+        _restoredTurn = data.CombatTurn;
+    }
+
+    private int _restoredTurn = 1;
 
     public void Start()
     {
@@ -231,6 +269,7 @@ public class CombatManager : GameModule, IObserver
                 }
 
                 Notify(EventType.EncounterResolve);
+                RunManager.Instance.GetService<SaveManager>()?.SaveRun();
                 break;
             case EventType.EnemyDefeated:
                 if (subject is Boss boss)

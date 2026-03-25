@@ -26,9 +26,9 @@ public class XPManager : GameModule, IObserver
     public void AddXP(int amount)
     {
         currentXP += amount;
-        Notify(EventType.XPAdded);
-        TextOutputter.Instance.OutputText("Gained " + amount + " XP.");
+        TextOutputter.Instance.OutputText("Gained " + amount + " XP!");
         CheckLevelUp();
+        RunManager.Instance.GetService<SaveManager>()?.SaveRun();
     }
 
     private void CheckLevelUp()
@@ -41,6 +41,13 @@ public class XPManager : GameModule, IObserver
             xpThresholdForLevelUp = CalculateXPToNextLevel();
             Notify(EventType.LevelUp);
         }
+    }
+
+    public void RestoreState(int level, int currentXP, int threshold)
+    {
+        this.level = level;
+        this.currentXP = currentXP;
+        this.xpThresholdForLevelUp = threshold;
     }
 
     private int CalculateXPToNextLevel()

@@ -11,5 +11,6 @@ public enum AilmentType
     AtkDebuff,
     DefDebuff,
     DmgDebuff,
-    Reloading
+    Reloading,
+    Weaken
 }

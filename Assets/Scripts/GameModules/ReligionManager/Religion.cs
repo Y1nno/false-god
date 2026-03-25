@@ -11,6 +11,16 @@ public class Religion
     public string RequiredEnemyName { get; protected set; } = "";
     public string QuestDescription { get; protected set; } = "No active quest.";
 
+    public void RestoreState(int level, string status)
+    {
+        CurrentFaithLevel = level;
+        if (System.Enum.TryParse(status, out QuestStatus s))
+        {
+            CurrentQuestStatus = s;
+        }
+        AssignNextQuest();
+    }
+
     public virtual void OnJoinReligion()
     {
         Debug.Log("Joined religion: " + ReligionID);

@@ -27,6 +27,14 @@ public class RelicManager : GameModule, IObserver
         _activeRelics = invm.UnEquippedItems.OfType<RelicInstance>().ToList();
     }
 
+    public int GetEnemiesKilled() => _enemiesKilledThisRun;
+
+    public void RestoreState(int enemiesKilled)
+    {
+        _enemiesKilledThisRun = enemiesKilled;
+        RefreshRelics();
+    }
+
     public float GetGoldMultiplier()
     {
         RefreshRelics();

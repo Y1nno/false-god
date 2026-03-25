@@ -7,15 +7,18 @@ public class EncounterManager : GameModule, IObserver
     private Encounter _currentEncounter;
     private Encounter _forcedNextEncounter;
 
-    private float _treasureChance = 5.0f;
-    private float _trapChance = 10.0f;
-    private float _fountainChance = 5.0f;
-    private float _shrineChance = 5.0f;
+    public float TreasureChance = 5.0f;
+    public float TrapChance = 10.0f;
+    public float FountainChance = 5.0f;
+    public float ShrineChance = 5.0f;
 
-    private int _totalEncountersResolved = 0;
-    private bool _religionPending = false;
-    private bool _shopPending = false;
-    private int _encountersSinceLastEscalation = 0;
+    public int TotalEncountersResolved = 0;
+    public bool ReligionPending = false;
+    public bool ShopPending = false;
+    public int EncountersSinceLastEscalation = 0;
+
+    private EncounterType _currentEncounterType;
+    private string _currentTrapSOID;
 
     private List<TrapEncounterSO> _availableTrapEncounters;
 
@@ -53,6 +56,7 @@ public class EncounterManager : GameModule, IObserver
         EncounterType encounterType = DetermineEncounterType();
         HandleEncounterChances(encounterType);
         
+        TrapEncounterSO selectedTrap = null;
         if (_forcedNextEncounter != null)
         {
             _currentEncounter = _forcedNextEncounter;
@@ -60,7 +64,6 @@ public class EncounterManager : GameModule, IObserver
         }
         else
         {
-            TrapEncounterSO selectedTrap = null;
             if (encounterType == EncounterType.Trap && _availableTrapEncounters != null && _availableTrapEncounters.Count > 0)
             {
                 float totalSpawnChance = 0;
@@ -85,6 +88,9 @@ public class EncounterManager : GameModule, IObserver
             _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), encounterType, selectedTrap);
         }
         
+        _currentEncounterType = encounterType;
+        _currentTrapSOID = selectedTrap != null ? selectedTrap.name : null;
+
         AttachToEncounter(_currentEncounter);
         TextOutputter.Instance.OutputText("Encounter created: " + _currentEncounter.GetType().Name);
         _currentEncounter.StartEncounter();
@@ -127,6 +133,9 @@ public class EncounterManager : GameModule, IObserver
         }
 
         _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), type, selectedTrap);
+        _currentEncounterType = type;
+        _currentTrapSOID = selectedTrap != null ? selectedTrap.name : null;
+
         AttachToEncounter(_currentEncounter);
         TextOutputter.Instance.OutputText("Encounter switched to: " + _currentEncounter.GetType().Name);
         _currentEncounter.StartEncounter();
@@ -160,6 +169,47 @@ public class EncounterManager : GameModule, IObserver
     {
         return _currentEncounter;
     }
+
+    public EncounterType GetCurrentEncounterType() => _currentEncounterType;
+    public string GetCurrentTrapSOID() => _currentTrapSOID;
+
+    public void RestoreState(RunSaveData data)
+    {
+        _currentEncounterType = data.CurrentEncounterType;
+        _currentTrapSOID = data.CurrentTrapSOID;
+        TotalEncountersResolved = data.TotalEncountersResolved;
+        ReligionPending = data.ReligionPending;
+        ShopPending = data.ShopPending;
+        EncountersSinceLastEscalation = data.EncountersSinceLastEscalation;
+        TreasureChance = data.TreasureChance;
+        TrapChance = data.TrapChance;
+        FountainChance = data.FountainChance;
+        ShrineChance = data.ShrineChance;
+
+        TrapEncounterSO selectedTrap = null;
+        if (data.CurrentEncounterType == EncounterType.Trap && !string.IsNullOrEmpty(data.CurrentTrapSOID))
+        {
+            selectedTrap = _availableTrapEncounters.Find(t => t.name == data.CurrentTrapSOID);
+        }
+
+        _currentEncounter = new EncounterFactory().CreateEncounter(_dm.GetCurrentDungeonFloorData(), data.CurrentEncounterType, selectedTrap);
+        
+        if (_currentEncounter is EnemyEncounter enemyEnc && data.CurrentEnemyIDs != null && data.CurrentEnemyIDs.Count > 0)
+        {
+            RunManager.Instance.GetService<CombatManager>()?.PrepareRestoredBattle(data);
+        }
+        else if (_currentEncounter is MerchantEncounter me)
+        {
+            me.RestoreState(data.ShopInventory);
+        }
+        else if (_currentEncounter is BlacksmithEncounter be)
+        {
+            be.RestoreState(data.ShopInventory);
+        }
+
+        AttachToEncounter(_currentEncounter);
+        _currentEncounter.StartEncounter();
+    }
     #endregion
 
     private EncounterType DetermineEncounterType()
@@ -183,21 +233,21 @@ public class EncounterManager : GameModule, IObserver
 
         // --- Milestone Checks (Religion every 20, Shop every 25) ---
         // Since DetermineEncounterType is called BEFORE resolution, we check (_totalEncountersResolved + 1)
-        int currentTotalIndex = _totalEncountersResolved + 1;
-        if (currentTotalIndex % 20 == 0) _religionPending = true;
-        if (currentTotalIndex % 25 == 0) _shopPending = true;
+        int currentTotalIndex = TotalEncountersResolved + 1;
+        if (currentTotalIndex % 20 == 0) ReligionPending = true;
+        if (currentTotalIndex % 25 == 0) ShopPending = true;
 
         ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
-        if (rm != null && rm.HasQuestItemForCurrentReligion()) _religionPending = true;
+        if (rm != null && rm.HasQuestItemForCurrentReligion()) ReligionPending = true;
 
         // 3. Religion Milestone (Fixed trigger, delayed if Boss/Rest)
-        if (_religionPending)
+        if (ReligionPending)
         {
             return EncounterType.Religious;
         }
 
         // 4. Shop Milestone (Merchant/Blacksmith 50/50, delayed if Boss/Rest)
-        if (_shopPending)
+        if (ShopPending)
         {
             // Note: Merchant/Blacksmith/Fountain logic to be implemented later as per user request
             return UnityEngine.Random.value <= 0.5f ? EncounterType.Merchant : EncounterType.Blacksmith;
@@ -208,19 +258,19 @@ public class EncounterManager : GameModule, IObserver
         float cumulative = 0;
 
         // Chest (5% base, +2.5% increment)
-        cumulative += _treasureChance;
+        cumulative += TreasureChance;
         if (roll <= cumulative) return EncounterType.Treasure;
 
         // Trap (10% base, +2% increment)
-        cumulative += _trapChance;
+        cumulative += TrapChance;
         if (roll <= cumulative) return EncounterType.Trap;
 
         // Fountain (5% base, +1.5% increment)
-        cumulative += _fountainChance;
+        cumulative += FountainChance;
         if (roll <= cumulative) return EncounterType.Fountain;
 
         // Health Shrine (5% base, +1.5% increment)
-        cumulative += _shrineChance;
+        cumulative += ShrineChance;
         if (roll <= cumulative) return EncounterType.Shrine;
 
         // 6. Fallback (Enemy)
@@ -229,25 +279,25 @@ public class EncounterManager : GameModule, IObserver
 
     private void HandleEncounterChances(EncounterType encounterType)
     {
-        _encountersSinceLastEscalation++;
-        bool shouldEscalate = _encountersSinceLastEscalation % 2 == 0;
+        EncountersSinceLastEscalation++;
+        bool shouldEscalate = EncountersSinceLastEscalation % 2 == 0;
 
         // Reset current chances if they just spawned, or escalate every other encounter
-        if (encounterType == EncounterType.Treasure) _treasureChance = 5.0f;
-        else if (shouldEscalate) _treasureChance += 2.5f;
+        if (encounterType == EncounterType.Treasure) TreasureChance = 5.0f;
+        else if (shouldEscalate) TreasureChance += 2.5f;
 
-        if (encounterType == EncounterType.Trap) _trapChance = 10.0f;
-        else if (shouldEscalate) _trapChance += 2.0f;
+        if (encounterType == EncounterType.Trap) TrapChance = 10.0f;
+        else if (shouldEscalate) TrapChance += 2.0f;
 
-        if (encounterType == EncounterType.Fountain) _fountainChance = 5.0f;
-        else if (shouldEscalate) _fountainChance += 1.5f;
+        if (encounterType == EncounterType.Fountain) FountainChance = 5.0f;
+        else if (shouldEscalate) FountainChance += 1.5f;
 
-        if (encounterType == EncounterType.Shrine) _shrineChance = 5.0f;
-        else if (shouldEscalate) _shrineChance += 1.5f;
+        if (encounterType == EncounterType.Shrine) ShrineChance = 5.0f;
+        else if (shouldEscalate) ShrineChance += 1.5f;
 
         // Reset milestone pendings if they spawned
-        if (encounterType == EncounterType.Religious) _religionPending = false;
-        if (encounterType == EncounterType.Merchant || encounterType == EncounterType.Blacksmith) _shopPending = false;
+        if (encounterType == EncounterType.Religious) ReligionPending = false;
+        if (encounterType == EncounterType.Merchant || encounterType == EncounterType.Blacksmith) ShopPending = false;
     }
 
     public void ProcessEncounterDecision(int decisionIndex)
@@ -270,7 +320,7 @@ public class EncounterManager : GameModule, IObserver
         }
         else if (eventType == EventType.EncounterResolve)
         {
-            _totalEncountersResolved++;
+            TotalEncountersResolved++;
             RunManager.Instance.GetService<EquipmentManager>()?.TickCooldowns(CooldownType.Encounters);
 
             // Propagate the event to EncounterManager's observers (like Rites)

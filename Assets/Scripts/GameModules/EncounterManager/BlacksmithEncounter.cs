@@ -25,10 +25,30 @@ public class BlacksmithEncounter : Encounter
 
     public BlacksmithEncounter(float difficulty) : base(difficulty) { }
 
+    public List<SerializableShopItem> GetSerializedInventory()
+    {
+        var list = new List<SerializableShopItem>();
+        foreach (var item in _shopInventory)
+        {
+            list.Add(new SerializableShopItem { ID = item.ID, DisplayName = item.DisplayName, Price = item.Price, Rarity = item.Rarity, Sold = item.Sold });
+        }
+        return list;
+    }
+
+    public void RestoreState(List<SerializableShopItem> savedStock)
+    {
+        if (savedStock == null || savedStock.Count == 0) return;
+        _shopInventory.Clear();
+        foreach (var s in savedStock)
+        {
+            _shopInventory.Add(new ShopItem(s.ID, s.DisplayName, s.Price, s.Rarity) { Sold = s.Sold });
+        }
+    }
+
     public override void StartEncounter()
     {
         base.StartEncounter();
-        GenerateShopInventory();
+        if (_shopInventory.Count == 0) GenerateShopInventory();
         TextOutputter.Instance.OutputText("The heat of the forge hits you. 'Bring me your steel,' the blacksmith grunts.");
         ShowMainMenu();
     }
