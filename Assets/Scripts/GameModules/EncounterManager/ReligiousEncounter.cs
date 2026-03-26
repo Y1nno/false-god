@@ -14,7 +14,7 @@ public class ReligiousEncounter : Encounter, IPromptResponder
 
     public override void StartEncounter()
     {
-        Notify(EventType.EncounterStart);
+        base.StartEncounter();
 
         if (_rm.CurrentReligion == null)
         {
@@ -30,7 +30,7 @@ public class ReligiousEncounter : Encounter, IPromptResponder
         }
         else
         {
-            // TODO: Implement religious encounter options for existing religion members
+            ShowMemberInteraction();
         }
     }
 
@@ -40,28 +40,85 @@ public class ReligiousEncounter : Encounter, IPromptResponder
         List<string> outputOptions = new List<string>();
         for (int i = 0; i < _offeredReligions.Count; i++)
         {
-            outputOptions.Add(_offeredReligions[i].ReligionID);
+            outputOptions.Add("Join " + _offeredReligions[i].ReligionID);
         }
-        Prompt prompt = new Prompt("Choose a new religion:", outputOptions, this);
+        outputOptions.Add("Leave"); // The Decline option
+        new Prompt("A group of mystics offer you a path of faith. Choose a new religion:", outputOptions, this);
+    }
+
+    private void ShowMemberInteraction()
+    {
+        Religion r = _rm.CurrentReligion;
+        string msg = $"Welcome, follower of {r.ReligionID}.\nFaith Level: {r.CurrentFaithLevel}/4\nQuest: {r.QuestDescription}";
+        List<string> options = new List<string>();
+
+        if (r.CurrentQuestStatus == QuestStatus.ReadyToTurnIn)
+        {
+            options.Add("Complete Quest & Claim Reward");
+        }
+        else if (r.CurrentQuestStatus == QuestStatus.GatheringItem)
+        {
+            InventoryManager inv = RunManager.Instance.GetService<InventoryManager>();
+            if (inv != null && inv.HasItem(r.RequiredItemID))
+            {
+                options.Add($"Sacrifice required item to the Altar");
+            }
+        }
+        
+        options.Add("Leave");
+        new Prompt(msg, options, this);
     }
 
     public override void RecieveDecision(int decisionIndex)
     {
-        if (_offeredReligions.Count == 0 && _offeredQuests.Count > 0)
+        if (_rm.CurrentReligion == null)
         {
-            Quest chosenQuest = _offeredQuests[decisionIndex];
-            _offeredQuests = new List<Quest>();
-            _rm.AcceptReligionQuest(chosenQuest);
-        }
-        else if (_offeredQuests.Count == 0 && _offeredReligions.Count > 0)
-        {
-            Religion chosenReligion = _offeredReligions[decisionIndex];
+            // Joining logic
+            if (decisionIndex < _offeredReligions.Count)
+            {
+                Religion chosenReligion = _offeredReligions[decisionIndex];
+                _rm.JoinReligion(chosenReligion);
+            }
+            else
+            {
+                TextOutputter.Instance.OutputText("You decline the offer of faith and move on.");
+            }
             _offeredReligions = new List<Religion>();
-            _rm.JoinReligion(chosenReligion);
         }
         else
         {
-            Debug.LogWarning("ReligiousEncounter received decision but no valid options are available.");
+            // Member interaction logic
+            Religion r = _rm.CurrentReligion;
+            List<string> options = new List<string>();
+            bool canTurnIn = r.CurrentQuestStatus == QuestStatus.ReadyToTurnIn;
+            bool canSacrifice = false;
+            
+            InventoryManager inv = RunManager.Instance.GetService<InventoryManager>();
+            if (r.CurrentQuestStatus == QuestStatus.GatheringItem && inv != null && inv.HasItem(r.RequiredItemID))
+            {
+                canSacrifice = true;
+            }
+
+            if (canTurnIn) options.Add("complete");
+            else if (canSacrifice) options.Add("sacrifice");
+            options.Add("leave");
+
+            string choice = options[decisionIndex];
+            if (choice == "complete")
+            {
+                r.CompleteQuest();
+            }
+            else if (choice == "sacrifice")
+            {
+                inv.RemoveItemByID(r.RequiredItemID);
+                TextOutputter.Instance.OutputText($"You sacrifice the required item to the altar!");
+                r.SetQuestReady();
+                TextOutputter.Instance.OutputText("The celestial forces are pleased. Your quest is ready for completion.");
+            }
+            else
+            {
+                TextOutputter.Instance.OutputText("You leave the holy site.");
+            }
         }
 
         ResolveEncounter();

@@ -24,7 +24,6 @@ public class RunManager : GameModule
 
     private RunManager()
     {
-        TextOutputter.Instance.OutputText("RunManager initialized.");
     }
 
     public override void AttachDefaultObservers()
@@ -35,14 +34,53 @@ public class RunManager : GameModule
 
     // API Methods
 
-    // Starts a new run by initializing all managers
-    public void StartNewRun()
+    // Starts a new run by initializing all managers. If a save exists, it can optionally load it.
+    public void StartNewRun(bool forceNew = true)
     {
+        if (s_mb != null)
+        {
+            s_mb.CleanupAllManagers();
+        }
         s_mb = new ManagerBox();
         s_mb.InitializeAllManagers();
         s_runEnder = new RunEnder();
 
-        TextOutputter.Instance.OutputText("New run started.");
+        bool loaded = false;
+        SaveManager sm = GetService<SaveManager>();
+        if (!forceNew && sm != null && sm.HasRunSave())
+        {
+            sm.LoadRun();
+            TextOutputter.Instance?.OutputText("Continuing previous run.");
+            loaded = true;
+        }
+        else
+        {
+            TextOutputter.Instance?.OutputText("New run started.");
+        }
+
+        Notify(EventType.RunStart);
+        
+        // After setup, check for Afterbirth relic
+        RiteManager rm = GetService<RiteManager>();
+        if (rm != null && !string.IsNullOrEmpty(rm.StartingRelicID))
+        {
+            RelicSO relicData = Resources.Load<RelicSO>($"Items/{rm.StartingRelicID}");
+            if (relicData == null) relicData = Resources.Load<RelicSO>($"Items/{rm.StartingRelicID.Replace(" ", "")}");
+            
+            if (relicData != null)
+            {
+                GetService<InventoryManager>()?.AddItemToInventory(new RelicInstance(relicData));
+                TextOutputter.Instance?.OutputText($"Afterbirth: You have begun with your chosen relic: {relicData.ItemName}.");
+            }
+            rm.StartingRelicID = "";
+            GetService<SaveManager>()?.SaveMeta();
+        }
+
+        // If not loaded, trigger the first encounter manually
+        if (!loaded)
+        {
+            GetService<DungeonManager>()?.Notify(EventType.DungeonRoomAdvance);
+        }
     }
 
     // Ends the current run and returns a summary
@@ -51,9 +89,10 @@ public class RunManager : GameModule
         RunSummary rs = new RunSummary();
         if (s_mb != null)
         {
+            s_mb.CleanupAllManagers();
             s_mb = null;
         }
-        TextOutputter.Instance.OutputText("Run ended.");
+        TextOutputter.Instance?.OutputText("Run ended.");
         return rs;
     }
 

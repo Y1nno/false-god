@@ -14,6 +14,7 @@ public enum EventType
     EncounterResolve,
     PlayerAboutToDie,
     DungeonRoomAdvance,
+    DungeonEncounterAdvance,
     DungeonFloorAdvance,
     GoldAdded,
     GoldSpent,
@@ -35,5 +36,8 @@ public enum EventType
     PlayerActionSet,
     EnemyDefeated,
     DiceRoll,
-    DecisionMade
+    DiceRollFinalized,
+    DecisionMade,
+    RunStart,
+    RunEnd
 }

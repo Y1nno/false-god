@@ -3,6 +3,7 @@ using UnityEngine;
 public class ConsumableInstance : Item
 {
     public Consumable BaseData { get; private set; }
+    public override string GetName() => BaseData != null ? BaseData.ItemName : "Unknown Consumable";
     public int Tier { get; private set; }
 
     public ConsumableInstance(Consumable baseData, int tier)
@@ -14,16 +15,16 @@ public class ConsumableInstance : Item
     public override void Use()
     {
         // For ConsumableInstance, the inventory or UI normally calls this.
-        // We need a target; we assume Player for now if invoked directly without target.
         CombatManager cm = RunManager.Instance.GetService<CombatManager>();
-        if (cm != null && cm.CurrentBattle != null && cm.CurrentBattle.Pcm != null)
+        
+        // We can use consumables anytime as long as the PCM exists
+        if (cm != null && cm.Pcm != null)
         {
-            Use(cm.CurrentBattle.Pcm);
+            Use(cm.Pcm);
+            return;
         }
-        else
-        {
-            TextOutputter.Instance.OutputText("Cannot use consumable outside of battle for now.");
-        }
+        
+        TextOutputter.Instance.OutputText("Cannot use consumable: Player state not found.");
     }
 
     public void Use(Combatant target)

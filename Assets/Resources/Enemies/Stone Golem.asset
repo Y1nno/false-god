@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aaabbbcccdddeeefff00011122233344, type: 3}
+  m_Name: Stone Golem
+  m_EditorClassIdentifier: 
+  EnemyName: Stone Golem
+  BaseHealth: 25
+  BaseMana: 0
+  BaseAtk: 4
+  BaseSpAtk: 0
+  BaseDef: 4
+  BaseSpDef: 4
+  BaseSpeed: 1
+  DodgeChance: 0.0
+  CritChance: 0.0
+  BaseXP: 25
+  AvailableActionIDs:
+  - 1
+  GoldValue: 0
+  SpecialDescription: ""

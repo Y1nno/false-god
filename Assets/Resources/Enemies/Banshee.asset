@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: aaabbbcccdddeeefff00011122233344, type: 3}
+  m_Name: Banshee
+  m_EditorClassIdentifier: 
+  EnemyName: Banshee
+  BaseHealth: 18
+  BaseMana: 10
+  BaseAtk: 0
+  BaseSpAtk: 5
+  BaseDef: 2
+  BaseSpDef: 3
+  BaseSpeed: 8
+  DodgeChance: 8.0
+  CritChance: 7.0
+  BaseXP: 28
+  AvailableActionIDs:
+  - 1
+  GoldValue: 0
+  SpecialDescription: "Haunt: reduces player atk and sp.atk -30%"

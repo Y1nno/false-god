@@ -13,13 +13,26 @@ public class ScoreManager : GameModule, IObserver
 
     public override void AttachDefaultObservers()
     {
-        // No default observers for now
+        RunManager.Instance.GetService<EncounterManager>()?.AttachObserver(this);
     }
 
     public void AddScore(int points)
     {
         CurrentScore += points;
-        TextOutputter.Instance.OutputText($"Gained {points} points! Current Score: {CurrentScore}");
+        TotalScore += points;
+        TextOutputter.Instance.OutputText($"Gained {points} points! Current Score: {CurrentScore} (Total: {TotalScore})");
+        RunManager.Instance.GetService<SaveManager>()?.SaveRun();
+    }
+
+    public void RestoreState(int score)
+    {
+        CurrentScore = score;
+    }
+
+    public int TotalScore { get; private set; }
+    public void RestoreMetaState(int totalScore)
+    {
+        TotalScore = totalScore;
     }
 
     public void OnNotify(object subject, EventType eventType)

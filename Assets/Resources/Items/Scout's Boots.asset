@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdad69720ae6f5248b7600463fade9a9, type: 3}
+  m_Name: Scout's Boots
+  m_EditorClassIdentifier: Assembly-CSharp::EquipmentSO
+  ItemID: 32
+  ItemName: Scout's Boots
+  ItemIcon: {fileID: 0}
+  Description: 
+  Slot: 2
+  Rarity: 1
+  PhysicalDefense:
+    value: 0
+    min: 2
+    max: 3
+  SpecialDefense:
+    value: 0
+    min: 2
+    max: 3
+  PhysicalAttack:
+    value: 0
+    min: 0
+    max: 0
+  SpecialAttack:
+    value: 0
+    min: 0
+    max: 0
+  STR:
+    value: 0
+    min: 0
+    max: 0
+  DEX:
+    value: 0
+    min: 0
+    max: 0
+  INT:
+    value: 0
+    min: 0
+    max: 0
+  SPD:
+    value: 0
+    min: 1
+    max: 1
+  CritChance:
+    value: 0
+    min: 0
+    max: 0
+  BlockChance:
+    value: 0
+    min: 0
+    max: 0
+  DodgeChance:
+    value: 0
+    min: 0
+    max: 0
+  Traits: []
+  Skill: {fileID: 0}

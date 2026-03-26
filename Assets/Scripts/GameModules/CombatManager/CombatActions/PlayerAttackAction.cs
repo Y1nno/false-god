@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Linq;
 
 public class PlayerAttackAction : CombatAction
 {
@@ -17,7 +18,7 @@ public class PlayerAttackAction : CombatAction
         if (!base.CanUse(user)) return false;
 
         EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
-        if (eqm != null && eqm.HasMoveFirstAvailable(out EquipmentSO moveFirstItem, out int traitIndex))
+        if (eqm != null && eqm.HasMoveFirstAvailable(out Equipment moveFirstItem, out int traitIndex))
         {
             if (moveFirstItem.Traits[traitIndex].CurrentCooldown > 0)
             {
@@ -37,17 +38,55 @@ public class PlayerAttackAction : CombatAction
         }
 
         int damage = _baseDamage;
-        TextOutputter.Instance.OutputText($"{user.GetName()} used {ActionName} on {target.GetName()}!");
-        damage = CalculateDamageFromBase(damage, user);
-        int damageDealt = target.GetAttacked(damage, ActionType, user);
 
         EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
+        Equipment weapon = eqm?.GetEquippedItem(EquipmentSlot.Weapon);
+        if (weapon != null && user is PlayerCombatManager)
+        {
+            damage = weapon.PhysicalAttack > 0 ? weapon.PhysicalAttack : weapon.SpecialAttack;
+            // Note: In case of range, Wp is the rolled value. 
+            // Currently Equipment class stores the rolled value and factors in modifiers.
+        }
+
+        TextOutputter.Instance.OutputText($"{user.GetName()} used {ActionName} on {target.GetName()}!");
+        damage = CalculateDamageFromBase(damage, user);
+        TextOutputter.Instance.OutputText($"Attack Roll: {damage} (Weapon + Stats + Modifiers).");
+        int damageDealt = target.GetAttacked(damage, ActionType, user);
+
+        // Splash Damage (Relic + Weapon Trait)
+        float relicSplashPercent = RunManager.Instance.GetService<RelicManager>()?.GetSplashDamagePercentage() ?? 0f;
+        float traitSplashPercent = (eqm?.GetTotalSplashDamagePercentage() ?? 0) / 100f;
+        float totalSplashPercent = relicSplashPercent + traitSplashPercent;
+
+        if (totalSplashPercent > 0 && user is PlayerCombatManager)
+        {
+            int splashDamage = Mathf.RoundToInt(damageDealt * totalSplashPercent);
+            if (splashDamage > 0)
+            {
+                CombatManager cm = RunManager.Instance.GetService<CombatManager>();
+                if (cm != null && cm.CurrentBattle != null)
+                {
+                    var otherEnemies = cm.CurrentBattle.GetEnemies()
+                        .Where(e => e != target && e.IsAlive())
+                        .ToList();
+                    
+                    if (otherEnemies.Count > 0)
+                    {
+                        TextOutputter.Instance.OutputText($"Splash damage dealt {splashDamage} to other enemies!");
+                        foreach (var enemy in otherEnemies)
+                        {
+                            enemy.GetAttacked(splashDamage, ActionType, user);
+                        }
+                    }
+                }
+            }
+        }
         
         if (user is PlayerCombatManager pcmUser)
         {
             eqm?.DegradeEquippedWeapons(); // Drain durability on hit
 
-            if (eqm != null && eqm.HasTraitAvailable(EquipmentTrait.DoubleStrike, out EquipmentSO item, out int traitIndex))
+            if (eqm != null && eqm.HasTraitAvailable(EquipmentTrait.DoubleStrike, out Equipment item, out int traitIndex))
             {
                 float procChance = item.Traits[traitIndex].Value;
                 if (Random.Range(0f, 100f) < procChance)

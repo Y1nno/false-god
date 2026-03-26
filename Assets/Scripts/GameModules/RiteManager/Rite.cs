@@ -6,6 +6,9 @@ public abstract class Rite
     public int RitePointCost { get; protected set; }
     public RiteType RiteType { get; protected set; }
     public abstract string Description { get; }
+    
+    public int CurrentCooldown { get; set; } = 0;
+    public bool IsDestroyed { get; set; } = false;
 
     public Rite(string riteID, int ritePointCost, RiteType riteType)
     {

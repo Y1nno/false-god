@@ -25,13 +25,24 @@ public class Subject
         }
     }
 
+    // Clear all observers from the subject
+    public void ClearObservers()
+    {
+        observers.Clear();
+    }
+
     // Notify all observers of an event
     public void Notify(EventType eventType)
+    {
+        Notify(this, eventType);
+    }
+
+    public void Notify(object subject, EventType eventType)
     {
         List<IObserver> observersCopy = new List<IObserver>(observers);
         foreach (var observer in observersCopy)
         {
-            observer.OnNotify(this, eventType);
+            observer.OnNotify(subject, eventType);
         }
     }
 

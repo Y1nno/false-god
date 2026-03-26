@@ -74,8 +74,15 @@ public class Consumable : ItemSO
                 PlayerManager pmSC = RunManager.Instance.GetService<PlayerManager>();
                 if (pmSC != null)
                 {
-                    if (modifiedAmount > 0) pmSC.IncreaseStat(effect.TargetStat, Mathf.RoundToInt(modifiedAmount));
-                    else pmSC.DecreaseStat(effect.TargetStat, Mathf.RoundToInt(-modifiedAmount));
+                    if (effect.DurationType == EffectDurationType.Instant)
+                    {
+                        if (modifiedAmount > 0) pmSC.IncreaseStat(effect.TargetStat, Mathf.RoundToInt(modifiedAmount));
+                        else pmSC.DecreaseStat(effect.TargetStat, Mathf.RoundToInt(-modifiedAmount));
+                    }
+                    else
+                    {
+                         target.AddActiveEffect(new ActiveOverTimeEffect(effect, modifiedAmount));
+                    }
                 }
                 break;
 
@@ -83,11 +90,18 @@ public class Consumable : ItemSO
                 PlayerManager pmAll = RunManager.Instance.GetService<PlayerManager>();
                 if (pmAll != null)
                 {
-                    Stat[] allStats = (Stat[])System.Enum.GetValues(typeof(Stat));
-                    foreach (Stat stat in allStats)
+                    if (effect.DurationType == EffectDurationType.Instant)
                     {
-                        if (modifiedAmount > 0) pmAll.IncreaseStat(stat, Mathf.RoundToInt(modifiedAmount));
-                        else pmAll.DecreaseStat(stat, Mathf.RoundToInt(-modifiedAmount));
+                        Stat[] allStats = (Stat[])System.Enum.GetValues(typeof(Stat));
+                        foreach (Stat stat in allStats)
+                        {
+                            if (modifiedAmount > 0) pmAll.IncreaseStat(stat, Mathf.RoundToInt(modifiedAmount));
+                            else pmAll.DecreaseStat(stat, Mathf.RoundToInt(-modifiedAmount));
+                        }
+                    }
+                    else
+                    {
+                         target.AddActiveEffect(new ActiveOverTimeEffect(effect, modifiedAmount));
                     }
                 }
                 break;
@@ -95,6 +109,29 @@ public class Consumable : ItemSO
             case ConsumableEffectType.HealOverTime:
             case ConsumableEffectType.ManaOverTime:
                 target.AddActiveEffect(new ActiveOverTimeEffect(effect, modifiedAmount));
+                break;
+
+            case ConsumableEffectType.Portal:
+                EncounterManager em = RunManager.Instance.GetService<EncounterManager>();
+                if (em != null)
+                {
+                    em.ReplaceCurrentEncounter(EncounterType.Portal);
+                }
+                break;
+
+            case ConsumableEffectType.GoldGain:
+                EconomyManager econ = RunManager.Instance.GetService<EconomyManager>();
+                if (econ != null)
+                {
+                    int min = Mathf.RoundToInt(modifiedAmount);
+                    int max = min;
+                    if (effect.Amount.Length > 1)
+                    {
+                        max = Mathf.RoundToInt(effect.Amount[1] * multiplier);
+                    }
+                    int gain = UnityEngine.Random.Range(min, max + 1);
+                    econ.AddGold(gain);
+                }
                 break;
         }
     }
@@ -104,7 +141,7 @@ public class ActiveOverTimeEffect
 {
     public ConsumableEffect BaseEffect { get; private set; }
     public float ModifiedAmount { get; private set; }
-    public int RoundsRemaining { get; private set; }
+    public int RoundsRemaining { get; set; }
 
     public ActiveOverTimeEffect(ConsumableEffect baseEffect, float modifiedAmount)
     {

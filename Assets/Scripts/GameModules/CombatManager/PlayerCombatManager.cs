@@ -1,37 +1,42 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerCombatManager : Combatant, IPromptResponder
 {
-    private PlayerManager _pm = RunManager.Instance.GetService<PlayerManager>();
+    private PlayerManager _pm => RunManager.Instance.GetService<PlayerManager>();
 
     private List<CombatAction> _availableActions = new List<CombatAction>();
-    private enum DecisionMode { None, ChoosingAction, ChoosingTarget }
+    private enum DecisionMode { None, ChoosingAction, ChoosingTarget, ChoosingSpell }
     private DecisionMode _currentDecisionMode = DecisionMode.None;
-
+    
     private readonly List<int> k_StartingActionIDs = new List<int>
     {
         0, // Do Nothing
         1, // Basic Attack
         2, // Basic Block
-        3, // Fireball
         999, // Switch Weapon
     };
 
     private List<int> _decisionsAvailable = new List<int>();
 
     List<Combatant> possibleTargets = new List<Combatant>();
+    private int _fervorStacks = 0;
+    private int _whisperingFlameCooldown = 0;
 
     public PlayerCombatManager()
     {
-        foreach (int actionID in k_StartingActionIDs)
+        Level = RunManager.Instance.GetService<XPManager>()?.level ?? 1;
+        _fervorStacks = 0;
+    }
+
+    public void GrantFervorStack()
+    {
+        if (_fervorStacks < 5)
         {
-            CombatAction action = ActionFactory.CreateActionByID(actionID);
-            if (action != null)
-            {
-                _availableActions.Add(action);
-            }
+            _fervorStacks++;
+            TextOutputter.Instance.OutputText($"Fervor! ATK increased by {(_fervorStacks * 2)}% (Stack {_fervorStacks}/5).");
         }
     }
     public override Resource GetHealth()
@@ -45,8 +50,19 @@ public class PlayerCombatManager : Combatant, IPromptResponder
 
     protected override int TakeDamage(int amount)
     {
-        // Redirect damage to PlayerManager to ensure global events (like Lazarus Rite) trigger
-        return _pm.TakeDamage(amount);
+        // Use base TakeDamage to handle block/relics and update health
+        int finalDamageDealt = base.TakeDamage(amount);
+
+        // Notify global observers if player is near death
+        if (_pm.Health.CurrentValue <= 0)
+        {
+            _pm.Notify(EventType.PlayerAboutToDie);
+            if (_pm.Health.CurrentValue <= 0)
+            {
+                _pm.Die();
+            }
+        }
+        return finalDamageDealt;
     }
 
     public override int GetAttacked(int damage = 0, AttackType attackType = AttackType.Physical, Combatant attacker = null)
@@ -92,14 +108,28 @@ public class PlayerCombatManager : Combatant, IPromptResponder
             return 0;
         }
 
+        if (damage > 0 && attacker != null && attacker is Enemy)
+        {
+            RelicManager relicm = RunManager.Instance.GetService<RelicManager>();
+            if (relicm != null)
+            {
+                damage = Mathf.RoundToInt(damage * relicm.GetEnemyDamageMultiplier());
+            }
+        }
+
         int damageDealt = 0;
+        int defense = 0;
         switch (attackType)
         {
             case AttackType.Physical:
-                damageDealt = TakeDamage(damage - _pm.CalculateSecondaryStat(SecondaryStat.PHDEF));
+                defense = _pm.CalculateSecondaryStat(SecondaryStat.PHDEF);
+                TextOutputter.Instance.OutputText($"Defense reduced damage by {defense}.");
+                damageDealt = TakeDamage(damage - defense);
                 break;
             case AttackType.Special:
-                damageDealt = TakeDamage(damage - _pm.CalculateSecondaryStat(SecondaryStat.SPDEF));
+                defense = _pm.CalculateSecondaryStat(SecondaryStat.SPDEF);
+                TextOutputter.Instance.OutputText($"Special Defense reduced damage by {defense}.");
+                damageDealt = TakeDamage(damage - defense);
                 break;
             default:
                 damageDealt = TakeDamage(damage);
@@ -109,7 +139,7 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         if (IsAlive() && attackType == AttackType.Physical && attacker != null && attacker.IsAlive())
         {
             EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
-            if (eqm != null && eqm.HasTraitAvailable(EquipmentTrait.CounterChance, out EquipmentSO item, out int traitIndex))
+            if (eqm != null && eqm.HasTraitAvailable(EquipmentTrait.CounterChance, out Equipment item, out int traitIndex))
             {
                 float counterChance = item.Traits[traitIndex].Value;
                 if (UnityEngine.Random.Range(0f, 100f) < counterChance)
@@ -121,7 +151,96 @@ public class PlayerCombatManager : Combatant, IPromptResponder
             }
         }
 
+        if (attacker != null && damageDealt > 0)
+        {
+            attacker.OnDealDamage(damageDealt, this);
+        }
+
         return damageDealt;
+    }
+
+    public void OnBattleStart()
+    {
+        ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+        
+        // Serpent's Coil Lvl 3: 35% Poison random enemy
+        if (rm?.CurrentReligion is SerpentsCoil && rm.CurrentReligion.CurrentFaithLevel >= 3)
+        {
+            if (UnityEngine.Random.Range(0f, 100f) < 35f)
+            {
+                Battle b = RunManager.Instance.GetService<CombatManager>()?.CurrentBattle;
+                List<Combatant> enemies = b?.GetEnemies();
+                if (enemies != null && enemies.Count > 0)
+                {
+                    Combatant target = enemies[UnityEngine.Random.Range(0, enemies.Count)];
+                    target.ApplyAilment(AilmentType.Poison, 3);
+                    TextOutputter.Instance.OutputText("Serpent's Coil: A hidden viper strikes the enemy with poison!");
+                }
+            }
+        }
+
+        // Whispering Flame Lvl 3: Start-of-battle Burn (15%)
+        if (rm?.CurrentReligion is WhisperingFlame && rm.CurrentReligion.CurrentFaithLevel >= 3)
+        {
+            if (_whisperingFlameCooldown <= 0)
+            {
+                if (UnityEngine.Random.Range(0f, 100f) < 15f)
+                {
+                    Battle b = RunManager.Instance.GetService<CombatManager>()?.CurrentBattle;
+                    List<Combatant> enemies = b?.GetEnemies();
+                    if (enemies != null && enemies.Count > 0)
+                    {
+                        Combatant target = enemies[UnityEngine.Random.Range(0, enemies.Count)];
+                        target.ApplyAilment(AilmentType.Burn, 3);
+                        TextOutputter.Instance.OutputText("Whispering Flame: A searing gaze ignites the enemy!");
+                        _whisperingFlameCooldown = 1; // 1 Encounter cooldown
+                    }
+                }
+            }
+            else
+            {
+                _whisperingFlameCooldown--;
+            }
+        }
+        _hasUsedFirstAttack = false;
+        _fervorStacks = 0; // Reset fervor at start of fight
+    }
+
+    private bool _hasUsedFirstAttack = false;
+
+    public override void OnDealDamage(int amount, Combatant target)
+    {
+        base.OnDealDamage(amount, target);
+        
+        // Dawnbearers Level 3: +15% damage on first physical attack
+        ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+        if (rm?.CurrentReligion is OrderOfTheDawnbearers && rm.CurrentReligion.CurrentFaithLevel >= 3 && !_hasUsedFirstAttack)
+        {
+            _hasUsedFirstAttack = true;
+            int bonus = Mathf.RoundToInt(amount * 0.15f);
+            if (bonus > 0)
+            {
+                target.GetAttacked(bonus, AttackType.True, this);
+                TextOutputter.Instance.OutputText($"Dawnbearer's Vengeance: +{bonus} bonus damage on first strike!");
+            }
+        }
+    }
+
+    public override void OnRoundEnd()
+    {
+        base.OnRoundEnd();
+
+        // Serpents Coil Level 4: Shed Skin (20% heal ailment)
+        ReligionManager rm = RunManager.Instance.GetService<ReligionManager>();
+        if (rm?.CurrentReligion is SerpentsCoil && rm.CurrentReligion.CurrentFaithLevel >= 4)
+        {
+            if (ActiveAilments.Count > 0 && UnityEngine.Random.value <= 0.20f)
+            {
+                Ailment ailment = ActiveAilments[UnityEngine.Random.Range(0, ActiveAilments.Count)];
+                RemoveAilment(ailment.Type);
+                TextOutputter.Instance.OutputText($"Shed Skin: The serpent sheds its skin, clearing {ailment.Type}!");
+            }
+        }
     }
 
     public override float GetCritChance()
@@ -135,19 +254,38 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     }
     public override void ChooseAction()
     {
+        if (HasAilment(AilmentType.Frozen) || HasAilment(AilmentType.Stun) || HasAilment(AilmentType.Reloading))
+        {
+            string reason = HasAilment(AilmentType.Frozen) ? "frozen solid" : (HasAilment(AilmentType.Stun) ? "stunned" : "reloading");
+            TextOutputter.Instance.OutputText($"You are {reason} and cannot move!");
+            _availableActions.Clear();
+            _availableActions.Add(ActionFactory.CreateActionByID(000)); // Do Nothing action
+            
+            Notify(EventType.PlayerTurnStart);
+            _currentDecisionMode = DecisionMode.ChoosingAction;
+            Prompt skipPrompt = new Prompt($"You are {reason}!", new List<string> { "Skip Turn" }, this);
+            return;
+        }
+        CurrentBlock = 0; // Reset Block at start of player turn
         _availableActions.Clear();
         EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
-        EquipmentSO moveFirstItem = null;
+        Equipment moveFirstItem = null;
         int traitIndex = -1;
         bool hasMoveFirst = eqm != null && eqm.HasMoveFirstAvailable(out moveFirstItem, out traitIndex);
 
         foreach (int actionID in k_StartingActionIDs)
         {
             CombatAction action = ActionFactory.CreateActionByID(actionID);
-            if (action != null)
+            if (action != null && action.CanUse(this))
             {
                 _availableActions.Add(action);
             }
+        }
+
+        SpellManager sm = RunManager.Instance.GetService<SpellManager>();
+        if (sm != null && sm.LearnedSpells.Count > 0)
+        {
+            _availableActions.Add(new SpellGroupAction()); 
         }
 
         Notify(EventType.PlayerTurnStart);
@@ -191,10 +329,19 @@ public class PlayerCombatManager : Combatant, IPromptResponder
                 //Debug.Log($"Player selected action index: {decisionIndex}");
                 CombatAction selectedAction = _availableActions[decisionIndex];
 
+                if (selectedAction.ActionID == 888) // Use Spell group
+                {
+                    _currentDecisionMode = DecisionMode.ChoosingSpell;
+                    SpellManager sm = RunManager.Instance.GetService<SpellManager>();
+                    List<string> spellNames = sm.LearnedSpells.Select(s => $"{s.actionName} ({s.cost} MP)").ToList();
+                    Prompt spellPrompt = new Prompt("Select a spell:", spellNames, this);
+                    return;
+                }
+
                 if (selectedAction.ActionID == 1) // Basic Attack
                 {
                     EquipmentManager eqm = RunManager.Instance.GetService<EquipmentManager>();
-                    if (eqm != null && eqm.HasMoveFirstAvailable(out EquipmentSO item, out int traitIndex))
+                    if (eqm != null && eqm.HasMoveFirstAvailable(out Equipment item, out int traitIndex))
                     {
                         if (item.Traits[traitIndex].CurrentCooldown > 0)
                         {
@@ -231,11 +378,54 @@ public class PlayerCombatManager : Combatant, IPromptResponder
                 Prompt prompt = new Prompt("Choose your target:", targetStrings, this);
                 break;
 
+            case DecisionMode.ChoosingSpell:
+                SpellManager smMsg = RunManager.Instance.GetService<SpellManager>();
+                SpellSO selectedSpell = smMsg.LearnedSpells[decisionIndex];
+                
+                // Check mana cost
+                if (!CanAffordMana(selectedSpell.cost))
+                {
+                    TextOutputter.Instance.OutputText("Not enough mana!");
+                    ChooseAction(); // Restart choosing phase
+                    return;
+                }
+
+                CurrentAction = new SpellAction(selectedSpell);
+                TextOutputter.Instance.OutputText($"Player selected spell: {selectedSpell.actionName}");
+
+                if (CurrentAction.NeedsTarget() == false)
+                {
+                    _currentDecisionMode = DecisionMode.None;
+                    Notify(EventType.PlayerActionSet);
+                    return;
+                }
+
+                _currentDecisionMode = DecisionMode.ChoosingTarget;
+                possibleTargets = CurrentAction.GetAvailableTargets(this, CurrentAction.TargetType);
+                List<string> targetStringsSpell = new List<string>();
+                foreach (Combatant target in possibleTargets)
+                {
+                    targetStringsSpell.Add($"{target.GetName()} (HP: {target.GetHealth().CurrentValue}/{target.GetHealth().MaxValue})");
+                }
+                Prompt promptSpell = new Prompt("Choose your target:", targetStringsSpell, this);
+                break;
+
             case DecisionMode.ChoosingTarget:
                 _currentDecisionMode = DecisionMode.None;
-                _currentTarget = possibleTargets[decisionIndex];
+                
+                if (decisionIndex >= 0 && decisionIndex < possibleTargets.Count)
+                {
+                    _currentTarget = possibleTargets[decisionIndex];
+
+                    // Handle Charmed status: 50% chance to force target to Self
+                    if (HasAilment(AilmentType.Charmed) && UnityEngine.Random.value <= 0.5f)
+                    {
+                        TextOutputter.Instance.OutputText("You are charmed and target yourself!");
+                        _currentTarget = this;
+                    }
+                }
+
                 possibleTargets.Clear();
-                //Debug.Log($"Selected target: {_currentTarget.GetName()}, setting action and notifying.");
                 Notify(EventType.PlayerActionSet);
                 break;
         }
@@ -251,11 +441,99 @@ public class PlayerCombatManager : Combatant, IPromptResponder
     }
     public override int GetStat(Stat stat)
     {
-        return _pm.GetStat(stat);
+        int baseStat = _pm.GetStat(stat);
+        return baseStat + GetStatBonus(stat);
     }
+
+    public int GetStatBonus(Stat stat)
+    {
+        float bonus = 0;
+        if (_activeEffects == null) return 0;
+        foreach (var effect in _activeEffects)
+        {
+            if ((effect.BaseEffect.Type == ConsumableEffectType.StatChange && effect.BaseEffect.TargetStat == stat) ||
+                effect.BaseEffect.Type == ConsumableEffectType.AllStatsChange)
+            {
+                bonus += effect.ModifiedAmount;
+            }
+        }
+        return Mathf.RoundToInt(bonus);
+    }
+
     public override int GetSecondaryStat(SecondaryStat stat)
     {
-        return _pm.CalculateSecondaryStat(stat);
+        int baseStat = _pm.CalculateSecondaryStat(stat);
+
+        // Apply Ailment Modifiers
+        foreach (var ailment in ActiveAilments)
+        {
+            float mod = AilmentScaling.GetStatModifier(ailment.Type, ailment.Stacks);
+            if (mod == 0) continue;
+
+            bool applies = false;
+            switch (ailment.Type)
+            {
+                case AilmentType.Burn:
+                    applies = (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK);
+                    break;
+                case AilmentType.Poison:
+                    applies = (stat == SecondaryStat.SPDEF);
+                    break;
+                case AilmentType.Frozen:
+                    applies = (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF);
+                    // Frozen gives a BOOST (negative reduction), so AilmentScaling should handle the sign
+                    break;
+                case AilmentType.Bleed:
+                    // Bleed handles healing, not base secondary stats in this version of the table
+                    break;
+                case AilmentType.Weaken:
+                    applies = (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF);
+                    break;
+                case AilmentType.AtkDebuff:
+                    applies = (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK);
+                    break;
+                case AilmentType.DefDebuff:
+                    applies = (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF);
+                    break;
+            }
+
+            if (applies)
+            {
+                baseStat = Mathf.RoundToInt(baseStat * (1f - mod));
+            }
+        }
+
+        // Apply Auras from active Enemies
+        CombatManager cbm = RunManager.Instance.GetService<CombatManager>();
+        if (cbm != null && cbm.CurrentBattle != null)
+        {
+            foreach (var enemy in cbm.CurrentBattle.GetEnemies())
+            {
+                if (enemy == null || !enemy.IsAlive()) continue;
+
+                if (enemy.GetName() == "Banshee" && (stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK))
+                {
+                    baseStat = Mathf.RoundToInt(baseStat * 0.70f); // Haunt: -30% Atk
+                }
+                else if (enemy.GetName() == "Wraith" && (stat == SecondaryStat.PHDEF || stat == SecondaryStat.SPDEF))
+                {
+                    baseStat = Mathf.RoundToInt(baseStat * 0.70f); // Spite: -30% Def
+                }
+            }
+        }
+
+        return baseStat + GetSecondaryStatBonus(stat);
+    }
+
+    public int GetSecondaryStatBonus(SecondaryStat stat)
+    {
+        int bonus = 0;
+        if ((stat == SecondaryStat.PHATK || stat == SecondaryStat.SPATK) && _fervorStacks > 0)
+        {
+            int baseVal = _pm.CalculateSecondaryStat(stat);
+            bonus += Mathf.RoundToInt(baseVal * (_fervorStacks * 0.02f));
+        }
+        return bonus;
     }
     public override int GetBonusDamage()
     {
@@ -264,8 +542,8 @@ public class PlayerCombatManager : Combatant, IPromptResponder
 
     public override bool TryUseMana(int amount)
     {
-        // 1. Try normal mana usage first
-        if (base.TryUseMana(amount))
+        // 1. Try normal mana usage first (includes Blessed Cross check)
+        if (_pm.TryUseMana(amount))
         {
             return true;
         }
@@ -283,10 +561,6 @@ public class PlayerCombatManager : Combatant, IPromptResponder
             }
 
             // Consume health for the rest
-            // Check if we have enough health (don't kill self unless intended? usually allow suicide or block)
-            // Let's allow suicide for drama, or check CanAfford if we want safety.
-            // Requirement says "Use HP as Mana", usually implies "Blood Magic".
-
             if (_pm.Health.CurrentValue > deficit)
             {
                 _pm.TakeDamage(deficit);
@@ -321,11 +595,9 @@ public class PlayerCombatManager : Combatant, IPromptResponder
         {
             int deficit = amount - _pm.Mana.CurrentValue;
             // Ensure we have enough health to cover the deficit
-            // Depending on design, we might require > deficit to stay alive, or >= to cast and die.
-            // Let's go with > 0 after cost (strict survival) or >= (allowed to die).
-            // Given "Die()" exists, allowing >= seems consistent.
             return _pm.Health.CurrentValue > deficit;
         }
         return false;
     }
 }
+

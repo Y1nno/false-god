@@ -13,21 +13,33 @@ public class TraitWithValueDrawer : PropertyDrawer
         SerializedProperty cooldownTypeProp = property.FindPropertyRelative("CooldownType");
         SerializedProperty cooldownDurationProp = property.FindPropertyRelative("CooldownDuration");
 
+        EquipmentTrait trait = (EquipmentTrait)traitProp.enumValueIndex;
+
         // Calculate rects
         Rect traitRect = new Rect(position.x, position.y, position.width * 0.5f - 2, EditorGUIUtility.singleLineHeight);
         Rect valueRect = new Rect(position.x + position.width * 0.5f + 2, position.y, position.width * 0.5f - 2, EditorGUIUtility.singleLineHeight);
 
-        // Draw basic fields
+        // Draw trait dropdown
         EditorGUI.PropertyField(traitRect, traitProp, GUIContent.none);
-        
-        // Only show Value if it's NOT MoveFirst
-        if (traitProp.enumValueIndex != (int)EquipmentTrait.MoveFirst)
+
+        // Determine how to draw the Value field
+        if (IsBooleanTrait(trait))
         {
+            // Do not draw Value field
+        }
+        else if (IsPercentageTrait(trait))
+        {
+            // Draw as Slider
+            valueProp.intValue = EditorGUI.IntSlider(valueRect, valueProp.intValue, 0, 100);
+        }
+        else
+        {
+            // Draw as normal IntField
             EditorGUI.PropertyField(valueRect, valueProp, GUIContent.none);
         }
 
         // Conditionally draw MoveFirst properties on the next line
-        if (traitProp.enumValueIndex == (int)EquipmentTrait.MoveFirst)
+        if (trait == EquipmentTrait.MoveFirst)
         {
             Rect cooldownTypeRect = new Rect(position.x, position.y + EditorGUIUtility.singleLineHeight + 2, position.width * 0.5f - 2, EditorGUIUtility.singleLineHeight);
             Rect cooldownDurationRect = new Rect(position.x + position.width * 0.5f + 2, position.y + EditorGUIUtility.singleLineHeight + 2, position.width * 0.5f - 2, EditorGUIUtility.singleLineHeight);
@@ -37,6 +49,28 @@ public class TraitWithValueDrawer : PropertyDrawer
         }
 
         EditorGUI.EndProperty();
+    }
+
+    private bool IsBooleanTrait(EquipmentTrait trait)
+    {
+        return trait == EquipmentTrait.MoveFirst || 
+               trait == EquipmentTrait.TrueStrike || 
+               trait == EquipmentTrait.ComboStrike || 
+               trait == EquipmentTrait.HealAfterFirstDamage;
+    }
+
+    private bool IsPercentageTrait(EquipmentTrait trait)
+    {
+        return trait == EquipmentTrait.XPBoost ||
+               trait == EquipmentTrait.GlobalDamageReduction ||
+               trait == EquipmentTrait.CounterChance ||
+               trait == EquipmentTrait.SpellReflect ||
+               trait == EquipmentTrait.DoubleStrike ||
+               trait == EquipmentTrait.PoisonHit ||
+               trait == EquipmentTrait.BurnHit ||
+               trait == EquipmentTrait.FreezeHit ||
+               trait == EquipmentTrait.WeakenHit ||
+               trait == EquipmentTrait.SplashDamage;
     }
 
     public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
