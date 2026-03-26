@@ -256,7 +256,21 @@ public class PlayerManager : GameModule, IObserver
     {
         // Notify observers about player death
         TextOutputter.Instance.OutputText("<color=red>YOU DIED.</color>");
+        
+        RiteManager rm = RunManager.Instance.GetService<RiteManager>();
+        if (rm != null && rm.ActiveRites.ContainsKey(RiteType.Afterbirth))
+        {
+             RunManager.Instance.GetService<RelicManager>()?.PromptAfterbirthSelection();
+             return; // ActualDeath will be called after selection
+        }
+
+        ActualDeath();
+    }
+
+    public void ActualDeath()
+    {
         RunManager.Instance.GetService<SaveManager>()?.ClearRunSave();
+        RunManager.Instance.GetService<RiteManager>()?.RecordDeath();
         Notify(EventType.PlayerDeath);
     }
 

@@ -36,6 +36,8 @@ public static class RiteFactory
                 return new EmpressRite();
             case RiteType.Merlin:
                 return new MerlinRite();
+            case RiteType.Afterbirth:
+                return new AfterbirthRite();
             default:
                 // For now, return null or throw for unimplemented rites
                 // throw new NotImplementedException($"Rite {type} is not yet implemented.");

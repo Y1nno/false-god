@@ -33,6 +33,12 @@ public class RunSaveData
     public List<string> LearnedSpellIDs = new List<string>();
     public int EnemiesKilled;
     public List<string> EquippedRiteIDs = new List<string>();
+    public List<SerializableRiteState> RiteStates = new List<SerializableRiteState>();
+    
+    // Current Run Trackers (to check for unlocks on save)
+    public int RunGoldSpent;
+    public int RunConsumablesUsed;
+    public bool RunJoinedReligion;
 
     // Dungeon & Encounter State
     public RoomSize CurrentRoomSize;
@@ -87,6 +93,27 @@ public class MetaSaveData
     public int TotalScore;
     public int HighestFloor;
     public int BaseRitePoints;
+    
+    // Detailed Trackers
+    public int TotalDeaths;
+    public int TotalSpellsCast;
+    public int TotalMaxDiceRolls;
+    public List<string> BossesDefeated = new List<string>();
+    public List<string> ReligionJoinedEver = new List<string>();
+    public List<string> EnemyKillKeys = new List<string>();
+    public List<int> EnemyKillValues = new List<int>();
+    
+    public bool Spent1000Gold;
+    public bool Used50Consumables;
+    public string StartingRelicID; // For Afterbirth Rite
+}
+
+[Serializable]
+public class SerializableRiteState
+{
+    public string RiteID;
+    public int Cooldown;
+    public bool IsDestroyed;
 }
 
 [Serializable]
@@ -284,6 +311,12 @@ public class SaveManager : GameModule
             foreach (var rite in riteman.ActiveRites.Values)
             {
                 data.EquippedRiteIDs.Add(rite.RiteID);
+                data.RiteStates.Add(new SerializableRiteState 
+                { 
+                    RiteID = rite.RiteID, 
+                    Cooldown = rite.CurrentCooldown, 
+                    IsDestroyed = rite.IsDestroyed 
+                });
             }
         }
 
@@ -338,6 +371,18 @@ public class SaveManager : GameModule
                 if (Enum.TryParse(riteID, out RiteType type))
                 {
                     ritem.EquipRite(type);
+                    
+                    // Restore cooldown/destroyed state
+                    var state = data.RiteStates.Find(s => s.RiteID == riteID);
+                    if (state != null)
+                    {
+                        var rite = ritem.GetRite(type);
+                        if (rite != null)
+                        {
+                            rite.CurrentCooldown = state.Cooldown;
+                            rite.IsDestroyed = state.IsDestroyed;
+                        }
+                    }
                 }
             }
         }
@@ -389,7 +434,20 @@ public class SaveManager : GameModule
 
         if (ritem != null)
         {
+            data.UnlockedRiteIDs = ritem.GetUnlockedRiteIDs();
             data.BaseRitePoints = ritem.BaseRitePoints;
+            
+            data.TotalDeaths = ritem.TotalDeaths;
+            data.TotalSpellsCast = ritem.TotalSpellsCast;
+            data.TotalMaxDiceRolls = ritem.TotalMaxDiceRolls;
+            data.BossesDefeated = new List<string>(ritem.BossesDefeated);
+            data.ReligionJoinedEver = new List<string>(ritem.ReligionsJoined);
+            data.Spent1000Gold = ritem.Spent1000Gold;
+            data.Used50Consumables = ritem.Used50Consumables;
+            data.StartingRelicID = ritem.StartingRelicID;
+            
+            data.EnemyKillKeys = new List<string>(ritem.KillsByEnemyID.Keys);
+            data.EnemyKillValues = new List<int>(ritem.KillsByEnemyID.Values);
         }
         
         string json = JsonUtility.ToJson(data, true);
@@ -408,6 +466,21 @@ public class SaveManager : GameModule
         {
             ritem.SetUnlockedRiteIDs(data.UnlockedRiteIDs);
             ritem.BaseRitePoints = data.BaseRitePoints;
+            
+            ritem.TotalDeaths = data.TotalDeaths;
+            ritem.TotalSpellsCast = data.TotalSpellsCast;
+            ritem.TotalMaxDiceRolls = data.TotalMaxDiceRolls;
+            ritem.BossesDefeated = new HashSet<string>(data.BossesDefeated);
+            ritem.ReligionsJoined = new HashSet<string>(data.ReligionJoinedEver);
+            ritem.Spent1000Gold = data.Spent1000Gold;
+            ritem.Used50Consumables = data.Used50Consumables;
+            ritem.StartingRelicID = data.StartingRelicID;
+            
+            ritem.KillsByEnemyID.Clear();
+            for (int i = 0; i < data.EnemyKillKeys.Count && i < data.EnemyKillValues.Count; i++)
+            {
+                ritem.KillsByEnemyID[data.EnemyKillKeys[i]] = data.EnemyKillValues[i];
+            }
         }
 
         ScoreManager sm = RunManager.Instance.GetService<ScoreManager>();

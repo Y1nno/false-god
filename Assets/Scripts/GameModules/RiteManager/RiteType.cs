@@ -15,5 +15,6 @@ public enum RiteType
     Berserk,
     Empress,
     Merlin,
-    Faithless
+    Faithless,
+    Afterbirth
 }

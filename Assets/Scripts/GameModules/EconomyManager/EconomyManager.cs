@@ -6,6 +6,7 @@ public class EconomyManager : GameModule, IObserver
 
     // Tracks the most recent change in gold (positive or negative)
     public int GoldDelta { get; private set; } = 0;
+    public int GoldSpentInRun { get; set; } = 0;
 
     public override void AttachDefaultObservers()
     {
@@ -28,6 +29,7 @@ public class EconomyManager : GameModule, IObserver
         {
             _gold -= amount;
             GoldDelta = -amount;
+            GoldSpentInRun += amount;
             TextOutputter.Instance.OutputText($"Spent {amount} gold. Remaining: {_gold}"); // Updated text
             Notify(EventType.GoldSpent);
             RunManager.Instance.GetService<SaveManager>()?.SaveRun(); // Added SaveRun call

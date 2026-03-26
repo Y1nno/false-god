@@ -13,6 +13,7 @@ public class InventoryManager : GameModule, IPromptResponder
     #region Public API
 
     public List<Item> UnEquippedItems { get; private set; } = new List<Item>();
+    public int ConsumablesUsedInRun { get; set; } = 0;
 
     public override void AttachDefaultObservers()
     {
@@ -232,6 +233,7 @@ public class InventoryManager : GameModule, IPromptResponder
         else if (itemToHandle is ConsumableInstance consumableInstance)
         {
             RemoveItemFromInventory(consumableInstance); // Drink it
+            ConsumablesUsedInRun++;
             
             CombatManager cm = RunManager.Instance.GetService<CombatManager>();
             if (cm != null && cm.Pcm != null)

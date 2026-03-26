@@ -26,6 +26,11 @@ public class SpellAction : CombatAction
         }
 
         TextOutputter.Instance.OutputText($"{user.GetName()} casts {_data.actionName}!");
+        
+        if (user is PlayerCombatManager)
+        {
+            RunManager.Instance.GetService<RiteManager>()?.RecordSpellCast();
+        }
 
         List<Combatant> targets = new List<Combatant>();
         if (TargetType == TargetingType.AllEnemies || TargetType == TargetingType.All)

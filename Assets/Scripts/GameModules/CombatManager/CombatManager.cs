@@ -272,9 +272,18 @@ public class CombatManager : GameModule, IObserver
                 RunManager.Instance.GetService<SaveManager>()?.SaveRun();
                 break;
             case EventType.EnemyDefeated:
-                if (subject is Boss boss)
+                Enemy defEnemy = subject as Enemy;
+                if (defEnemy != null)
                 {
-                    _defeatedBosses.Add(boss.BossData.BossName);
+                    bool isBoss = defEnemy is Boss;
+                    string eName = defEnemy.EnemyData != null ? defEnemy.EnemyData.EnemyName : defEnemy.Name;
+                    
+                    RunManager.Instance.GetService<RiteManager>()?.RecordKill(eName, isBoss);
+                    
+                    if (isBoss)
+                    {
+                        _defeatedBosses.Add(eName);
+                    }
                 }
 
                 // Whispering Flame Lvl 4: Fervor (Kill enemy in 4 turns)

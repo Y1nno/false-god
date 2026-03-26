@@ -37,6 +37,7 @@ public class ReligionManager : GameModule
         }
         CurrentReligion = newReligion;
         CurrentReligion.OnJoinReligion();
+        RunManager.Instance.GetService<RiteManager>()?.RecordReligionJoin(newReligion.ReligionID);
     }
 
     public void LeaveReligion()

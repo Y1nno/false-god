@@ -46,6 +46,10 @@ public class DiceRoller : Subject, IObserver, IPromptResponder
     public void RollForStatWithModifier(Stat statType, int modifier, int successThreshold, int rollCounter = 0)
     {
         int baseRoll = UnityEngine.Random.Range(k_minRoll, k_maxRoll + 1);
+        if (baseRoll == k_maxRoll)
+        {
+            RunManager.Instance.GetService<RiteManager>()?.RecordMaxDiceRoll();
+        }
         int total = baseRoll + modifier;
 
         var result = new DiceRollResult

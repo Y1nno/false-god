@@ -59,6 +59,22 @@ public class RunManager : GameModule
         }
 
         Notify(EventType.RunStart);
+        
+        // After setup, check for Afterbirth relic
+        RiteManager rm = GetService<RiteManager>();
+        if (rm != null && !string.IsNullOrEmpty(rm.StartingRelicID))
+        {
+            RelicSO relicData = Resources.Load<RelicSO>($"Items/{rm.StartingRelicID}");
+            if (relicData == null) relicData = Resources.Load<RelicSO>($"Items/{rm.StartingRelicID.Replace(" ", "")}");
+            
+            if (relicData != null)
+            {
+                GetService<InventoryManager>()?.AddItemToInventory(new RelicInstance(relicData));
+                TextOutputter.Instance?.OutputText($"Afterbirth: You have begun with your chosen relic: {relicData.ItemName}.");
+            }
+            rm.StartingRelicID = "";
+            GetService<SaveManager>()?.SaveMeta();
+        }
 
         // If not loaded, trigger the first encounter manually
         if (!loaded)

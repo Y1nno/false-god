@@ -58,6 +58,8 @@ public class ChildrenOfThePaleMoon : Religion
                     pm.Mana.IncreaseBaseMax(bonus);
                     pm.RestoreMana(bonus);
                     TextOutputter.Instance.OutputText($"Reward: Retroactive +5 Max Mana for every depth reached (Total: +{bonus}).");
+                    
+                    RunManager.Instance.GetService<RiteManager>()?.UnlockRite(RiteType.Empress.ToString());
                 }
                 break;
         }

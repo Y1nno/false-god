@@ -2,7 +2,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
 
-public class RelicManager : GameModule, IObserver
+public class RelicManager : GameModule, IObserver, IPromptResponder
 {
     private List<RelicInstance> _activeRelics = new List<RelicInstance>();
     private int _enemiesKilledThisRun = 0;
@@ -220,6 +220,45 @@ public class RelicManager : GameModule, IObserver
         }
 
         return loss;
+    }
+
+    public void PromptAfterbirthSelection()
+    {
+        RefreshRelics();
+        if (_activeRelics.Count == 0)
+        {
+            // No relics to carry over, just die
+            RunManager.Instance.GetService<PlayerManager>()?.ActualDeath();
+            return;
+        }
+
+        List<string> options = _activeRelics.Select(r => r.GetName()).ToList();
+        options.Add("Cancel");
+
+        new Prompt("Select a Relic to carry over to your next life (Afterbirth):", options, this);
+    }
+
+    public void ProcessPromptResponse(int decisionIndex)
+    {
+        RefreshRelics();
+        if (decisionIndex >= 0 && decisionIndex < _activeRelics.Count)
+        {
+            string chosenID = _activeRelics[decisionIndex].BaseData.ItemID;
+            RiteManager rm = RunManager.Instance.GetService<RiteManager>();
+            if (rm != null)
+            {
+                rm.StartingRelicID = chosenID;
+                TextOutputter.Instance.OutputText($"Afterbirth: You will begin your next journey with '{_activeRelics[decisionIndex].GetName()}'.");
+                rm.SyncRunStats(); 
+                RunManager.Instance.GetService<SaveManager>()?.SaveMeta();
+            }
+        }
+        else
+        {
+            TextOutputter.Instance.OutputText("Afterbirth: No relic selected.");
+        }
+
+        RunManager.Instance.GetService<PlayerManager>()?.ActualDeath();
     }
 
     public void OnNotify(object subject, EventType eventType)
